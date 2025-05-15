@@ -1,5 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ScrapedContent {
   url: string;
@@ -16,11 +17,21 @@ export interface ScrapedContent {
   listItems: string[];
   metaDescription: string | null;
   metaKeywords: string | null;
+  projectId?: string; // Project identifier
+}
+
+export interface CrawlProject {
+  id: string;
+  name: string;
+  startUrl: string;
+  createdAt: Date;
+  pageCount: number;
 }
 
 export interface CrawlOptions {
   crawlEntireSite: boolean;
   maxPages?: number;
+  projectName?: string;
 }
 
 export class ScraperService {
@@ -31,6 +42,8 @@ export class ScraperService {
   private static baseDomain: string = '';
   private static isCrawling: boolean = false;
   private static maxPages: number = 10; // Default limit
+  private static currentProjectId: string = '';
+  private static projects: CrawlProject[] = [];
   
   static async scrapeWebsite(url: string, options?: CrawlOptions): Promise<ScrapedContent | null> {
     try {
@@ -51,9 +64,34 @@ export class ScraperService {
         return null;
       }
 
+      // Generate a new project ID for this crawl session
+      this.currentProjectId = uuidv4();
+      const projectName = options?.projectName || this.getProjectNameFromUrl(url);
+      const newProject: CrawlProject = {
+        id: this.currentProjectId,
+        name: projectName,
+        startUrl: url,
+        createdAt: new Date(),
+        pageCount: 0
+      };
+      this.projects.push(newProject);
+
       // If not crawling the entire site, just scrape the single page
       if (!options?.crawlEntireSite) {
-        return this.scrapeSinglePage(url);
+        const singlePageResult = await this.scrapeSinglePage(url);
+        if (singlePageResult) {
+          singlePageResult.projectId = this.currentProjectId;
+          this.results = [singlePageResult];
+          
+          // Update the project page count
+          this.updateProjectPageCount(this.currentProjectId, 1);
+          
+          toast({
+            title: "Scrape Complete",
+            description: `Successfully scraped page: ${singlePageResult.title || url}`,
+          });
+        }
+        return singlePageResult;
       }
       
       // If already crawling, don't start another crawl
@@ -93,8 +131,11 @@ export class ScraperService {
       // Return the first page results
       toast({
         title: "Crawl Complete",
-        description: `Successfully crawled ${this.results.length} pages`,
+        description: `Successfully crawled ${this.results.length} pages into project "${projectName}"`,
       });
+      
+      // Update the project page count
+      this.updateProjectPageCount(this.currentProjectId, this.results.length);
       
       this.isCrawling = false;
       return this.results.length > 0 ? this.results[0] : null;
@@ -107,6 +148,22 @@ export class ScraperService {
       });
       this.isCrawling = false;
       return null;
+    }
+  }
+  
+  private static getProjectNameFromUrl(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname;
+    } catch (e) {
+      return "Untitled Project";
+    }
+  }
+  
+  private static updateProjectPageCount(projectId: string, count: number): void {
+    const projectIndex = this.projects.findIndex(p => p.id === projectId);
+    if (projectIndex !== -1) {
+      this.projects[projectIndex].pageCount = count;
     }
   }
   
@@ -124,6 +181,8 @@ export class ScraperService {
       const scrapedContent = await this.scrapeSinglePage(currentUrl);
       
       if (scrapedContent) {
+        // Add project ID to the scraped content
+        scrapedContent.projectId = this.currentProjectId;
         this.results.push(scrapedContent);
         
         // Process links to add to queue
@@ -152,10 +211,12 @@ export class ScraperService {
         }
         
         // Notify progress
-        toast({
-          title: "Crawling in Progress",
-          description: `Crawled ${this.visited.size} pages, found ${this.queue.length} more links`,
-        });
+        if (this.results.length % 3 === 0 || this.results.length === 1) {
+          toast({
+            title: "Crawling in Progress",
+            description: `Crawled ${this.visited.size} pages, found ${this.queue.length} more links`,
+          });
+        }
       }
     }
   }
@@ -220,6 +281,18 @@ export class ScraperService {
   
   static getAllResults(): ScrapedContent[] {
     return this.results;
+  }
+  
+  static getResultsByProject(projectId: string): ScrapedContent[] {
+    return this.results.filter(result => result.projectId === projectId);
+  }
+  
+  static getCurrentProject(): CrawlProject | null {
+    return this.projects.find(p => p.id === this.currentProjectId) || null;
+  }
+  
+  static getAllProjects(): CrawlProject[] {
+    return [...this.projects];
   }
   
   static isCurrentlyCrawling(): boolean {

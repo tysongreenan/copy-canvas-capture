@@ -7,16 +7,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Globe, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Database } from "@/integrations/supabase/types";
+import { ContentService } from "@/services/ContentService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ScrapedContentRecord = Database['public']['Tables']['scraped_content']['Row'];
 
 const Project = () => {
   const { id } = useParams<{ id: string }>();
-  const [project, setProject] = useState<ScrapedContent | null>(null);
+  const [project, setProject] = useState<any>(null);
+  const [projectPages, setProjectPages] = useState<ScrapedContent[]>([]);
+  const [selectedPage, setSelectedPage] = useState<ScrapedContent | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -26,45 +31,42 @@ const Project = () => {
     const fetchProject = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('scraped_content')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching project:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load project details",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (data) {
-          // Safely type the content object
-          const contentObj = data.content as {
-            headings: Array<{tag: string; text: string}>;
-            paragraphs: string[];
-            links: Array<{url: string; text: string}>;
-            listItems: string[];
-            metaDescription: string;
-            metaKeywords: string;
-          };
+        // First get the project information
+        const project = await ContentService.getProjectById(id);
+        setProject(project);
+        
+        if (project) {
+          // Then get all pages for this project
+          const pages = await ContentService.getProjectPages(id);
           
-          // Convert the database record to ScrapedContent format
-          const scrapedContent: ScrapedContent = {
-            url: data.url,
-            title: data.title || "",
-            headings: contentObj.headings || [],
-            paragraphs: contentObj.paragraphs || [],
-            links: contentObj.links || [],
-            listItems: contentObj.listItems || [],
-            metaDescription: contentObj.metaDescription || "",
-            metaKeywords: contentObj.metaKeywords || ""
-          };
-          setProject(scrapedContent);
+          if (pages && pages.length > 0) {
+            const scrapedPages = pages.map(page => {
+              // Safely type the content object
+              const contentObj = page.content as {
+                headings: Array<{tag: string; text: string}>;
+                paragraphs: string[];
+                links: Array<{url: string; text: string}>;
+                listItems: string[];
+                metaDescription: string;
+                metaKeywords: string;
+              };
+              
+              // Convert the database record to ScrapedContent format
+              return {
+                url: page.url,
+                title: page.title || "",
+                headings: contentObj.headings || [],
+                paragraphs: contentObj.paragraphs || [],
+                links: contentObj.links || [],
+                listItems: contentObj.listItems || [],
+                metaDescription: contentObj.metaDescription || "",
+                metaKeywords: contentObj.metaKeywords || ""
+              };
+            });
+            
+            setProjectPages(scrapedPages);
+            setSelectedPage(scrapedPages[0]);
+          }
         }
       } catch (error: any) {
         console.error("Error fetching project:", error);
@@ -85,6 +87,25 @@ const Project = () => {
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+  
+  // Get domain from URL
+  const getDomainFromUrl = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch (e) {
+      return url;
+    }
+  };
+
+  // Get path from URL for better display
+  const getPathFromUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname || '/';
+    } catch (e) {
+      return url;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -110,7 +131,7 @@ const Project = () => {
           
           {project?.url && (
             <div className="text-sm text-gray-500 mt-1">
-              {project.url}
+              {project.url} • {project.page_count || 0} pages
             </div>
           )}
         </div>
@@ -119,11 +140,56 @@ const Project = () => {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-        ) : project ? (
-          <ContentDisplay data={project} />
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Project not found or you don't have access to it.</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-1 space-y-4">
+              <div className="font-medium text-lg mb-2">
+                Pages ({projectPages.length})
+              </div>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                {projectPages.map((page, index) => (
+                  <div 
+                    key={index}
+                    onClick={() => setSelectedPage(page)}
+                    className={`p-3 border rounded-md hover:bg-gray-50 cursor-pointer ${selectedPage?.url === page.url ? 'bg-indigo-50 border-indigo-200' : ''}`}
+                  >
+                    <div className="font-medium truncate">{page.title || getPathFromUrl(page.url)}</div>
+                    <div className="flex items-center text-xs text-gray-500 truncate">
+                      <LinkIcon className="h-3 w-3 mr-1" />
+                      {getPathFromUrl(page.url)}
+                    </div>
+                  </div>
+                ))}
+                
+                {projectPages.length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    No pages found in this project
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="md:col-span-3">
+              {selectedPage ? (
+                <div className="border rounded-md p-4">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-bold">{selectedPage.title}</h2>
+                    <div className="text-sm text-gray-500">
+                      <a href={selectedPage.url} target="_blank" rel="noopener noreferrer" className="flex items-center hover:text-indigo-600">
+                        <Globe className="h-3 w-3 mr-1" />
+                        {selectedPage.url}
+                      </a>
+                    </div>
+                  </div>
+                  
+                  <ContentDisplay data={selectedPage} />
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500">Select a page from the left to view its content</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

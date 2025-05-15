@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
-  onCrawlComplete?: (data: ScrapedContent[]) => void;
+  onCrawlComplete?: (data: ScrapedContent[], projectId: string, projectName: string) => void;
 }
 
 export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
@@ -48,12 +48,19 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
         // If crawling entire site, notify about all results
         if (crawlEntireSite) {
           const allResults = ScraperService.getAllResults();
-          if (onCrawlComplete) {
-            onCrawlComplete(allResults);
+          const currentProject = ScraperService.getCurrentProject();
+          
+          if (onCrawlComplete && currentProject) {
+            onCrawlComplete(
+              allResults, 
+              currentProject.id, 
+              currentProject.name
+            );
           }
+          
           toast({
             title: "Crawl Complete",
-            description: `Successfully crawled ${allResults.length} pages`,
+            description: `Successfully crawled ${allResults.length} pages into project "${currentProject?.name || 'Untitled'}"`,
           });
         } else {
           toast({

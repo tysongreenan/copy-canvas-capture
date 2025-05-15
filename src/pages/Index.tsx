@@ -112,7 +112,7 @@ const Index = () => {
           <section id="demo-result" className="py-16 md:py-20 border-b border-gray-200 bg-gray-50">
             <div className="container max-w-6xl px-6 md:px-0">
               <h2 className="text-3xl font-bold mb-8 text-center">Your Extracted Content</h2>
-              <ContentDisplay content={scrapedResult} />
+              <ContentDisplay data={scrapedResult} />
               <div className="mt-12 text-center">
                 <p className="text-lg mb-6">Like what you see? Get full access with our one-time purchase.</p>
                 <Button asChild size="lg" className="bg-primary hover:bg-primary/90">

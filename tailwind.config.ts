@@ -21,12 +21,21 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: [
+					'"Neue Haas Grotesk Display Pro"',
 					'"SF Pro Display"', 
 					'"SF Pro"', 
 					'-apple-system', 
 					'BlinkMacSystemFont', 
 					'system-ui', 
 					'Roboto', 
+					'sans-serif'
+				],
+				body: [
+					'"SF Pro Text"',
+					'-apple-system',
+					'BlinkMacSystemFont',
+					'system-ui',
+					'Roboto',
 					'sans-serif'
 				],
 				mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'monospace']
@@ -97,11 +106,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'beam': {
+					from: {
+						opacity: 0,
+						transform: 'translateX(-100%) skewX(-10deg)'
+					},
+					to: {
+						opacity: 0.3,
+						transform: 'translateX(100%) skewX(-10deg)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'beam': 'beam 2.5s ease-in-out infinite'
 			}
 		}
 	},

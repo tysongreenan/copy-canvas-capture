@@ -32,6 +32,7 @@ export type Database = {
           content: Json
           created_at: string
           id: string
+          project_id: string | null
           title: string | null
           url: string
           user_id: string | null
@@ -40,6 +41,7 @@ export type Database = {
           content: Json
           created_at?: string
           id?: string
+          project_id?: string | null
           title?: string | null
           url: string
           user_id?: string | null
@@ -48,9 +50,45 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          project_id?: string | null
           title?: string | null
           url?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraped_content_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scraped_projects: {
+        Row: {
+          created_at: string
+          id: string
+          page_count: number | null
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_count?: number | null
+          title: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_count?: number | null
+          title?: string
+          url?: string
+          user_id?: string
         }
         Relationships: []
       }

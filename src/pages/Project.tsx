@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ContentDisplay } from "@/components/ContentDisplay";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -12,8 +11,6 @@ import { Link } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Database } from "@/integrations/supabase/types";
 import { ContentService } from "@/services/ContentService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 
 type ScrapedContentRecord = Database['public']['Tables']['scraped_content']['Row'];
 

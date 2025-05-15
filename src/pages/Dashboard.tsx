@@ -5,7 +5,7 @@ import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, Link } from "react-router-dom";
-import type { ScrapedContent, CrawlProject } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -54,12 +54,17 @@ const Dashboard = () => {
     setScrapedData(data);
   };
   
-  const handleCrawlComplete = (pages: ScrapedContent[], projectId: string, projectName: string) => {
-    setCurrentProject({
-      id: projectId,
-      name: projectName,
-      pages
-    });
+  const handleCrawlComplete = (pages: ScrapedContent[], projectId?: string, projectName?: string) => {
+    if (pages.length > 0) {
+      setCurrentProject({
+        id: projectId || 'temp-project-id',
+        name: projectName || getDomainFromUrl(pages[0].url),
+        pages
+      });
+      
+      // Hide the single scraped page when we have a project
+      setScrapedData(null);
+    }
   };
 
   // Format date for display

@@ -35,7 +35,7 @@ export const ContentService = {
           url: startUrl,
           page_count: contents.length
         })
-        .select()
+        .select('*')
         .single();
       
       if (projectError) {
@@ -80,7 +80,7 @@ export const ContentService = {
         description: `Project with ${contents.length} pages saved successfully`
       });
       
-      return project;
+      return project as SavedProject;
     } catch (error: any) {
       console.error("Error saving project:", error);
       toast({

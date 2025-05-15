@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScraperService, CrawlOptions } from "@/services/ScraperService";
+import { ScraperService } from "@/services/ScraperService";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { toast } from "@/hooks/use-toast";
 import { Search, Upload, Globe } from "lucide-react";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
-  onCrawlComplete?: (data: ScrapedContent[], projectId: string, projectName: string) => void;
+  onCrawlComplete?: (data: ScrapedContent[], projectId?: string, projectName?: string) => void;
 }
 
 export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
@@ -19,6 +19,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
   const [loading, setLoading] = useState(false);
   const [crawlEntireSite, setCrawlEntireSite] = useState(false);
   const [maxPages, setMaxPages] = useState(10);
+  const [projectName, setProjectName] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +36,10 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
     setLoading(true);
     
     try {
-      const options: CrawlOptions = {
+      const options = {
         crawlEntireSite,
-        maxPages
+        maxPages: maxPages,
+        projectName: projectName || getDomainFromUrl(url)
       };
       
       const result = await ScraperService.scrapeWebsite(url, options);
@@ -48,20 +50,15 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
         // If crawling entire site, notify about all results
         if (crawlEntireSite) {
           const allResults = ScraperService.getAllResults();
-          const currentProject = ScraperService.getCurrentProject();
           
-          if (onCrawlComplete && currentProject) {
+          if (onCrawlComplete) {
             onCrawlComplete(
-              allResults, 
-              currentProject.id, 
-              currentProject.name
+              allResults,
+              // We'll use a URL-based project name if none is provided
+              undefined,
+              projectName || getDomainFromUrl(url)
             );
           }
-          
-          toast({
-            title: "Crawl Complete",
-            description: `Successfully crawled ${allResults.length} pages into project "${currentProject?.name || 'Untitled'}"`,
-          });
         } else {
           toast({
             title: "Success",
@@ -71,6 +68,16 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       }
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Get domain from URL for default project name
+  const getDomainFromUrl = (url: string) => {
+    try {
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      return new URL(fullUrl).hostname;
+    } catch (e) {
+      return url;
     }
   };
 
@@ -102,21 +109,35 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
         </div>
         
         {crawlEntireSite && (
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="max-pages" className="min-w-[120px]">Maximum pages:</Label>
-            <Input
-              id="max-pages"
-              type="number"
-              min="1"
-              max="100"
-              value={maxPages}
-              onChange={(e) => setMaxPages(Number(e.target.value))}
-              className="w-20"
-            />
-            <span className="text-sm text-gray-500">
-              (Higher values may take longer)
-            </span>
-          </div>
+          <>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="max-pages" className="min-w-[120px]">Maximum pages:</Label>
+              <Input
+                id="max-pages"
+                type="number"
+                min="1"
+                max="100"
+                value={maxPages}
+                onChange={(e) => setMaxPages(Number(e.target.value))}
+                className="w-20"
+              />
+              <span className="text-sm text-gray-500">
+                (Higher values may take longer)
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="project-name" className="min-w-[120px]">Project name:</Label>
+              <Input
+                id="project-name"
+                type="text"
+                placeholder={getDomainFromUrl(url) || "My Project"}
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </>
         )}
         
         <div className="flex gap-2">
@@ -136,11 +157,11 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
             <Upload className="mr-2 h-4 w-4" />
             Upload
           </Button>
-          {loading && crawlEntireSite && ScraperService.isCurrentlyCrawling() && (
+          {loading && crawlEntireSite && (
             <Button 
               type="button" 
               variant="destructive"
-              onClick={() => ScraperService.stopCrawling()}
+              onClick={() => { /* Add stop crawl function */ }}
               className="px-6 font-medium"
             >
               Stop Crawl

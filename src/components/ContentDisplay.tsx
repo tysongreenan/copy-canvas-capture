@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,10 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Globe, Link } from "lucide-react";
+import { Copy, Check, Globe, Link, Square, SquareCheck } from "lucide-react";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { SaveButton } from "@/components/SaveButton";
 import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ContentDisplayProps {
   data: ScrapedContent;
@@ -22,6 +22,7 @@ interface ContentDisplayProps {
 
 export function ContentDisplay({ data }: ContentDisplayProps) {
   const [copied, setCopied] = useState<Record<string, boolean>>({});
+  const [isReviewed, setIsReviewed] = useState(false);
   const { user } = useAuth();
   
   const handleCopy = (text: string, section: string) => {
@@ -172,7 +173,7 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 items-center">
               <Button
                 variant="ghost"
                 size="sm"
@@ -183,6 +184,19 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
                 {copied["URL"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
               {user && <SaveButton content={data} />}
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="reviewed" 
+                  checked={isReviewed}
+                  onCheckedChange={() => setIsReviewed(!isReviewed)}
+                />
+                <label
+                  htmlFor="reviewed"
+                  className="text-sm font-medium leading-none cursor-pointer"
+                >
+                  Reviewed
+                </label>
+              </div>
             </div>
             <div className="flex items-center space-x-1">
               <Badge variant="outline" className="text-xs">

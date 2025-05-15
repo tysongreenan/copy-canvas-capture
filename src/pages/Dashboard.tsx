@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -7,16 +6,18 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload, Globe, Link, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
+import { Search, Upload, Globe, Link, MapPin, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Dashboard = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
   const [scrapedPages, setScrapedPages] = useState<ScrapedContent[]>([]);
   const [recentlyCrawledPages, setRecentlyCrawledPages] = useState<ScrapedContent[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'sitemap'>('grid');
+  const [reviewedPages, setReviewedPages] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
 
   // Redirect if not logged in
@@ -96,6 +97,13 @@ const Dashboard = () => {
     return siteMap;
   };
 
+  const toggleReviewed = (url: string) => {
+    setReviewedPages(prev => ({
+      ...prev,
+      [url]: !prev[url]
+    }));
+  };
+
   const siteMap = organizePagesBySitemap(recentlyCrawledPages.length > 0 ? recentlyCrawledPages : scrapedPages);
 
   return (
@@ -169,7 +177,7 @@ const Dashboard = () => {
                     {recentlyCrawledPages.map((page, index) => (
                       <Card 
                         key={`crawl-${index}`} 
-                        className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                        className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                         onClick={() => setScrapedData(page)}
                       >
                         <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
@@ -178,9 +186,23 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <CardContent className="p-3">
-                          <div className="flex items-center text-sm font-medium truncate mb-1" title={page.url}>
-                            <Globe className="h-3 w-3 mr-1 text-indigo-600" />
-                            {getDomainFromUrl(page.url)}
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center text-sm font-medium truncate" title={page.url}>
+                              <Globe className="h-3 w-3 mr-1 text-indigo-600" />
+                              {getDomainFromUrl(page.url)}
+                            </div>
+                            <div 
+                              className="ml-2" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReviewed(page.url);
+                              }}
+                            >
+                              <Checkbox 
+                                checked={!!reviewedPages[page.url]} 
+                                onCheckedChange={() => toggleReviewed(page.url)}
+                              />
+                            </div>
                           </div>
                           <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
                             <Link className="h-3 w-3 mr-1" />
@@ -215,13 +237,25 @@ const Dashboard = () => {
                             {siteMap[domain].map((page, idx) => (
                               <div 
                                 key={idx} 
-                                className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                className={`p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2 ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                                 onClick={() => setScrapedData(page)}
                               >
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                                 <div className="flex-1">
                                   <div className="font-medium truncate">{page.title || "Untitled"}</div>
                                   <div className="text-xs text-gray-500 truncate">{page.url}</div>
+                                </div>
+                                <div 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleReviewed(page.url);
+                                  }}
+                                  className="mr-2"
+                                >
+                                  <Checkbox 
+                                    checked={!!reviewedPages[page.url]} 
+                                    onCheckedChange={() => toggleReviewed(page.url)}
+                                  />
                                 </div>
                                 <Badge variant="outline" className="text-xs whitespace-nowrap">
                                   {page.paragraphs.length} p
@@ -269,7 +303,7 @@ const Dashboard = () => {
                     {scrapedPages.map((page, index) => (
                       <Card 
                         key={index} 
-                        className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                        className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                         onClick={() => setScrapedData(page)}
                       >
                         <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -278,9 +312,22 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <CardContent className="p-3">
-                          <div className="flex items-center text-sm font-medium truncate mb-1" title={page.url}>
-                            <Globe className="h-3 w-3 mr-1 text-gray-600" />
-                            {getDomainFromUrl(page.url)}
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center text-sm font-medium truncate" title={page.url}>
+                              <Globe className="h-3 w-3 mr-1 text-gray-600" />
+                              {getDomainFromUrl(page.url)}
+                            </div>
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReviewed(page.url);
+                              }}
+                            >
+                              <Checkbox 
+                                checked={!!reviewedPages[page.url]} 
+                                onCheckedChange={() => toggleReviewed(page.url)}
+                              />
+                            </div>
                           </div>
                           <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
                             <Link className="h-3 w-3 mr-1" />
@@ -310,13 +357,25 @@ const Dashboard = () => {
                             {siteMap[domain].map((page, idx) => (
                               <div 
                                 key={idx} 
-                                className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                className={`p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2 ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                                 onClick={() => setScrapedData(page)}
                               >
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                                 <div className="flex-1">
                                   <div className="font-medium truncate">{page.title || "Untitled"}</div>
                                   <div className="text-xs text-gray-500 truncate">{page.url}</div>
+                                </div>
+                                <div 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleReviewed(page.url);
+                                  }}
+                                  className="mr-2"
+                                >
+                                  <Checkbox 
+                                    checked={!!reviewedPages[page.url]} 
+                                    onCheckedChange={() => toggleReviewed(page.url)}
+                                  />
                                 </div>
                                 <Badge variant="outline" className="text-xs whitespace-nowrap">
                                   {page.paragraphs.length} p

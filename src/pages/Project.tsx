@@ -10,6 +10,7 @@ import { ArrowLeft, Globe, Link as LinkIcon } from "lucide-react";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Database } from "@/integrations/supabase/types";
 import { ContentService } from "@/services/ContentService";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ScrapedContentRecord = Database['public']['Tables']['scraped_content']['Row'];
 
@@ -111,6 +112,28 @@ const Project = () => {
     }
   };
 
+  // Function to check if a page is the main URL (domain root)
+  const isMainUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname === '/' || urlObj.pathname === '';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Sort pages to have the main URL first, then alphabetically by path
+  const sortedPages = [...projectPages].sort((a, b) => {
+    // Main URL goes first
+    if (isMainUrl(a.url) && !isMainUrl(b.url)) return -1;
+    if (!isMainUrl(a.url) && isMainUrl(b.url)) return 1;
+    
+    // Then sort by pathname
+    const pathA = getPathFromUrl(a.url);
+    const pathB = getPathFromUrl(b.url);
+    return pathA.localeCompare(pathB);
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -135,7 +158,12 @@ const Project = () => {
           
           {project?.url && (
             <div className="text-sm text-gray-500 mt-1">
-              {project.url} • {project.page_count || 0} pages
+              <a href={project.url} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 inline-flex items-center">
+                <Globe className="h-3 w-3 mr-1" />
+                {getDomainFromUrl(project.url)}
+              </a>
+              <span className="mx-2">•</span>
+              <span>{project.page_count || 0} pages</span>
             </div>
           )}
         </div>
@@ -157,27 +185,49 @@ const Project = () => {
               <div className="font-medium text-lg mb-2">
                 Pages ({projectPages.length})
               </div>
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-                {projectPages.map((page, index) => (
-                  <div 
-                    key={index}
-                    onClick={() => setSelectedPage(page)}
-                    className={`p-3 border rounded-md hover:bg-gray-50 cursor-pointer ${selectedPage?.url === page.url ? 'bg-indigo-50 border-indigo-200' : ''}`}
-                  >
-                    <div className="font-medium truncate">{page.title || getPathFromUrl(page.url)}</div>
-                    <div className="flex items-center text-xs text-gray-500 truncate">
-                      <LinkIcon className="h-3 w-3 mr-1" />
-                      {getPathFromUrl(page.url)}
+              
+              {/* Project domain card at the top */}
+              {project?.url && (
+                <div className="p-3 border rounded-md bg-slate-50 mb-4">
+                  <div className="font-medium">Domain</div>
+                  <div className="flex items-center text-sm text-gray-700 mt-1">
+                    <Globe className="h-3.5 w-3.5 mr-1 text-indigo-600" />
+                    <a 
+                      href={project.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:underline truncate"
+                    >
+                      {getDomainFromUrl(project.url)}
+                    </a>
+                  </div>
+                </div>
+              )}
+              
+              {/* Scrollable area for pages */}
+              <ScrollArea className="h-[55vh]">
+                <div className="space-y-2 pr-2">
+                  {sortedPages.map((page, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => setSelectedPage(page)}
+                      className={`p-3 border rounded-md hover:bg-gray-50 cursor-pointer ${selectedPage?.url === page.url ? 'bg-indigo-50 border-indigo-200' : ''}`}
+                    >
+                      <div className="font-medium truncate">{page.title || getPathFromUrl(page.url)}</div>
+                      <div className="flex items-center text-xs text-gray-500 truncate">
+                        <LinkIcon className="h-3 w-3 mr-1" />
+                        {isMainUrl(page.url) ? '/' : getPathFromUrl(page.url)}
+                      </div>
                     </div>
-                  </div>
-                ))}
-                
-                {projectPages.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    No pages found in this project
-                  </div>
-                )}
-              </div>
+                  ))}
+                  
+                  {projectPages.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      No pages found in this project
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             </div>
             
             <div className="md:col-span-3">

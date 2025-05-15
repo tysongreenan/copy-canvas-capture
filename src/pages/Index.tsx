@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -7,14 +8,23 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Lightbulb, Search, TestTube } from "lucide-react";
+import { ArrowRight, Search, TestTube, Archive } from "lucide-react";
 
 const Index = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
+  const [scrapedPages, setScrapedPages] = useState<ScrapedContent[]>([]);
   const { user } = useAuth();
 
   const handleResult = (data: ScrapedContent) => {
     setScrapedData(data);
+    setScrapedPages(prev => {
+      // Check if we already have this URL to avoid duplicates
+      const exists = prev.some(page => page.url === data.url);
+      if (!exists) {
+        return [data, ...prev];
+      }
+      return prev;
+    });
   };
 
   const features = [
@@ -31,45 +41,53 @@ const Index = () => {
     {
       title: "Instant Results",
       description: "No waiting - get your content immediately and ready for implementation",
-      icon: <Lightbulb className="w-10 h-10 text-primary" />
+      icon: <Archive className="w-10 h-10 text-primary" />
     }
   ];
 
+  // Get domain from URL
+  const getDomainFromUrl = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch (e) {
+      return url;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white relative">
-      {/* Background accents */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-100 rounded-full opacity-20 blur-3xl"></div>
-        <div className="absolute top-1/3 -right-20 w-80 h-80 bg-primary rounded-full opacity-10 blur-3xl"></div>
-        <div className="absolute -bottom-40 left-1/3 w-80 h-80 bg-blue-200 rounded-full opacity-20 blur-3xl"></div>
-      </div>
-      
+    <div className="min-h-screen flex flex-col bg-white relative">
       <Header />
       
       <main className="flex-1 relative z-0">
-        {/* Hero Section */}
-        <section className="py-16 md:py-24">
+        {/* Search Section */}
+        <section className="py-8 border-b border-gray-200">
           <div className="container max-w-5xl px-6 md:px-0">
-            <div className="text-center mb-10">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-                <span className="text-gradient-lumen">Illuminate Hidden Content</span> <br />
-                From Any Website
+            <div className="text-center mb-6">
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                Illuminate Hidden Content
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto">
-                Extract clean, formatted content from any website instantly. 
-                Buy once, use forever.
+              <p className="text-gray-600">
+                Extract clean, formatted content from any website instantly
               </p>
+            </div>
 
-              <div className="max-w-2xl mx-auto">
-                <ScrapeForm onResult={handleResult} />
-              </div>
+            <div className="max-w-3xl mx-auto">
+              <ScrapeForm onResult={handleResult} />
+            </div>
+          </div>
+        </section>
+        
+        {/* Scraped Pages Section */}
+        <section className="py-8">
+          <div className="container max-w-5xl px-6 md:px-0">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Scraped Pages</h2>
+              <div className="text-sm text-gray-500">{scrapedPages.length} pages</div>
             </div>
             
-            {scrapedData && <ContentDisplay data={scrapedData} />}
-            
-            {!scrapedData && (
-              <div className="text-center">
-                <div className="w-32 h-32 mx-auto mb-6 text-gray-200">
+            {scrapedPages.length === 0 && !scrapedData && (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 mx-auto mb-6 text-gray-200">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -84,152 +102,66 @@ const Index = () => {
                 </div>
               </div>
             )}
-          </div>
-        </section>
-
-        {/* About Us Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container max-w-5xl px-6 md:px-0">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">About Lumen</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
-            </div>
-            <div className="flex flex-col md:flex-row gap-8 items-center">
-              <div className="md:w-1/2">
-                <div className="relative">
-                  <div className="w-full h-64 md:h-96 bg-gray-200 rounded-lg overflow-hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full text-gray-300">
-                      <circle cx="12" cy="12" r="10" className="stroke-primary" />
-                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" className="stroke-primary" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div className="md:w-1/2">
-                <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
-                <p className="text-gray-600 mb-6">
-                  At Lumen, we believe that content should be accessible, clean, and ready to use. Our mission is to shed light on hidden content, making it easy for web professionals to extract and repurpose website content without the hassle of manual copying and formatting.
-                </p>
-                <p className="text-gray-600 mb-6">
-                  Founded by a team of web designers and developers, Lumen was born out of the frustration of constantly needing to manually extract content from clients' existing websites.
-                </p>
-                <Button asChild>
-                  <Link to="/auth" className="inline-flex items-center gap-2">
-                    Learn More <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-16 md:py-20">
-          <div className="container max-w-5xl px-6 md:px-0">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Everything you need to extract and repurpose website content efficiently.
-              </p>
-            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <Card key={index} className="border-none shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="pt-6 px-6 pb-6 flex flex-col items-center text-center">
-                    <div className="mb-4 rounded-full bg-primary/10 p-3">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                    <p className="text-gray-600">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container max-w-5xl px-6 md:px-0">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple Pricing</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Transparent pricing with no subscription or hidden fees.
-              </p>
-            </div>
+            {scrapedData && (
+              <div className="mb-8">
+                <ContentDisplay data={scrapedData} />
+              </div>
+            )}
             
-            <div className="max-w-md mx-auto">
-              <Card className="border-none shadow-xl">
-                <CardContent className="pt-8 px-8 pb-8">
-                  <div className="text-center mb-6">
-                    <div className="inline-block rounded-full bg-primary/10 p-3 mb-4">
-                      <Lightbulb className="w-8 h-8 text-primary" />
+            {scrapedPages.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {scrapedPages.map((page, index) => (
+                  <Card key={index} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                        onClick={() => setScrapedData(page)}>
+                    <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                      <div className="text-center px-4 truncate font-medium">
+                        {page.title || getDomainFromUrl(page.url)}
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-bold mb-1">Lifetime Access</h3>
-                    <div className="text-4xl font-bold my-4">$49</div>
-                    <p className="text-gray-600 text-sm">One-time payment, forever access</p>
-                  </div>
-                  
-                  <ul className="space-y-3 mb-6">
-                    <li className="flex items-center">
-                      <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Unlimited Content Extraction
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Save & Export Results
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Free Updates Forever
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Personal & Commercial Use
-                    </li>
-                  </ul>
-                  
-                  <Button className="w-full" asChild>
-                    <Link to="/auth">Buy Lifetime Access</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                    <CardContent className="p-3">
+                      <div className="text-sm font-medium truncate" title={page.url}>
+                        {getDomainFromUrl(page.url)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Updated just now
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Final CTA Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-br from-primary/10 to-white">
-          <div className="container max-w-5xl px-6 md:px-0">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Try Lumen Before You Buy</h2>
-              <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-                Extract content from any website now - no sign up required.
-              </p>
-
-              <div className="max-w-2xl mx-auto">
-                <ScrapeForm onResult={handleResult} />
+        {/* Features Section - Only show if no data yet */}
+        {!scrapedData && (
+          <section className="py-16 md:py-20 bg-gray-50">
+            <div className="container max-w-5xl px-6 md:px-0">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold mb-4">Powerful Features</h2>
+                <div className="h-1 w-20 bg-primary mx-auto"></div>
+                <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+                  Everything you need to extract and repurpose website content efficiently.
+                </p>
               </div>
               
-              <div className="mt-10 pt-10 border-t border-gray-200">
-                <p className="text-gray-500">
-                  Questions? <a href="mailto:support@lumen-extractor.com" className="text-primary hover:underline">Contact our support team</a>
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {features.map((feature, index) => (
+                  <Card key={index} className="border-none shadow-md hover:shadow-lg transition-shadow">
+                    <CardContent className="pt-6 px-6 pb-6 flex flex-col items-center text-center">
+                      <div className="mb-4 rounded-full bg-primary/10 p-3">
+                        {feature.icon}
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                      <p className="text-gray-600">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
       
       <footer className="py-6 text-center text-sm text-gray-500 border-t">

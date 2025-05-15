@@ -47,52 +47,63 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
       });
   };
   
+  // Get domain from URL
+  const getDomainFromUrl = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch (e) {
+      return url;
+    }
+  };
+  
   return (
-    <div className="mt-10 mb-10">
-      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between mb-4">
-        <h2 className="text-2xl font-bold mt-2 sm:mt-0">
-          Content from {data.title || data.url}
-        </h2>
-        
-        <div className="flex items-center gap-2">
-          {user && <SaveButton content={data} />}
-        </div>
-      </div>
-      
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>Page Information</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleCopy(`Title: ${data.title}\nURL: ${data.url}\nMeta Description: ${data.metaDescription || 'None'}\nMeta Keywords: ${data.metaKeywords || 'None'}`, "Page Info")}
-              className="h-8 w-8"
-            >
-              {copied["Page Info"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            </Button>
+    <div className="mt-6 mb-10">
+      <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+        <div className="relative">
+          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+            NEW
           </div>
-          <CardDescription>Basic information about the page</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="space-y-2 text-sm">
-            <div className="flex flex-col">
-              <dt className="font-medium">Title</dt>
-              <dd>{data.title || 'No title found'}</dd>
+          <div className="w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+            {data.title ? (
+              <div className="text-xl font-bold text-gray-800 text-center px-4">{data.title}</div>
+            ) : (
+              <div className="h-full w-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500">{getDomainFromUrl(data.url)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-medium truncate" title={data.url}>
+              {getDomainFromUrl(data.url)}
             </div>
-            <div className="flex flex-col">
-              <dt className="font-medium">URL</dt>
-              <dd className="break-all">{data.url}</dd>
+            <div className="text-xs text-gray-500">
+              Updated just now
             </div>
-            <div className="flex flex-col">
-              <dt className="font-medium">Meta Description</dt>
-              <dd>{data.metaDescription || 'No meta description found'}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => handleCopy(data.url, "URL")}
+              >
+                <span className="sr-only">Copy URL</span>
+                {copied["URL"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+              {user && <SaveButton content={data} />}
             </div>
-            <div className="flex flex-col">
-              <dt className="font-medium">Meta Keywords</dt>
-              <dd>{data.metaKeywords || 'No meta keywords found'}</dd>
+            <div className="flex items-center space-x-1">
+              <Badge variant="outline" className="text-xs">
+                {data.headings.length} Headings
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {data.paragraphs.length} Paragraphs
+              </Badge>
             </div>
-          </dl>
+          </div>
         </CardContent>
       </Card>
 

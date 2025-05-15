@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -104,7 +103,6 @@ const Index = () => {
                       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" className="stroke-primary" />
                     </svg>
                   </div>
-                  <div className="absolute inset-0 beam"></div>
                 </div>
               </div>
               <div className="md:w-1/2">

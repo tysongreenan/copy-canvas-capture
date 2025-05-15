@@ -14,7 +14,6 @@ export function Header() {
                 <circle cx="12" cy="12" r="10" className="stroke-lumenBlue" />
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" className="stroke-lumenBlue" />
               </svg>
-              <div className="absolute inset-0 beam"></div>
             </div>
             <span className="text-xl uppercase tracking-tight text-jet">Lumen</span>
           </Link>

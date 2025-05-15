@@ -38,37 +38,6 @@ pre, code {
   padding: 0.5rem;
 }
 
-/* Add beam effect */
-@keyframes beam {
-  from {
-    opacity: 0;
-    transform: translateX(-100%) skewX(-10deg);
-  }
-  to {
-    opacity: 0.3;
-    transform: translateX(100%) skewX(-10deg);
-  }
-}
-
-.beam-effect {
-  position: relative;
-  overflow: hidden;
-}
-
-.beam-effect::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #00CFFF; /* Lumen Blue */
-  opacity: 0;
-  transform: translateX(-100%) skewX(-10deg);
-  animation: beam 2.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
 /* More modern layout spacing */
 .section {
   padding: 4rem 1.5rem;

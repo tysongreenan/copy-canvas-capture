@@ -1,25 +1,17 @@
 
 /* Animation styles */
 
-@keyframes beam {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateX(-100%) skewX(-10deg);
   }
   to {
-    opacity: 0.08;
-    transform: translateX(100%) skewX(-10deg);
+    opacity: 1;
   }
 }
 
 @layer utilities {
-  .beam {
-    @apply absolute inset-0 w-full h-full z-0;
-  }
-  
-  .beam::after {
-    content: '';
-    @apply absolute inset-0 w-full h-full bg-lumenBlue opacity-0 skew-x-12;
-    animation: beam 5s ease-in-out infinite;
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
   }
 }

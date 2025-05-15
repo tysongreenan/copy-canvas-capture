@@ -55,6 +55,76 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
       return url;
     }
   };
+
+  // Generate structured content mimicking the original website layout
+  const generateStructuredContent = () => {
+    let structuredContent = "";
+    
+    // Add title
+    if (data.title) {
+      structuredContent += `<h1>${data.title}</h1>\n\n`;
+    }
+    
+    // Add meta description if available
+    if (data.metaDescription) {
+      structuredContent += `<p class="meta-description">${data.metaDescription}</p>\n\n`;
+    }
+    
+    // Add headings and paragraphs interleaved in a logical order
+    let headingIndex = 0;
+    let paragraphIndex = 0;
+    let listItemIndex = 0;
+    
+    // Simple algorithm to interleave content in a way that might mimic page structure
+    // We'll add a heading, then related paragraphs, then a list if relevant
+    while (headingIndex < data.headings.length || paragraphIndex < data.paragraphs.length) {
+      // Add a heading if available
+      if (headingIndex < data.headings.length) {
+        const heading = data.headings[headingIndex];
+        structuredContent += `<${heading.tag}>${heading.text}</${heading.tag}>\n\n`;
+        headingIndex++;
+      }
+      
+      // Add up to 2 paragraphs after each heading
+      for (let i = 0; i < 2; i++) {
+        if (paragraphIndex < data.paragraphs.length) {
+          structuredContent += `<p>${data.paragraphs[paragraphIndex]}</p>\n\n`;
+          paragraphIndex++;
+        }
+      }
+      
+      // Add a few list items if we have them
+      if (listItemIndex < data.listItems.length) {
+        structuredContent += "<ul>\n";
+        const itemsToAdd = Math.min(3, data.listItems.length - listItemIndex);
+        for (let i = 0; i < itemsToAdd; i++) {
+          structuredContent += `  <li>${data.listItems[listItemIndex]}</li>\n`;
+          listItemIndex++;
+        }
+        structuredContent += "</ul>\n\n";
+      }
+    }
+    
+    // Add any remaining paragraphs
+    while (paragraphIndex < data.paragraphs.length) {
+      structuredContent += `<p>${data.paragraphs[paragraphIndex]}</p>\n\n`;
+      paragraphIndex++;
+    }
+    
+    // Add any remaining list items
+    if (listItemIndex < data.listItems.length) {
+      structuredContent += "<ul>\n";
+      while (listItemIndex < data.listItems.length) {
+        structuredContent += `  <li>${data.listItems[listItemIndex]}</li>\n`;
+        listItemIndex++;
+      }
+      structuredContent += "</ul>\n\n";
+    }
+    
+    return structuredContent;
+  };
+  
+  const structuredContent = generateStructuredContent();
   
   return (
     <div className="mt-6 mb-10">
@@ -120,6 +190,9 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
           </TabsTrigger>
           <TabsTrigger value="listItems">
             List Items <Badge variant="outline" className="ml-2">{data.listItems.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="structured">
+            Structured
           </TabsTrigger>
         </TabsList>
         
@@ -243,6 +316,38 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
               ) : (
                 <p className="text-muted-foreground">No list items found on this page</p>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="structured">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle>Structured Content</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCopy(structuredContent, "Structured")}
+                  className="h-8 w-8"
+                >
+                  {copied["Structured"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <CardDescription>Complete website content in structured format</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96">
+                <pre className="whitespace-pre-wrap text-sm">{structuredContent}</pre>
+              </div>
+              <div className="mt-4">
+                <Button 
+                  onClick={() => handleCopy(structuredContent, "Structured")}
+                  className="w-full"
+                >
+                  {copied["Structured"] ? "Copied!" : "Copy All Content"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

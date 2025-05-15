@@ -7,11 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload } from "lucide-react";
+import { Search, Upload, Globe } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
   const [scrapedPages, setScrapedPages] = useState<ScrapedContent[]>([]);
+  const [recentlyCrawledPages, setRecentlyCrawledPages] = useState<ScrapedContent[]>([]);
   const { user } = useAuth();
 
   // Redirect if not logged in
@@ -28,6 +30,23 @@ const Dashboard = () => {
         return [data, ...prev];
       }
       return prev;
+    });
+  };
+  
+  const handleCrawlComplete = (allResults: ScrapedContent[]) => {
+    setRecentlyCrawledPages(allResults);
+    // Update the scrapedPages with all new results
+    setScrapedPages(prev => {
+      const newPages = [...prev];
+      
+      // Add all results that don't already exist
+      allResults.forEach(result => {
+        if (!newPages.some(page => page.url === result.url)) {
+          newPages.unshift(result);
+        }
+      });
+      
+      return newPages;
     });
   };
 
@@ -58,7 +77,10 @@ const Dashboard = () => {
             </div>
 
             <div className="max-w-3xl mx-auto">
-              <ScrapeForm onResult={handleResult} />
+              <ScrapeForm 
+                onResult={handleResult} 
+                onCrawlComplete={handleCrawlComplete}
+              />
             </div>
           </div>
         </section>
@@ -70,6 +92,47 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold">Scraped Pages</h2>
               <div className="text-sm text-gray-500">{scrapedPages.length} pages</div>
             </div>
+            
+            {/* Recently crawled pages section */}
+            {recentlyCrawledPages.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-lg font-medium">Recently Crawled</h3>
+                  <Badge variant="outline" className="bg-indigo-50">
+                    {recentlyCrawledPages.length} pages
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                  {recentlyCrawledPages.map((page, index) => (
+                    <Card 
+                      key={`crawl-${index}`} 
+                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                      onClick={() => setScrapedData(page)}
+                    >
+                      <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
+                        <div className="text-center px-4 truncate font-medium">
+                          {page.title || getDomainFromUrl(page.url)}
+                        </div>
+                      </div>
+                      <CardContent className="p-3">
+                        <div className="flex items-center text-sm font-medium truncate" title={page.url}>
+                          <Globe className="h-3 w-3 mr-1 text-indigo-600" />
+                          {getDomainFromUrl(page.url)}
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>
+                            {page.paragraphs.length} paragraphs
+                          </span>
+                          <span>
+                            {page.links.length} links
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {scrapedPages.length === 0 && !scrapedData && (
               <div className="text-center py-12">
@@ -96,25 +159,31 @@ const Dashboard = () => {
             )}
             
             {scrapedPages.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {scrapedPages.map((page, index) => (
-                  <Card key={index} className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
-                        onClick={() => setScrapedData(page)}>
-                    <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
-                      <div className="text-center px-4 truncate font-medium">
-                        {page.title || getDomainFromUrl(page.url)}
+              <div>
+                <h3 className="text-lg font-medium mb-4">All Pages</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {scrapedPages.map((page, index) => (
+                    <Card 
+                      key={index} 
+                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                      onClick={() => setScrapedData(page)}
+                    >
+                      <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                        <div className="text-center px-4 truncate font-medium">
+                          {page.title || getDomainFromUrl(page.url)}
+                        </div>
                       </div>
-                    </div>
-                    <CardContent className="p-3">
-                      <div className="text-sm font-medium truncate" title={page.url}>
-                        {getDomainFromUrl(page.url)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Updated just now
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      <CardContent className="p-3">
+                        <div className="text-sm font-medium truncate" title={page.url}>
+                          {getDomainFromUrl(page.url)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Updated just now
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </div>

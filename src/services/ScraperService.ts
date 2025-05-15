@@ -18,8 +18,21 @@ export interface ScrapedContent {
   metaKeywords: string | null;
 }
 
+export interface CrawlOptions {
+  crawlEntireSite: boolean;
+  maxPages?: number;
+}
+
 export class ScraperService {
-  static async scrapeWebsite(url: string): Promise<ScrapedContent | null> {
+  private static visited: Set<string> = new Set();
+  private static queue: string[] = [];
+  private static results: ScrapedContent[] = [];
+  private static baseUrl: string = '';
+  private static baseDomain: string = '';
+  private static isCrawling: boolean = false;
+  private static maxPages: number = 10; // Default limit
+  
+  static async scrapeWebsite(url: string, options?: CrawlOptions): Promise<ScrapedContent | null> {
     try {
       // Add https:// if missing
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -38,6 +51,117 @@ export class ScraperService {
         return null;
       }
 
+      // If not crawling the entire site, just scrape the single page
+      if (!options?.crawlEntireSite) {
+        return this.scrapeSinglePage(url);
+      }
+      
+      // If already crawling, don't start another crawl
+      if (this.isCrawling) {
+        toast({
+          title: "Crawl in Progress",
+          description: "Please wait for the current crawl to complete",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Initialize crawl
+      this.visited.clear();
+      this.queue = [url];
+      this.results = [];
+      this.isCrawling = true;
+      this.maxPages = options?.maxPages || 10;
+      
+      try {
+        const urlObj = new URL(url);
+        this.baseUrl = urlObj.origin;
+        this.baseDomain = urlObj.hostname;
+      } catch (e) {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid website URL",
+          variant: "destructive"
+        });
+        this.isCrawling = false;
+        return null;
+      }
+      
+      // Start crawling
+      await this.crawl();
+      
+      // Return the first page results
+      toast({
+        title: "Crawl Complete",
+        description: `Successfully crawled ${this.results.length} pages`,
+      });
+      
+      this.isCrawling = false;
+      return this.results.length > 0 ? this.results[0] : null;
+    } catch (error) {
+      console.error('Error during website crawl:', error);
+      toast({
+        title: "Crawling Error",
+        description: "Failed to crawl website content. Please check the URL and try again.",
+        variant: "destructive"
+      });
+      this.isCrawling = false;
+      return null;
+    }
+  }
+  
+  static async crawl(): Promise<void> {
+    while (this.queue.length > 0 && this.visited.size < this.maxPages) {
+      const currentUrl = this.queue.shift()!;
+      
+      if (this.visited.has(currentUrl)) {
+        continue;
+      }
+      
+      this.visited.add(currentUrl);
+      
+      // Scrape the current page
+      const scrapedContent = await this.scrapeSinglePage(currentUrl);
+      
+      if (scrapedContent) {
+        this.results.push(scrapedContent);
+        
+        // Process links to add to queue
+        for (const link of scrapedContent.links) {
+          let linkUrl = link.url;
+          
+          // Handle relative URLs
+          if (linkUrl.startsWith('/')) {
+            linkUrl = this.baseUrl + linkUrl;
+          } else if (!linkUrl.startsWith('http')) {
+            // Skip non-http links (like mailto:, tel:, etc.)
+            continue;
+          }
+          
+          try {
+            const linkUrlObj = new URL(linkUrl);
+            
+            // Only follow links with the same domain
+            if (linkUrlObj.hostname === this.baseDomain && !this.visited.has(linkUrl) && !this.queue.includes(linkUrl)) {
+              this.queue.push(linkUrl);
+            }
+          } catch (e) {
+            // Invalid URL, skip
+            continue;
+          }
+        }
+        
+        // Notify progress
+        toast({
+          title: "Crawling in Progress",
+          description: `Crawled ${this.visited.size} pages, found ${this.queue.length} more links`,
+        });
+      }
+    }
+  }
+  
+  static async scrapeSinglePage(url: string): Promise<ScrapedContent | null> {
+    try {
       // Using a proxy service to bypass CORS
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
       
@@ -89,13 +213,25 @@ export class ScraperService {
       };
       
     } catch (error) {
-      console.error('Error scraping website:', error);
-      toast({
-        title: "Scraping Error",
-        description: "Failed to scrape website content. Please check the URL and try again.",
-        variant: "destructive"
-      });
+      console.error('Error scraping page:', error);
       return null;
     }
+  }
+  
+  static getAllResults(): ScrapedContent[] {
+    return this.results;
+  }
+  
+  static isCurrentlyCrawling(): boolean {
+    return this.isCrawling;
+  }
+  
+  static stopCrawling(): void {
+    this.queue = [];
+    this.isCrawling = false;
+    toast({
+      title: "Crawl Stopped",
+      description: `Crawl stopped after processing ${this.visited.size} pages`,
+    });
   }
 }

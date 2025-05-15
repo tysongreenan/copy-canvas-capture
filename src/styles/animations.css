@@ -7,7 +7,7 @@
     transform: translateX(-100%) skewX(-10deg);
   }
   to {
-    opacity: 0.15;
+    opacity: 0.08;
     transform: translateX(100%) skewX(-10deg);
   }
 }
@@ -20,6 +20,6 @@
   .beam::after {
     content: '';
     @apply absolute inset-0 w-full h-full bg-lumenBlue opacity-0 skew-x-12;
-    animation: beam 3.5s ease-in-out infinite;
+    animation: beam 5s ease-in-out infinite;
   }
 }

@@ -3,10 +3,14 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import type { ScrapedContent } from "@/services/ScraperService";
 
 const Index = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
+  const { user } = useAuth();
 
   const handleResult = (data: ScrapedContent) => {
     setScrapedData(data);
@@ -45,6 +49,18 @@ const Index = () => {
             <div className="mt-4 text-sm text-gray-400">
               Try example sites like <span className="text-primary">apple.com</span> or <span className="text-primary">wikipedia.org</span>
             </div>
+            
+            {!user && (
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg max-w-md mx-auto">
+                <h3 className="font-medium mb-2">Want to save your results?</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Create an account or log in to save scraped content for future reference.
+                </p>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/auth">Sign up or log in</Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>

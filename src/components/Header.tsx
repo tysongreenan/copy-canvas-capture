@@ -1,28 +1,25 @@
 
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
+import { UserMenu } from "@/components/UserMenu";
 
 export function Header() {
-  const isMobile = useIsMobile();
-  
   return (
-    <header className="py-6 md:py-8 px-6 md:px-0 border-b border-gray-100 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
-      <div className="container max-w-5xl flex flex-col items-center">
+    <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10 relative">
+      <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 bg-gradient-to-br from-blue-400 to-primary rounded-lg flex items-center justify-center shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white w-6 h-6">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2H4"/>
+          <Link to="/" className="flex items-center gap-2 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <path d="m9 14 2 2 4-4" />
             </svg>
-          </div>
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">CopyScraper</h1>
+            <span>CopyScraper</span>
+          </Link>
         </div>
         
-        <p className="mt-4 text-center text-gray-500 max-w-md">
-          {isMobile 
-            ? "Extract and organize text content from any website" 
-            : "Extract and organize text content from any website for your design projects"}
-        </p>
+        <div className="flex items-center gap-4">
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

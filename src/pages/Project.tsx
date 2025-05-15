@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Globe, Link as LinkIcon } from "lucide-react";
-import { Link } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Database } from "@/integrations/supabase/types";
 import { ContentService } from "@/services/ContentService";
@@ -20,6 +19,7 @@ const Project = () => {
   const [projectPages, setProjectPages] = useState<ScrapedContent[]>([]);
   const [selectedPage, setSelectedPage] = useState<ScrapedContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -27,46 +27,53 @@ const Project = () => {
 
     const fetchProject = async () => {
       setLoading(true);
+      setError(null);
       try {
         // First get the project information
         const project = await ContentService.getProjectById(id);
+        
+        if (!project) {
+          setError("Project not found");
+          setLoading(false);
+          return;
+        }
+        
         setProject(project);
         
-        if (project) {
-          // Then get all pages for this project
-          const pages = await ContentService.getProjectPages(id);
-          
-          if (pages && pages.length > 0) {
-            const scrapedPages = pages.map(page => {
-              // Safely type the content object
-              const contentObj = page.content as {
-                headings: Array<{tag: string; text: string}>;
-                paragraphs: string[];
-                links: Array<{url: string; text: string}>;
-                listItems: string[];
-                metaDescription: string;
-                metaKeywords: string;
-              };
-              
-              // Convert the database record to ScrapedContent format
-              return {
-                url: page.url,
-                title: page.title || "",
-                headings: contentObj.headings || [],
-                paragraphs: contentObj.paragraphs || [],
-                links: contentObj.links || [],
-                listItems: contentObj.listItems || [],
-                metaDescription: contentObj.metaDescription || "",
-                metaKeywords: contentObj.metaKeywords || ""
-              };
-            });
+        // Then get all pages for this project
+        const pages = await ContentService.getProjectPages(id);
+        
+        if (pages && pages.length > 0) {
+          const scrapedPages = pages.map(page => {
+            // Safely type the content object
+            const contentObj = page.content as {
+              headings: Array<{tag: string; text: string}>;
+              paragraphs: string[];
+              links: Array<{url: string; text: string}>;
+              listItems: string[];
+              metaDescription: string;
+              metaKeywords: string;
+            };
             
-            setProjectPages(scrapedPages);
-            setSelectedPage(scrapedPages[0]);
-          }
+            // Convert the database record to ScrapedContent format
+            return {
+              url: page.url,
+              title: page.title || "",
+              headings: contentObj.headings || [],
+              paragraphs: contentObj.paragraphs || [],
+              links: contentObj.links || [],
+              listItems: contentObj.listItems || [],
+              metaDescription: contentObj.metaDescription || "",
+              metaKeywords: contentObj.metaKeywords || ""
+            };
+          });
+          
+          setProjectPages(scrapedPages);
+          setSelectedPage(scrapedPages[0]);
         }
       } catch (error: any) {
         console.error("Error fetching project:", error);
+        setError(error.message || "Failed to load project");
         toast({
           title: "Error",
           description: error.message || "Failed to load project",
@@ -136,6 +143,13 @@ const Project = () => {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12 bg-red-50 rounded-lg">
+            <p className="text-red-500">{error}</p>
+            <Button className="mt-4" variant="outline" asChild>
+              <Link to="/dashboard">Return to Dashboard</Link>
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

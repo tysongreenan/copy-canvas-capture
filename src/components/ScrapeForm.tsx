@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScraperService } from "@/services/ScraperService";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { toast } from "@/hooks/use-toast";
-import { Beam } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
@@ -21,7 +21,7 @@ export function ScrapeForm({ onResult }: ScrapeFormProps) {
     if (!url.trim()) {
       toast({
         title: "URL Required",
-        description: "Please enter a website URL to scrape",
+        description: "Please enter a website URL to illuminate",
         variant: "destructive"
       });
       return;

@@ -1,17 +1,18 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload, Globe, Link, MapPin, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { Search, Upload, Globe, Link as LinkIcon, MapPin, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContentService } from "@/services/ContentService";
+import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
@@ -19,12 +20,33 @@ const Dashboard = () => {
   const [recentlyCrawledPages, setRecentlyCrawledPages] = useState<ScrapedContent[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'sitemap'>('grid');
   const [reviewedPages, setReviewedPages] = useState<Record<string, boolean>>({});
+  const [savedProjects, setSavedProjects] = useState<any[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
   const { user } = useAuth();
 
   // Redirect if not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  // Fetch saved projects when component mounts
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchSavedContent = async () => {
+      setLoadingSaved(true);
+      try {
+        const content = await ContentService.getUserContent();
+        setSavedProjects(content);
+      } catch (error) {
+        console.error("Error fetching saved content:", error);
+      } finally {
+        setLoadingSaved(false);
+      }
+    };
+    
+    fetchSavedContent();
+  }, [user]);
 
   const handleResult = (data: ScrapedContent) => {
     setScrapedData(data);
@@ -112,6 +134,16 @@ const Dashboard = () => {
 
   const siteMap = organizePagesBySitemap(recentlyCrawledPages.length > 0 ? recentlyCrawledPages : scrapedPages);
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -168,6 +200,51 @@ const Dashboard = () => {
               </div>
             </div>
             
+            {/* Saved projects section */}
+            {savedProjects.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-lg font-medium">Your Projects</h3>
+                  <Badge variant="outline" className="bg-green-50">
+                    {savedProjects.length} saved
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                  {savedProjects.map((project) => (
+                    <Link 
+                      to={`/project/${project.id}`} 
+                      key={project.id}
+                      className="block"
+                    >
+                      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow h-full cursor-pointer">
+                        <div className="w-full h-24 bg-green-50 flex items-center justify-center overflow-hidden p-2">
+                          <div className="text-center px-4 truncate font-medium">
+                            {project.title || getPathFromUrl(project.url)}
+                          </div>
+                        </div>
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center text-sm font-medium truncate" title={project.url}>
+                              <Globe className="h-3 w-3 mr-1 text-green-600" />
+                              {getDomainFromUrl(project.url)}
+                            </div>
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500 truncate" title={project.url}>
+                            <LinkIcon className="h-3 w-3 mr-1" />
+                            {getPathFromUrl(project.url)}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Saved on {formatDate(project.created_at)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* Recently crawled pages section */}
             {recentlyCrawledPages.length > 0 && (
               <div className="mb-8">
@@ -214,7 +291,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
-                            <Link className="h-3 w-3 mr-1" />
+                            <LinkIcon className="h-3 w-3 mr-1" />
                             {getPathFromUrl(page.url)}
                           </div>
                           <div className="flex justify-between text-xs text-gray-500 mt-2">
@@ -283,7 +360,7 @@ const Dashboard = () => {
               </div>
             )}
             
-            {scrapedPages.length === 0 && !scrapedData && (
+            {scrapedPages.length === 0 && !scrapedData && savedProjects.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-20 h-20 mx-auto mb-6 text-gray-200">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
@@ -346,7 +423,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
-                            <Link className="h-3 w-3 mr-1" />
+                            <LinkIcon className="h-3 w-3 mr-1" />
                             {getPathFromUrl(page.url)}
                           </div>
                           <div className="text-xs text-gray-500 mt-2">

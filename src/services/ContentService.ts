@@ -92,5 +92,35 @@ export const ContentService = {
       });
       return [];
     }
+  },
+  
+  getProjectById: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('scraped_content')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching project:", error);
+        toast({
+          title: "Fetch failed",
+          description: error.message || "Failed to fetch project details",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      return data;
+    } catch (error: any) {
+      console.error("Error fetching project:", error);
+      toast({
+        title: "Fetch failed",
+        description: error.message || "Failed to fetch project details",
+        variant: "destructive"
+      });
+      return null;
+    }
   }
 };

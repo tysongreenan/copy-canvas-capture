@@ -15,6 +15,17 @@
     width: 100%;
   }
 
+  /* Full height layout for dark mode */
+  html, body {
+    @apply min-h-screen w-full;
+    height: 100%;
+  }
+
+  /* Make dark mode background fill the screen */
+  .dark body {
+    @apply bg-background min-h-screen;
+  }
+
   /* Buttons and interactive elements with sleek transitions */
   button, 
   a, 
@@ -24,3 +35,4 @@
     transition: all 0.2s ease-out;
   }
 }
+

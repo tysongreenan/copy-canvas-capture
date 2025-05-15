@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Project from "./pages/Project";
 
 // Update document title
-document.title = "CopyScraper - Extract Website Content";
+document.title = "Lumen - Extract Website Content";
 
 const queryClient = new QueryClient();
 
@@ -20,21 +20,24 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/project/:id" element={<Project />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <div className="min-h-screen flex flex-col bg-background text-foreground">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/project/:id" element={<Project />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+

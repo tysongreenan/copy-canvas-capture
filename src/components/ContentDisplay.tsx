@@ -363,8 +363,8 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96">
-                <pre className="whitespace-pre-wrap text-sm">{structuredContent}</pre>
+              <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96 text-left">
+                <pre className="whitespace-pre-wrap text-sm text-left">{structuredContent}</pre>
               </div>
               <div className="mt-4">
                 <Button 

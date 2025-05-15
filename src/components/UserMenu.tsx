@@ -41,9 +41,9 @@ export function UserMenu() {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/profile" className="flex items-center cursor-pointer">
+          <Link to="/dashboard" className="flex items-center cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

@@ -10,6 +10,9 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
+import { Database } from "@/integrations/supabase/types";
+
+type ScrapedContentRecord = Database['public']['Tables']['scraped_content']['Row'];
 
 const Project = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,16 +43,26 @@ const Project = () => {
         }
 
         if (data) {
+          // Safely type the content object
+          const contentObj = data.content as {
+            headings: Array<{tag: string; text: string}>;
+            paragraphs: string[];
+            links: Array<{url: string; text: string}>;
+            listItems: string[];
+            metaDescription: string;
+            metaKeywords: string;
+          };
+          
           // Convert the database record to ScrapedContent format
           const scrapedContent: ScrapedContent = {
             url: data.url,
-            title: data.title,
-            headings: data.content.headings || [],
-            paragraphs: data.content.paragraphs || [],
-            links: data.content.links || [],
-            listItems: data.content.listItems || [],
-            metaDescription: data.content.metaDescription || "",
-            metaKeywords: data.content.metaKeywords || ""
+            title: data.title || "",
+            headings: contentObj.headings || [],
+            paragraphs: contentObj.paragraphs || [],
+            links: contentObj.links || [],
+            listItems: contentObj.listItems || [],
+            metaDescription: contentObj.metaDescription || "",
+            metaKeywords: contentObj.metaKeywords || ""
           };
           setProject(scrapedContent);
         }

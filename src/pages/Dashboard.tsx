@@ -7,13 +7,16 @@ import { useAuth } from "@/context/AuthContext";
 import { Navigate } from "react-router-dom";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload, Globe } from "lucide-react";
+import { Search, Upload, Globe, Link, MapPin, ChevronRight, ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
   const [scrapedPages, setScrapedPages] = useState<ScrapedContent[]>([]);
   const [recentlyCrawledPages, setRecentlyCrawledPages] = useState<ScrapedContent[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'sitemap'>('grid');
   const { user } = useAuth();
 
   // Redirect if not logged in
@@ -59,6 +62,42 @@ const Dashboard = () => {
     }
   };
 
+  // Get path from URL for better display
+  const getPathFromUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname || '/';
+    } catch (e) {
+      return url;
+    }
+  };
+
+  // Organize pages by domain and path for sitemap view
+  const organizePagesBySitemap = (pages: ScrapedContent[]) => {
+    const siteMap: Record<string, ScrapedContent[]> = {};
+    
+    pages.forEach(page => {
+      const domain = getDomainFromUrl(page.url);
+      if (!siteMap[domain]) {
+        siteMap[domain] = [];
+      }
+      siteMap[domain].push(page);
+    });
+    
+    // Sort pages within each domain by path length (approximation of hierarchy)
+    Object.keys(siteMap).forEach(domain => {
+      siteMap[domain].sort((a, b) => {
+        const pathA = getPathFromUrl(a.url);
+        const pathB = getPathFromUrl(b.url);
+        return pathA.split('/').length - pathB.split('/').length;
+      });
+    });
+    
+    return siteMap;
+  };
+
+  const siteMap = organizePagesBySitemap(recentlyCrawledPages.length > 0 ? recentlyCrawledPages : scrapedPages);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -90,7 +129,29 @@ const Dashboard = () => {
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Scraped Pages</h2>
-              <div className="text-sm text-gray-500">{scrapedPages.length} pages</div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-gray-500">{scrapedPages.length} pages</div>
+                {(scrapedPages.length > 0 || recentlyCrawledPages.length > 0) && (
+                  <div className="flex rounded-md overflow-hidden border">
+                    <Button 
+                      variant={viewMode === 'grid' ? "default" : "ghost"} 
+                      size="sm"
+                      className="h-8 px-3"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <Search className="h-4 w-4 mr-1" /> Grid
+                    </Button>
+                    <Button 
+                      variant={viewMode === 'sitemap' ? "default" : "ghost"} 
+                      size="sm"
+                      className="h-8 px-3"
+                      onClick={() => setViewMode('sitemap')}
+                    >
+                      <MapPin className="h-4 w-4 mr-1" /> Sitemap
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Recently crawled pages section */}
@@ -102,35 +163,77 @@ const Dashboard = () => {
                     {recentlyCrawledPages.length} pages
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-                  {recentlyCrawledPages.map((page, index) => (
-                    <Card 
-                      key={`crawl-${index}`} 
-                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
-                      onClick={() => setScrapedData(page)}
-                    >
-                      <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
-                        <div className="text-center px-4 truncate font-medium">
-                          {page.title || getDomainFromUrl(page.url)}
+                
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                    {recentlyCrawledPages.map((page, index) => (
+                      <Card 
+                        key={`crawl-${index}`} 
+                        className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                        onClick={() => setScrapedData(page)}
+                      >
+                        <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
+                          <div className="text-center px-4 truncate font-medium">
+                            {page.title || getPathFromUrl(page.url)}
+                          </div>
                         </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="flex items-center text-sm font-medium truncate" title={page.url}>
-                          <Globe className="h-3 w-3 mr-1 text-indigo-600" />
-                          {getDomainFromUrl(page.url)}
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>
-                            {page.paragraphs.length} paragraphs
-                          </span>
-                          <span>
-                            {page.links.length} links
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <CardContent className="p-3">
+                          <div className="flex items-center text-sm font-medium truncate mb-1" title={page.url}>
+                            <Globe className="h-3 w-3 mr-1 text-indigo-600" />
+                            {getDomainFromUrl(page.url)}
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
+                            <Link className="h-3 w-3 mr-1" />
+                            {getPathFromUrl(page.url)}
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>
+                              {page.paragraphs.length} paragraphs
+                            </span>
+                            <span>
+                              {page.links.length} links
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mb-8 border rounded-md overflow-hidden">
+                    <Tabs defaultValue={Object.keys(siteMap)[0] || ''} className="w-full">
+                      <TabsList className="w-full justify-start overflow-x-auto">
+                        {Object.keys(siteMap).map(domain => (
+                          <TabsTrigger key={domain} value={domain} className="flex items-center gap-1">
+                            <Globe className="h-3 w-3" /> {domain}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {Object.keys(siteMap).map(domain => (
+                        <TabsContent key={domain} value={domain} className="p-4">
+                          <div className="space-y-2">
+                            {siteMap[domain].map((page, idx) => (
+                              <div 
+                                key={idx} 
+                                className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                onClick={() => setScrapedData(page)}
+                              >
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                                <div className="flex-1">
+                                  <div className="font-medium truncate">{page.title || "Untitled"}</div>
+                                  <div className="text-xs text-gray-500 truncate">{page.url}</div>
+                                </div>
+                                <Badge variant="outline" className="text-xs whitespace-nowrap">
+                                  {page.paragraphs.length} p
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </div>
+                )}
               </div>
             )}
             
@@ -158,32 +261,74 @@ const Dashboard = () => {
               </div>
             )}
             
-            {scrapedPages.length > 0 && (
+            {scrapedPages.length > 0 && !recentlyCrawledPages.length && (
               <div>
                 <h3 className="text-lg font-medium mb-4">All Pages</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {scrapedPages.map((page, index) => (
-                    <Card 
-                      key={index} 
-                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
-                      onClick={() => setScrapedData(page)}
-                    >
-                      <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
-                        <div className="text-center px-4 truncate font-medium">
-                          {page.title || getDomainFromUrl(page.url)}
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {scrapedPages.map((page, index) => (
+                      <Card 
+                        key={index} 
+                        className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                        onClick={() => setScrapedData(page)}
+                      >
+                        <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                          <div className="text-center px-4 truncate font-medium">
+                            {page.title || getPathFromUrl(page.url)}
+                          </div>
                         </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="text-sm font-medium truncate" title={page.url}>
-                          {getDomainFromUrl(page.url)}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Updated just now
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <CardContent className="p-3">
+                          <div className="flex items-center text-sm font-medium truncate mb-1" title={page.url}>
+                            <Globe className="h-3 w-3 mr-1 text-gray-600" />
+                            {getDomainFromUrl(page.url)}
+                          </div>
+                          <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
+                            <Link className="h-3 w-3 mr-1" />
+                            {getPathFromUrl(page.url)}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Updated just now
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border rounded-md overflow-hidden">
+                    <Tabs defaultValue={Object.keys(siteMap)[0] || ''} className="w-full">
+                      <TabsList className="w-full justify-start overflow-x-auto">
+                        {Object.keys(siteMap).map(domain => (
+                          <TabsTrigger key={domain} value={domain} className="flex items-center gap-1">
+                            <Globe className="h-3 w-3" /> {domain}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {Object.keys(siteMap).map(domain => (
+                        <TabsContent key={domain} value={domain} className="p-4">
+                          <div className="space-y-2">
+                            {siteMap[domain].map((page, idx) => (
+                              <div 
+                                key={idx} 
+                                className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                onClick={() => setScrapedData(page)}
+                              >
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                                <div className="flex-1">
+                                  <div className="font-medium truncate">{page.title || "Untitled"}</div>
+                                  <div className="text-xs text-gray-500 truncate">{page.url}</div>
+                                </div>
+                                <Badge variant="outline" className="text-xs whitespace-nowrap">
+                                  {page.paragraphs.length} p
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </div>
+                )}
               </div>
             )}
           </div>

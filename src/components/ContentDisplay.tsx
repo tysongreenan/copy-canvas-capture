@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Globe, Link } from "lucide-react";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { SaveButton } from "@/components/SaveButton";
 import { useAuth } from "@/context/AuthContext";
@@ -51,6 +51,16 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
   const getDomainFromUrl = (url: string) => {
     try {
       return new URL(url).hostname;
+    } catch (e) {
+      return url;
+    }
+  };
+  
+  // Get path from URL
+  const getPathFromUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.pathname;
     } catch (e) {
       return url;
     }
@@ -145,12 +155,21 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
         </div>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-medium truncate" title={data.url}>
-              {getDomainFromUrl(data.url)}
+            <div className="font-medium flex items-center gap-1">
+              <Globe className="h-4 w-4 text-indigo-600" />
+              <span className="truncate" title={getDomainFromUrl(data.url)}>
+                {getDomainFromUrl(data.url)}
+              </span>
             </div>
             <div className="text-xs text-gray-500">
               Updated just now
             </div>
+          </div>
+          <div className="text-sm text-gray-600 mb-3 flex items-center gap-1">
+            <Link className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate" title={data.url}>
+              {getPathFromUrl(data.url)}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex space-x-2">
@@ -334,7 +353,14 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
                   {copied["Structured"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <CardDescription>Complete website content in structured format</CardDescription>
+              <CardDescription>
+                <div className="flex items-center gap-1">
+                  <Link className="h-3 w-3" />
+                  <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate">
+                    {data.url}
+                  </a>
+                </div>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96">

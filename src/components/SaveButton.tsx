@@ -5,7 +5,7 @@ import { ContentService } from "@/services/ContentService";
 import type { ScrapedContent } from "@/services/ScraperService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Save } from "lucide-react";
+import { Bookmark } from "lucide-react";
 
 interface SaveButtonProps {
   content: ScrapedContent;
@@ -19,7 +19,7 @@ export function SaveButton({ content }: SaveButtonProps) {
     if (!user) {
       toast({
         title: "Authentication required",
-        description: "Please login to save scraped content",
+        description: "Please login to save illuminated content",
         variant: "destructive"
       });
       return;
@@ -39,7 +39,7 @@ export function SaveButton({ content }: SaveButtonProps) {
       disabled={saving || !user}
       className="gap-2"
     >
-      <Save className="h-4 w-4" />
+      <Bookmark className="h-4 w-4" />
       {saving ? "Saving..." : "Save Content"}
     </Button>
   );

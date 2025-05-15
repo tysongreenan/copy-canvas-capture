@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -104,6 +105,11 @@ const Dashboard = () => {
     }));
   };
 
+  // Handle card click explicitly
+  const handleCardClick = (page: ScrapedContent) => {
+    setScrapedData(page);
+  };
+
   const siteMap = organizePagesBySitemap(recentlyCrawledPages.length > 0 ? recentlyCrawledPages : scrapedPages);
 
   return (
@@ -178,7 +184,10 @@ const Dashboard = () => {
                       <Card 
                         key={`crawl-${index}`} 
                         className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                        onClick={() => setScrapedData(page)}
+                        onClick={() => handleCardClick(page)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View content for ${page.title || getPathFromUrl(page.url)}`}
                       >
                         <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
                           <div className="text-center px-4 truncate font-medium">
@@ -192,7 +201,7 @@ const Dashboard = () => {
                               {getDomainFromUrl(page.url)}
                             </div>
                             <div 
-                              className="ml-2" 
+                              className="ml-2 z-10" 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleReviewed(page.url);
@@ -238,7 +247,10 @@ const Dashboard = () => {
                               <div 
                                 key={idx} 
                                 className={`p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2 ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                                onClick={() => setScrapedData(page)}
+                                onClick={() => handleCardClick(page)}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`View content for ${page.title || "Untitled"}`}
                               >
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                                 <div className="flex-1">
@@ -250,7 +262,7 @@ const Dashboard = () => {
                                     e.stopPropagation();
                                     toggleReviewed(page.url);
                                   }}
-                                  className="mr-2"
+                                  className="mr-2 z-10"
                                 >
                                   <Checkbox 
                                     checked={!!reviewedPages[page.url]} 
@@ -304,7 +316,10 @@ const Dashboard = () => {
                       <Card 
                         key={index} 
                         className={`overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                        onClick={() => setScrapedData(page)}
+                        onClick={() => handleCardClick(page)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View content for ${page.title || getPathFromUrl(page.url)}`}
                       >
                         <div className="w-full h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
                           <div className="text-center px-4 truncate font-medium">
@@ -322,6 +337,7 @@ const Dashboard = () => {
                                 e.stopPropagation();
                                 toggleReviewed(page.url);
                               }}
+                              className="z-10"
                             >
                               <Checkbox 
                                 checked={!!reviewedPages[page.url]} 
@@ -358,7 +374,10 @@ const Dashboard = () => {
                               <div 
                                 key={idx} 
                                 className={`p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex items-center gap-2 ${reviewedPages[page.url] ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
-                                onClick={() => setScrapedData(page)}
+                                onClick={() => handleCardClick(page)}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`View content for ${page.title || "Untitled"}`}
                               >
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                                 <div className="flex-1">
@@ -370,7 +389,7 @@ const Dashboard = () => {
                                     e.stopPropagation();
                                     toggleReviewed(page.url);
                                   }}
-                                  className="mr-2"
+                                  className="mr-2 z-10"
                                 >
                                   <Checkbox 
                                     checked={!!reviewedPages[page.url]} 

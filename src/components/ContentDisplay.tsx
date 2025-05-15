@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -378,7 +379,7 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
             </CardHeader>
             <CardContent>
               <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96 text-left">
-                <pre className="whitespace-pre-wrap text-sm text-left">{structuredContent}</pre>
+                <pre className="whitespace-pre-wrap text-sm text-left font-mono">{structuredContent}</pre>
               </div>
               <div className="mt-4">
                 <Button 

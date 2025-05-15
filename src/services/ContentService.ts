@@ -35,7 +35,7 @@ export const ContentService = {
           title: title,
           url: startUrl,
           page_count: contents.length
-        } as any)  // Using 'any' type to bypass TypeScript checking
+        } as Database['public']['Tables']['scraped_projects']['Insert']) // Properly type the insert
         .select('*')
         .single();
       
@@ -156,10 +156,11 @@ export const ContentService = {
   
   getUserProjects: async () => {
     try {
+      // We cast the response type to match our SavedProject interface
       const { data, error } = await supabase
         .from('scraped_projects')
         .select('*')
-        .order('created_at', { ascending: false }) as { data: SavedProject[] | null, error: any };
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error("Error fetching projects:", error);
@@ -171,7 +172,7 @@ export const ContentService = {
         return [];
       }
       
-      return data || [] as SavedProject[];
+      return (data || []) as SavedProject[];
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({
@@ -218,7 +219,7 @@ export const ContentService = {
         .from('scraped_projects')
         .select('*')
         .eq('id', id)
-        .single() as { data: SavedProject | null, error: any };
+        .single();
       
       if (error) {
         console.error("Error fetching project:", error);

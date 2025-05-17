@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -26,6 +25,34 @@ export interface CrawlProject {
   startUrl: string;
   createdAt: Date;
   pageCount: number;
+  sitemapData?: SitemapData; // New property for sitemap data
+}
+
+export interface SitemapData {
+  nodes: SitemapNode[];
+  edges: SitemapEdge[];
+}
+
+export interface SitemapNode {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    icon?: React.ReactNode;
+    path: string;
+    handles: string[];
+    description?: string;
+    url: string;
+  };
+}
+
+export interface SitemapEdge {
+  id: string;
+  source: string;
+  target: string;
+  animated?: boolean;
+  style?: { stroke: string };
 }
 
 export interface CrawlOptions {
@@ -86,6 +113,9 @@ export class ScraperService {
           // Update the project page count
           this.updateProjectPageCount(this.currentProjectId, 1);
           
+          // Generate basic sitemap data for single page
+          newProject.sitemapData = this.generateSitemapForSinglePage(singlePageResult);
+          
           toast({
             title: "Scrape Complete",
             description: `Successfully scraped page: ${singlePageResult.title || url}`,
@@ -127,6 +157,9 @@ export class ScraperService {
       
       // Start crawling
       await this.crawl();
+      
+      // Generate sitemap data after crawling is complete
+      newProject.sitemapData = this.generateSitemapForProject();
       
       // Return the first page results
       toast({
@@ -279,6 +312,151 @@ export class ScraperService {
     }
   }
   
+  // Generate sitemap data for a single page
+  private static generateSitemapForSinglePage(page: ScrapedContent): SitemapData {
+    // Create a basic sitemap with just the main page
+    const nodes: SitemapNode[] = [
+      {
+        id: 'main',
+        type: 'siteNode',
+        position: { x: 250, y: 150 },
+        data: {
+          label: page.title || 'Main Page',
+          path: '/',
+          handles: ['top', 'bottom', 'left', 'right'],
+          url: page.url
+        }
+      }
+    ];
+    
+    // No edges for a single page
+    const edges: SitemapEdge[] = [];
+    
+    return { nodes, edges };
+  }
+  
+  // Generate sitemap data based on crawled pages
+  private static generateSitemapForProject(): SitemapData {
+    const nodes: SitemapNode[] = [];
+    const edges: SitemapEdge[] = [];
+    const nodeMap: Map<string, string> = new Map(); // URL to node ID mapping
+    
+    if (this.results.length === 0) {
+      return { nodes, edges };
+    }
+    
+    // First, create a node for the home/starting page
+    const homePage = this.results[0];
+    const homeNodeId = 'home';
+    nodeMap.set(homePage.url, homeNodeId);
+    
+    nodes.push({
+      id: homeNodeId,
+      type: 'siteNode',
+      position: { x: 250, y: 0 },
+      data: {
+        label: homePage.title || 'Home Page',
+        path: '/',
+        handles: ['bottom'],
+        url: homePage.url
+      }
+    });
+    
+    // Helper to get node ID for a URL
+    const getNodeId = (url: string): string => {
+      if (nodeMap.has(url)) {
+        return nodeMap.get(url)!;
+      }
+      
+      const id = `page-${nodeMap.size}`;
+      nodeMap.set(url, id);
+      return id;
+    };
+    
+    // Helper to simplify URL for display
+    const getPathFromUrl = (url: string): string => {
+      try {
+        const urlObj = new URL(url);
+        return urlObj.pathname || '/';
+      } catch (e) {
+        return url;
+      }
+    };
+    
+    // Process each page to create nodes
+    let rowIndex = 1;
+    const maxNodesPerRow = 5;
+    let processedUrls = new Set([homePage.url]);
+    
+    // Add nodes for other pages (after the home page)
+    for (let i = 1; i < this.results.length; i++) {
+      const page = this.results[i];
+      
+      // Skip if already processed
+      if (processedUrls.has(page.url)) continue;
+      processedUrls.add(page.url);
+      
+      const nodeId = getNodeId(page.url);
+      const colPosition = (i - 1) % maxNodesPerRow;
+      const rowPosition = Math.floor((i - 1) / maxNodesPerRow) + 1;
+      
+      nodes.push({
+        id: nodeId,
+        type: 'siteNode',
+        position: { x: 100 + colPosition * 200, y: rowPosition * 150 },
+        data: {
+          label: page.title || getPathFromUrl(page.url),
+          path: getPathFromUrl(page.url),
+          handles: ['top', 'bottom', 'left', 'right'],
+          url: page.url
+        }
+      });
+    }
+    
+    // Create edges based on page links
+    for (const page of this.results) {
+      const sourceId = nodeMap.get(page.url);
+      if (!sourceId) continue;
+      
+      // Process each link in the page
+      for (const link of page.links) {
+        let linkUrl = link.url;
+        
+        // Handle relative URLs
+        if (linkUrl.startsWith('/')) {
+          linkUrl = this.baseUrl + linkUrl;
+        } else if (!linkUrl.startsWith('http')) {
+          continue; // Skip non-HTTP links
+        }
+        
+        try {
+          const linkUrlObj = new URL(linkUrl);
+          // Only include links to the same domain
+          if (linkUrlObj.hostname === this.baseDomain && nodeMap.has(linkUrl)) {
+            const targetId = nodeMap.get(linkUrl);
+            
+            // Avoid duplicate edges
+            const edgeId = `${sourceId}-${targetId}`;
+            if (!edges.some(e => e.id === edgeId)) {
+              edges.push({
+                id: edgeId,
+                source: sourceId,
+                target: targetId!,
+                animated: true,
+                style: { stroke: '#3b82f6' }
+              });
+            }
+          }
+        } catch (e) {
+          // Invalid URL, skip
+          continue;
+        }
+      }
+    }
+    
+    return { nodes, edges };
+  }
+  
   static getAllResults(): ScrapedContent[] {
     return this.results;
   }
@@ -306,5 +484,11 @@ export class ScraperService {
       title: "Crawl Stopped",
       description: `Crawl stopped after processing ${this.visited.size} pages`,
     });
+  }
+  
+  // Get sitemap data for a specific project
+  static getSitemapData(projectId: string): SitemapData | undefined {
+    const project = this.projects.find(p => p.id === projectId);
+    return project?.sitemapData;
   }
 }

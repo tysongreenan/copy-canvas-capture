@@ -5,25 +5,25 @@ import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, Link } from "react-router-dom";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent, CrawlProject } from "@/services/ScraperService";
+import { ScraperService } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight } from "lucide-react";
+import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight, Map } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContentService, SavedProject } from "@/services/ContentService";
 import { SaveButton } from "@/components/SaveButton";
 import { SaveProjectButton } from "@/components/SaveProjectButton";
 import { toast } from "@/hooks/use-toast";
+import { ProjectSitemap } from "@/components/project/ProjectSitemap";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
-  const [currentProject, setCurrentProject] = useState<{
-    id: string;
-    name: string;
-    pages: ScrapedContent[];
-  } | null>(null);
+  const [currentProject, setCurrentProject] = useState<CrawlProject | null>(null);
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("pages");
   const { user } = useAuth();
 
   // Redirect if not logged in
@@ -56,14 +56,13 @@ const Dashboard = () => {
   
   const handleCrawlComplete = (pages: ScrapedContent[], projectId?: string, projectName?: string) => {
     if (pages.length > 0) {
-      setCurrentProject({
-        id: projectId || 'temp-project-id',
-        name: projectName || getDomainFromUrl(pages[0].url),
-        pages
-      });
-      
-      // Hide the single scraped page when we have a project
-      setScrapedData(null);
+      const project = ScraperService.getCurrentProject();
+      if (project) {
+        setCurrentProject(project);
+        
+        // Hide the single scraped page when we have a project
+        setScrapedData(null);
+      }
     }
   };
 
@@ -134,50 +133,63 @@ const Dashboard = () => {
                       Project: {currentProject.name}
                     </h2>
                     <div className="text-sm text-gray-500">
-                      {currentProject.pages.length} pages crawled
+                      {currentProject.pageCount} pages crawled
                     </div>
                   </div>
                   
                   <SaveProjectButton 
                     title={currentProject.name}
-                    startUrl={currentProject.pages[0]?.url || ""}
-                    contents={currentProject.pages}
+                    startUrl={currentProject.startUrl}
+                    contents={ScraperService.getResultsByProject(currentProject.id)}
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-                  {currentProject.pages.slice(0, 6).map((page, index) => (
-                    <Card 
-                      key={`project-${index}`} 
-                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => setScrapedData(page)}
-                    >
-                      <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
-                        <div className="text-center px-4 truncate font-medium">
-                          {page.title || getPathFromUrl(page.url)}
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center text-sm font-medium truncate" title={page.url}>
-                            <Globe className="h-3 w-3 mr-1 text-indigo-600" />
-                            {getDomainFromUrl(page.url)}
+                <Tabs defaultValue="pages" className="mb-8" onValueChange={setActiveTab}>
+                  <TabsList>
+                    <TabsTrigger value="pages">Pages ({currentProject.pageCount})</TabsTrigger>
+                    <TabsTrigger value="sitemap">Sitemap</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="pages" className="pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {ScraperService.getResultsByProject(currentProject.id).slice(0, 6).map((page, index) => (
+                        <Card 
+                          key={`project-${index}`} 
+                          className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setScrapedData(page)}
+                        >
+                          <div className="w-full h-24 bg-indigo-50 flex items-center justify-center overflow-hidden p-2">
+                            <div className="text-center px-4 truncate font-medium">
+                              {page.title || getPathFromUrl(page.url)}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
-                          <LinkIcon className="h-3 w-3 mr-1" />
-                          {getPathFromUrl(page.url)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                
-                {currentProject.pages.length > 6 && (
-                  <div className="text-center">
-                    <Button variant="outline">View all {currentProject.pages.length} pages</Button>
-                  </div>
-                )}
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center text-sm font-medium truncate" title={page.url}>
+                                <Globe className="h-3 w-3 mr-1 text-indigo-600" />
+                                {getDomainFromUrl(page.url)}
+                              </div>
+                            </div>
+                            <div className="flex items-center text-xs text-gray-500 truncate" title={page.url}>
+                              <LinkIcon className="h-3 w-3 mr-1" />
+                              {getPathFromUrl(page.url)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    {currentProject.pageCount > 6 && (
+                      <div className="text-center mt-4">
+                        <Button variant="outline">View all {currentProject.pageCount} pages</Button>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="sitemap" className="pt-4">
+                    <ProjectSitemap sitemapData={currentProject.sitemapData} />
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
             

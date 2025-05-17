@@ -3,7 +3,20 @@ import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import { useNavigate } from 'react-router-dom';
 
-const SitemapNodeComponent = ({ data, isConnectable }) => {
+interface SitemapNodeData {
+  label: string;
+  icon?: React.ReactNode;
+  path?: string;
+  handles?: string[];
+  description?: string;
+}
+
+interface SitemapNodeProps {
+  data: SitemapNodeData;
+  isConnectable: boolean;
+}
+
+const SitemapNodeComponent = ({ data, isConnectable }: SitemapNodeProps) => {
   const navigate = useNavigate();
   
   const handleNodeClick = () => {

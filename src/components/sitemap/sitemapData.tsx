@@ -1,6 +1,7 @@
 
 import { HomeIcon, LogInIcon, LayoutDashboardIcon, FileTextIcon } from 'lucide-react';
 
+// Define the node and edge types to match ReactFlow's requirements
 export const initialNodes = [
   {
     id: 'home',
@@ -42,9 +43,9 @@ export const initialNodes = [
     data: {
       label: 'Project Details',
       icon: <FileTextIcon className="w-5 h-5" />,
-      description: 'View project data',
       path: '/project/example',
       handles: ['top', 'left'],
+      description: 'View project data',
     },
   },
   {
@@ -54,9 +55,9 @@ export const initialNodes = [
     data: {
       label: 'Sitemap',
       icon: <FileTextIcon className="w-5 h-5" />,
-      description: 'Current page',
       path: '/sitemap',
       handles: ['top'],
+      description: 'Current page',
     },
   },
 ];

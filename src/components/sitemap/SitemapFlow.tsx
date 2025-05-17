@@ -7,6 +7,9 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
+  Node,
+  Edge,
+  Connection,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './sitemap.css';
@@ -19,11 +22,11 @@ const nodeTypes = {
 };
 
 export const SitemapFlow = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges as Edge[]);
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 

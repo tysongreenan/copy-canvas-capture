@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Project from "./pages/Project";
+import Sitemap from "./pages/Sitemap";
 
 // Update document title
 document.title = "Lumen - Extract Website Content";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/project/:id" element={<Project />} />
+              <Route path="/sitemap" element={<Sitemap />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -40,4 +42,3 @@ const App = () => (
 );
 
 export default App;
-

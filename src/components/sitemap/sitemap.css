@@ -1,0 +1,38 @@
+
+.react-flow__node {
+  border-radius: 8px;
+  transition: box-shadow 0.3s;
+}
+
+.react-flow__node:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.react-flow__controls {
+  box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__minimap {
+  background-color: rgba(240, 240, 240, 0.8);
+}
+
+.react-flow__attribution {
+  background: transparent;
+}
+
+.dark .react-flow__minimap {
+  background-color: rgba(30, 30, 30, 0.8);
+}
+
+.dark .react-flow__controls button {
+  background-color: #1f1f1f;
+  border-color: #333;
+  color: #eee;
+}

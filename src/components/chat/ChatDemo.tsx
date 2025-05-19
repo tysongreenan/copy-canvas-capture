@@ -4,14 +4,23 @@ import { useState } from "react";
 
 const ChatDemo = () => {
     const [inputValue, setInputValue] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     
     const handleInputChange = (value: string) => {
         setInputValue(value);
     };
     
     const handleSend = () => {
-        console.log("Message sent:", inputValue);
-        setInputValue("");
+        if (inputValue.trim()) {
+            setIsLoading(true);
+            console.log("Message sent:", inputValue);
+            
+            // Simulate response delay
+            setTimeout(() => {
+                setIsLoading(false);
+                setInputValue("");
+            }, 2000);
+        }
     };
     
     return (
@@ -21,7 +30,7 @@ const ChatDemo = () => {
                     value={inputValue}
                     onChange={handleInputChange}
                     onSend={handleSend}
-                    isLoading={false}
+                    isLoading={isLoading}
                 />
             </div>
         </div>

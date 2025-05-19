@@ -5,14 +5,7 @@ import { useEffect, useRef, useCallback, useTransition } from "react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-    ImageIcon,
-    FileUp,
-    Figma,
-    MonitorIcon,
-    CircleUserRound,
-    ArrowUpIcon,
     Paperclip,
-    PlusIcon,
     SendIcon,
     XIcon,
     LoaderIcon,
@@ -135,14 +128,17 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 )
 Textarea.displayName = "Textarea"
 
-export function AnimatedAIChat({
-    value = "",
-    onChange = () => {},
-    onSend = () => {},
-    isLoading = false,
-}) {
+// Updated interface to match the expected props in ChatDemo and ChatInterface
+interface AnimatedAIChatProps {
+    value: string;
+    onChange: (value: string) => void;
+    onSend: () => void;
+    isLoading: boolean;
+}
+
+export function AnimatedAIChat({ value: externalValue, onChange, onSend, isLoading }: AnimatedAIChatProps) {
+    const [value, setValue] = useState(externalValue);
     const [attachments, setAttachments] = useState<string[]>([]);
-    const [isTyping, setIsTyping] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
     const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -155,28 +151,26 @@ export function AnimatedAIChat({
     const [inputFocused, setInputFocused] = useState(false);
     const commandPaletteRef = useRef<HTMLDivElement>(null);
 
-    // Update height when value changes externally
+    // Sync external value
     useEffect(() => {
-        if (textareaRef.current) {
-            adjustHeight();
-        }
-    }, [value, adjustHeight]);
+        setValue(externalValue);
+    }, [externalValue]);
 
     const commandSuggestions: CommandSuggestion[] = [
         { 
-            icon: <ImageIcon className="w-4 h-4" />, 
+            icon: <Sparkles className="w-4 h-4" />, 
             label: "Clone UI", 
             description: "Generate a UI from a screenshot", 
             prefix: "/clone" 
         },
         { 
-            icon: <Figma className="w-4 h-4" />, 
+            icon: <Sparkles className="w-4 h-4" />, 
             label: "Import Figma", 
             description: "Import a design from Figma", 
             prefix: "/figma" 
         },
         { 
-            icon: <MonitorIcon className="w-4 h-4" />, 
+            icon: <Sparkles className="w-4 h-4" />, 
             label: "Create Page", 
             description: "Generate a new web page", 
             prefix: "/page" 
@@ -252,7 +246,9 @@ export function AnimatedAIChat({
                 e.preventDefault();
                 if (activeSuggestion >= 0) {
                     const selectedCommand = commandSuggestions[activeSuggestion];
-                    onChange(selectedCommand.prefix + ' ');
+                    const newValue = selectedCommand.prefix + ' ';
+                    setValue(newValue);
+                    onChange(newValue);
                     setShowCommandPalette(false);
                     
                     setRecentCommand(selectedCommand.label);
@@ -265,9 +261,23 @@ export function AnimatedAIChat({
         } else if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             if (value.trim()) {
-                onSend();
+                handleSendMessage();
             }
         }
+    };
+
+    const handleSendMessage = () => {
+        if (value.trim()) {
+            onSend();
+            adjustHeight(true);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setValue(newValue);
+        onChange(newValue);
+        adjustHeight();
     };
 
     const handleAttachFile = () => {
@@ -281,34 +291,22 @@ export function AnimatedAIChat({
     
     const selectCommandSuggestion = (index: number) => {
         const selectedCommand = commandSuggestions[index];
-        onChange(selectedCommand.prefix + ' ');
+        const newValue = selectedCommand.prefix + ' ';
+        setValue(newValue);
+        onChange(newValue);
         setShowCommandPalette(false);
         
         setRecentCommand(selectedCommand.label);
         setTimeout(() => setRecentCommand(null), 2000);
     };
 
-    const rippleKeyframes = `
-    @keyframes ripple {
-      0% { transform: scale(0.5); opacity: 0.6; }
-      100% { transform: scale(2); opacity: 0; }
-    }
-    `;
-
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            const style = document.createElement('style');
-            style.innerHTML = rippleKeyframes;
-            document.head.appendChild(style);
-            
-            return () => {
-                document.head.removeChild(style);
-            };
-        }
-    }, []);
-
     return (
-        <div className="flex flex-col w-full">
+        <div className="w-full bg-transparent text-white relative overflow-hidden">
+            <div className="absolute inset-0 w-full h-full overflow-hidden">
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full mix-blend-normal filter blur-[128px] animate-pulse" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full mix-blend-normal filter blur-[128px] animate-pulse delay-700" />
+                <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-fuchsia-500/10 rounded-full mix-blend-normal filter blur-[96px] animate-pulse delay-1000" />
+            </div>
             <div className="w-full relative">
                 <motion.div 
                     className="relative z-10"
@@ -365,14 +363,11 @@ export function AnimatedAIChat({
                             <Textarea
                                 ref={textareaRef}
                                 value={value}
-                                onChange={(e) => {
-                                    onChange(e.target.value);
-                                    adjustHeight();
-                                }}
+                                onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
                                 onFocus={() => setInputFocused(true)}
                                 onBlur={() => setInputFocused(false)}
-                                placeholder="Ask a question about your website content..."
+                                placeholder="Ask a question..."
                                 containerClassName="w-full"
                                 className={cn(
                                     "w-full px-4 py-3",
@@ -457,7 +452,7 @@ export function AnimatedAIChat({
                             
                             <motion.button
                                 type="button"
-                                onClick={onSend}
+                                onClick={handleSendMessage}
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.98 }}
                                 disabled={isLoading || !value.trim()}
@@ -484,7 +479,7 @@ export function AnimatedAIChat({
             <AnimatePresence>
                 {isLoading && (
                     <motion.div 
-                        className="mt-4 mx-auto transform backdrop-blur-2xl bg-white/[0.02] rounded-full px-4 py-2 shadow-lg border border-white/[0.05]"
+                        className="fixed bottom-8 mx-auto transform -translate-x-1/2 backdrop-blur-2xl bg-white/[0.02] rounded-full px-4 py-2 shadow-lg border border-white/[0.05]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
@@ -546,4 +541,17 @@ function TypingDots() {
             ))}
         </div>
     );
+}
+
+const rippleKeyframes = `
+@keyframes ripple {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+`;
+
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.innerHTML = rippleKeyframes;
+    document.head.appendChild(style);
 }

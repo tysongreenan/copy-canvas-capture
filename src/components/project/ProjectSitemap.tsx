@@ -1,4 +1,3 @@
-
 import { SitemapData } from '@/services/ScraperService';
 import { ReactFlow, MiniMap, Controls, Background, Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -21,7 +20,7 @@ export function ProjectSitemap({ sitemapData }: ProjectSitemapProps) {
     );
   }
 
-  // Ensure we have a waterfall layout with homepage at the top
+  // Ensure we have a waterfall layout with homepage at the top and simplified connections
   const organizedSitemapData = organizeSitemapData(sitemapData);
 
   return (
@@ -41,7 +40,7 @@ export function ProjectSitemap({ sitemapData }: ProjectSitemapProps) {
   );
 }
 
-// Function to organize the sitemap in a waterfall structure
+// Function to organize the sitemap in a waterfall structure with simplified connections
 function organizeSitemapData(sitemapData: SitemapData): SitemapData {
   const { nodes, edges } = sitemapData;
   
@@ -136,12 +135,115 @@ function organizeSitemapData(sitemapData: SitemapData): SitemapData {
       });
     }
     
+    // Simplify edges - only keep parent-child relationships rather than all cross-connections
+    const simplifiedEdges = [];
+    
+    // Add connections from home to first level
+    for (const nodeId of levelGroups.get(1) || []) {
+      simplifiedEdges.push({
+        id: `${homeNode.id}-${nodeId}`,
+        source: homeNode.id,
+        target: nodeId,
+        animated: false,
+        style: { stroke: '#3b82f6' }
+      });
+    }
+    
+    // For each level, connect nodes to the next level based on parent-child relationships
+    // but limit cross-connections to reduce visual clutter
+    for (let level = 1; level < Math.max(...levelGroups.keys()); level++) {
+      const currentLevelNodes = levelGroups.get(level) || [];
+      const nextLevelNodes = levelGroups.get(level + 1) || [];
+      
+      if (nextLevelNodes.length === 0) continue;
+      
+      // Find actual connections between these levels in the original edges
+      const levelConnections = edges.filter(edge => 
+        currentLevelNodes.includes(edge.source) && 
+        nextLevelNodes.includes(edge.target)
+      );
+      
+      // If there are actual connections, use them (but limit)
+      if (levelConnections.length > 0) {
+        // Group connections by source node to limit outgoing connections
+        const sourceConnections = new Map<string, string[]>();
+        
+        levelConnections.forEach(edge => {
+          if (!sourceConnections.has(edge.source)) {
+            sourceConnections.set(edge.source, []);
+          }
+          sourceConnections.get(edge.source)?.push(edge.target);
+        });
+        
+        // Limit connections per source node to reduce clutter
+        sourceConnections.forEach((targets, source) => {
+          // Keep only up to 3 connections per source node
+          const limitedTargets = targets.slice(0, 3);
+          
+          limitedTargets.forEach(target => {
+            simplifiedEdges.push({
+              id: `${source}-${target}`,
+              source,
+              target,
+              animated: false,
+              style: { stroke: '#3b82f6' }
+            });
+          });
+        });
+      } else {
+        // If no actual connections found, create some logical ones to maintain hierarchy
+        // Connect each node in current level to at least one node in next level if possible
+        currentLevelNodes.forEach((sourceId, idx) => {
+          // Distribute connections evenly - connect each source to target at same relative position
+          const targetIdx = Math.min(
+            Math.floor(idx * (nextLevelNodes.length / currentLevelNodes.length)),
+            nextLevelNodes.length - 1
+          );
+          
+          simplifiedEdges.push({
+            id: `${sourceId}-${nextLevelNodes[targetIdx]}`,
+            source: sourceId,
+            target: nextLevelNodes[targetIdx],
+            animated: false,
+            style: { stroke: '#94a3b8' } // lighter color for inferred connections
+          });
+        });
+      }
+    }
+    
     return {
       nodes: newNodes,
-      edges: edges
+      edges: simplifiedEdges
     };
   }
   
-  // If no home node found, return original data
-  return sitemapData;
+  // If no home node found, return original data with reduced edges
+  return {
+    nodes: sitemapData.nodes,
+    edges: simplifyEdges(sitemapData.edges)
+  };
+}
+
+// Helper function to reduce the number of edges to prevent visual clutter
+function simplifyEdges(edges: SitemapEdge[]): SitemapEdge[] {
+  // Group edges by source
+  const edgesBySource = new Map<string, SitemapEdge[]>();
+  
+  edges.forEach(edge => {
+    if (!edgesBySource.has(edge.source)) {
+      edgesBySource.set(edge.source, []);
+    }
+    edgesBySource.get(edge.source)?.push(edge);
+  });
+  
+  // Keep only a limited number of edges per source
+  const simplifiedEdges: SitemapEdge[] = [];
+  
+  edgesBySource.forEach((sourceEdges, source) => {
+    // Limit to 3 outgoing edges per node
+    const limitedEdges = sourceEdges.slice(0, 3);
+    simplifiedEdges.push(...limitedEdges);
+  });
+  
+  return simplifiedEdges;
 }

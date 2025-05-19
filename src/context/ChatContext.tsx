@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { ChatMessage, ChatConversation } from '@/services/ChatService';
+import { ChatMessage } from '@/services/ChatService';
 
 interface ChatContextType {
   messages: ChatMessage[];

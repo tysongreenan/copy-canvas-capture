@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { ChatProvider } from "@/context/ChatContext";
 import { ContentService, SavedProject } from "@/services/ContentService";
@@ -21,6 +20,7 @@ const ChatDemo = () => {
     const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
+    const [lastSources, setLastSources] = useState<any[]>([]);
     const { toast } = useToast();
     
     // Redirect if not logged in
@@ -181,20 +181,7 @@ const ChatDemo = () => {
                         </div>
                         
                         {/* Chat input */}
-                        <ChatProvider
-                            value={{
-                                messages: messages,
-                                setMessages: setMessages,
-                                input: inputValue,
-                                setInput: setInputValue,
-                                loading: isLoading,
-                                setLoading: setIsLoading,
-                                selectedConversationId: selectedConversationId,
-                                setSelectedConversationId: setSelectedConversationId,
-                                lastSources: [],
-                                setLastSources: () => {}
-                            }}
-                        >
+                        <ChatProvider>
                             {selectedProject && (
                                 <ChatInput 
                                     projectId={selectedProject.id}

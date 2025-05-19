@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScraperService } from "@/services/ScraperService";
 import { SavedProject } from "@/services/ContentService";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChatContainerProps {
   project: SavedProject;
@@ -19,8 +21,27 @@ export function ChatContainer({ project }: ChatContainerProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
   const [processingEmbeddings, setProcessingEmbeddings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hasEmbeddings, setHasEmbeddings] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  
+  // Check if the project already has embeddings
+  useEffect(() => {
+    const checkEmbeddings = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('document_chunks')
+          .select('*', { count: 'exact', head: true })
+          .eq('project_id', project.id);
+          
+        setHasEmbeddings(count !== null && count > 0);
+      } catch (error) {
+        console.error("Error checking embeddings:", error);
+      }
+    };
+    
+    checkEmbeddings();
+  }, [project.id]);
   
   const handleGenerateEmbeddings = async () => {
     setProcessingEmbeddings(true);
@@ -47,6 +68,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
       const success = await EmbeddingService.processProject(project.id, pages);
       
       if (success) {
+        setHasEmbeddings(true);
         toast({
           title: "Success",
           description: "Content processed successfully. You can now chat with your data."
@@ -130,14 +152,16 @@ export function ChatContainer({ project }: ChatContainerProps) {
             <h2 className="font-medium">Chat with {project.title || 'Website'}</h2>
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleGenerateEmbeddings}
-            disabled={processingEmbeddings}
-          >
-            {processingEmbeddings ? "Processing..." : "Process Content for Chat"}
-          </Button>
+          {!hasEmbeddings && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateEmbeddings}
+              disabled={processingEmbeddings}
+            >
+              {processingEmbeddings ? "Processing..." : "Process Content for Chat"}
+            </Button>
+          )}
         </div>
         
         {/* Chat interface */}

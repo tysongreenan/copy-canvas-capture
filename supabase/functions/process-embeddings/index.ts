@@ -32,7 +32,9 @@ serve(async (req) => {
       );
     }
 
-    // Generate embedding
+    console.log(`Processing text for project ${projectId} (length: ${text.length})`);
+    
+    // Generate embedding with OpenAI
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -47,11 +49,15 @@ serve(async (req) => {
 
     if (!embeddingResponse.ok) {
       const error = await embeddingResponse.json();
-      throw new Error(error.error?.message || 'Failed to generate embedding');
+      const errorMsg = error.error?.message || 'Failed to generate embedding';
+      console.error(`OpenAI API error: ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     const embeddingData = await embeddingResponse.json();
     const embedding = embeddingData.data[0].embedding;
+    
+    console.log(`Successfully generated embedding vector (dimensions: ${embedding.length})`);
 
     // Store in Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -69,9 +75,12 @@ serve(async (req) => {
       });
       
     if (error) {
+      console.error(`Database error: ${error.message}`, error);
       throw new Error(`Database error: ${error.message}`);
     }
 
+    console.log(`Successfully stored document chunk for project ${projectId}`);
+    
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

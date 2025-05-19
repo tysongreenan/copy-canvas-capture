@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { ProjectService } from './ProjectService';
 import { SitemapService } from './SitemapService';
 import { BrowserScraper } from './BrowserScraper';
+import { EmbeddingService } from './EmbeddingService';
+import { supabase } from "@/integrations/supabase/client";
 
 export class ScraperService {
   private static results: ScrapedContent[] = [];
@@ -12,11 +14,14 @@ export class ScraperService {
   private static baseUrl: string = '';
   private static baseDomain: string = '';
   private static isCrawling: boolean = false;
+  private static generateEmbeddings: boolean = false;
   
   /**
    * Main method to scrape a website (single page or crawl)
    */
   public static async scrapeWebsite(url: string, options: CrawlOptions): Promise<ScrapedContent | null> {
+    this.generateEmbeddings = options.generateEmbeddings || false;
+    
     if (options.crawlEntireSite) {
       this.isCrawling = true;
       await this.crawlSite(url, options);
@@ -28,6 +33,12 @@ export class ScraperService {
       // Single page scrape
       const result = await this.scrapeContent(url);
       this.results = [result]; // Store for potential access later
+      
+      // If embeddings are enabled, process the page
+      if (this.generateEmbeddings && result.projectId) {
+        await EmbeddingService.processContent(result, result.projectId);
+      }
+      
       return result;
     }
   }
@@ -90,6 +101,12 @@ export class ScraperService {
       content.projectId = projectId; // Assign the project ID to the content
       this.results.push(content);
       pageCount++;
+      
+      // Process embeddings for this page if enabled
+      if (this.generateEmbeddings) {
+        console.log(`Generating embeddings for ${url}`);
+        await EmbeddingService.processContent(content, projectId);
+      }
       
       // Extract and enqueue links, only if crawlEntireSite is true
       if (options.crawlEntireSite) {

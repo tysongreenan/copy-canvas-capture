@@ -1,12 +1,10 @@
 
 // Make sure ScraperService imports types from ScraperTypes
 import { ScrapedContent, CrawlProject, SitemapData, CrawlOptions } from './ScraperTypes';
-
-import { JSDOM } from 'jsdom';
-import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectService } from './ProjectService';
 import { SitemapService } from './SitemapService';
+import { BrowserScraper } from './BrowserScraper';
 
 export class ScraperService {
   private static results: ScrapedContent[] = [];
@@ -52,80 +50,7 @@ export class ScraperService {
    * Scrape content from a single page
    */
   public static async scrapeContent(url: string): Promise<ScrapedContent> {
-    try {
-      const response = await axios.get(url);
-      const html = response.data;
-      const dom = new JSDOM(html);
-      const document = dom.window.document;
-      
-      // Extract data
-      const title = document.title;
-      const headings: { text: string; tag: string }[] = [];
-      const paragraphs: string[] = [];
-      const links: { text: string; url: string }[] = [];
-      const listItems: string[] = [];
-      const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content');
-      const metaKeywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content');
-      
-      // Collect headings
-      const headingElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      headingElements.forEach(heading => {
-        headings.push({
-          text: heading.textContent?.trim() || '',
-          tag: heading.tagName.toLowerCase()
-        });
-      });
-      
-      // Collect paragraphs
-      const paragraphElements = document.querySelectorAll('p');
-      paragraphElements.forEach(paragraph => {
-        paragraphs.push(paragraph.textContent?.trim() || '');
-      });
-      
-      // Collect links
-      const linkElements = document.querySelectorAll('a[href]');
-      linkElements.forEach(link => {
-        const href = link.getAttribute('href') || '';
-        const absoluteUrl = new URL(href, url).href; // Resolve relative URLs
-        links.push({
-          text: link.textContent?.trim() || '',
-          url: absoluteUrl
-        });
-      });
-      
-      // Collect list items
-      const listItemElements = document.querySelectorAll('li');
-      listItemElements.forEach(item => {
-        listItems.push(item.textContent?.trim() || '');
-      });
-      
-      const scrapedContent: ScrapedContent = {
-        url: url,
-        title: title,
-        headings: headings,
-        paragraphs: paragraphs,
-        links: links,
-        listItems: listItems,
-        metaDescription: metaDescription,
-        metaKeywords: metaKeywords,
-      };
-      
-      return scrapedContent;
-    } catch (error: any) {
-      console.error(`Error scraping ${url}: ${error.message}`);
-      
-      // Return a default object in case of an error
-      return {
-        url: url,
-        title: 'Error',
-        headings: [],
-        paragraphs: [],
-        links: [],
-        listItems: [],
-        metaDescription: null,
-        metaKeywords: null,
-      };
-    }
+    return BrowserScraper.scrapeUrl(url);
   }
   
   /**

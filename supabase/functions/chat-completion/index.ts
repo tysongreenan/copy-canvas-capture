@@ -8,6 +8,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to normalize text for better matching
+function normalizeText(text: string): string {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -32,6 +41,10 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Processing query: "${query}" for project ${projectId}`);
+    const normalizedQuery = normalizeText(query);
+    console.log(`Normalized query: "${normalizedQuery}"`);
+
     // Generate embedding for the query
     const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
@@ -40,7 +53,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: query,
+        input: normalizedQuery,
         model: 'text-embedding-3-small',
       }),
     });
@@ -98,13 +111,16 @@ serve(async (req) => {
       );
     }
     
+    // Use a lower similarity threshold for better fuzzy matching
+    const similarityThreshold = 0.3; // Lower threshold to catch more potential matches despite typos
+    
     // Perform vector similarity search
     const { data: similarDocs, error } = await supabase.rpc(
       'match_documents',
       {
         query_embedding: embedding,
-        match_threshold: 0.5,
-        match_count: 5,
+        match_threshold: similarityThreshold,
+        match_count: 8, // Increase number of results to have more context
         p_project_id: projectId
       }
     );
@@ -117,10 +133,11 @@ serve(async (req) => {
     let context = '';
     if (similarDocs && similarDocs.length > 0) {
       context = similarDocs.map((doc: any) => doc.content).join('\n\n');
+      console.log(`Found ${similarDocs.length} similar documents`);
     } else {
       // No similar documents found
       const noSimilarDocsResponse = {
-        response: "I couldn't find any relevant information about your query in the processed content. Please try asking about something else related to this website.",
+        response: "I couldn't find any relevant information about your query in the processed content. Please try asking about something else related to this website or check if there might be a typo in your question.",
         sources: []
       };
       
@@ -141,6 +158,7 @@ serve(async (req) => {
         role: "system",
         content: `You are a helpful AI assistant that answers questions based on the following context from a website. 
                  If the answer is not contained in the context, say that you don't have enough information to answer accurately.
+                 Be aware that the user's query might contain typos or misspellings, so try to understand their intent.
                  Context: ${context}`
       }
     ];

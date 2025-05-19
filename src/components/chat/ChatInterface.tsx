@@ -67,12 +67,19 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
+  // Normalize text to help with handling typos and spelling mistakes
+  const normalizeInput = (text: string): string => {
+    return text.trim();
+  };
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     
+    const normalizedInput = normalizeInput(input);
+    
     const userMessage: ChatMessageType = {
       role: 'user',
-      content: input
+      content: normalizedInput
     };
     
     // Add user message to UI immediately
@@ -83,7 +90,7 @@ export function ChatInterface({
     try {
       // If we don't have a conversation ID yet, one will be created
       const { response, conversationId: newConversationId } = await ChatService.sendMessage(
-        input, 
+        normalizedInput, 
         projectId,
         conversationId,
         messages
@@ -148,6 +155,9 @@ export function ChatInterface({
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 Start a conversation by sending a message. Ask questions about your website content.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                The AI is designed to handle typos and spelling mistakes, so don't worry about perfect spelling.
               </p>
             </div>
           )}

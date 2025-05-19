@@ -1,65 +1,14 @@
+
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
-
-export interface ScrapedContent {
-  url: string;
-  title: string;
-  headings: {
-    text: string;
-    tag: string;
-  }[];
-  paragraphs: string[];
-  links: {
-    text: string;
-    url: string;
-  }[];
-  listItems: string[];
-  metaDescription: string | null;
-  metaKeywords: string | null;
-  projectId?: string; // Project identifier
-}
-
-export interface CrawlProject {
-  id: string;
-  name: string;
-  startUrl: string;
-  createdAt: Date;
-  pageCount: number;
-  sitemapData?: SitemapData; // New property for sitemap data
-}
-
-export interface SitemapData {
-  nodes: SitemapNode[];
-  edges: SitemapEdge[];
-}
-
-export interface SitemapNode {
-  id: string;
-  type: string;
-  position: { x: number; y: number };
-  data: {
-    label: string;
-    icon?: React.ReactNode;
-    path: string;
-    handles: string[];
-    description?: string;
-    url: string;
-  };
-}
-
-export interface SitemapEdge {
-  id: string;
-  source: string;
-  target: string;
-  animated?: boolean;
-  style?: { stroke: string };
-}
-
-export interface CrawlOptions {
-  crawlEntireSite: boolean;
-  maxPages?: number;
-  projectName?: string;
-}
+import { 
+  ScrapedContent, 
+  CrawlProject, 
+  CrawlOptions, 
+  SitemapData 
+} from './ScraperTypes';
+import { SitemapService } from './SitemapService';
+import { ProjectService } from './ProjectService';
 
 export class ScraperService {
   private static visited: Set<string> = new Set();
@@ -70,9 +19,11 @@ export class ScraperService {
   private static isCrawling: boolean = false;
   private static maxPages: number = 10; // Default limit
   private static currentProjectId: string = '';
-  private static projects: CrawlProject[] = [];
   private static startUrl: string = ''; // Store the starting URL for reference
   
+  /**
+   * Main entry point to scrape a website
+   */
   static async scrapeWebsite(url: string, options?: CrawlOptions): Promise<ScrapedContent | null> {
     try {
       // Add https:// if missing
@@ -97,15 +48,8 @@ export class ScraperService {
 
       // Generate a new project ID for this crawl session
       this.currentProjectId = uuidv4();
-      const projectName = options?.projectName || this.getProjectNameFromUrl(url);
-      const newProject: CrawlProject = {
-        id: this.currentProjectId,
-        name: projectName,
-        startUrl: url,
-        createdAt: new Date(),
-        pageCount: 0
-      };
-      this.projects.push(newProject);
+      const projectName = options?.projectName || ProjectService.getProjectNameFromUrl(url);
+      const newProject = ProjectService.createProject(this.currentProjectId, projectName, url);
 
       // If not crawling the entire site, just scrape the single page
       if (!options?.crawlEntireSite) {
@@ -115,10 +59,10 @@ export class ScraperService {
           this.results = [singlePageResult];
           
           // Update the project page count
-          this.updateProjectPageCount(this.currentProjectId, 1);
+          ProjectService.updateProjectPageCount(this.currentProjectId, 1);
           
           // Generate basic sitemap data for single page
-          newProject.sitemapData = this.generateSitemapForSinglePage(singlePageResult);
+          newProject.sitemapData = SitemapService.generateSitemapForSinglePage(singlePageResult);
           
           toast({
             title: "Scrape Complete",
@@ -163,7 +107,13 @@ export class ScraperService {
       await this.crawl();
       
       // Generate sitemap data after crawling is complete
-      newProject.sitemapData = this.generateSitemapForProject();
+      ProjectService.updateProjectSitemap(
+        this.currentProjectId,
+        this.results,
+        this.startUrl,
+        this.baseUrl,
+        this.baseDomain
+      );
       
       // Return the first page results
       toast({
@@ -172,7 +122,7 @@ export class ScraperService {
       });
       
       // Update the project page count
-      this.updateProjectPageCount(this.currentProjectId, this.results.length);
+      ProjectService.updateProjectPageCount(this.currentProjectId, this.results.length);
       
       this.isCrawling = false;
       return this.results.length > 0 ? this.results[0] : null;
@@ -188,22 +138,9 @@ export class ScraperService {
     }
   }
   
-  private static getProjectNameFromUrl(url: string): string {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname;
-    } catch (e) {
-      return "Untitled Project";
-    }
-  }
-  
-  private static updateProjectPageCount(projectId: string, count: number): void {
-    const projectIndex = this.projects.findIndex(p => p.id === projectId);
-    if (projectIndex !== -1) {
-      this.projects[projectIndex].pageCount = count;
-    }
-  }
-  
+  /**
+   * Crawl the website starting from the queue
+   */
   static async crawl(): Promise<void> {
     while (this.queue.length > 0 && this.visited.size < this.maxPages) {
       const currentUrl = this.queue.shift()!;
@@ -258,6 +195,9 @@ export class ScraperService {
     }
   }
   
+  /**
+   * Scrape a single page
+   */
   static async scrapeSinglePage(url: string): Promise<ScrapedContent | null> {
     try {
       // Using a proxy service to bypass CORS
@@ -316,176 +256,44 @@ export class ScraperService {
     }
   }
   
-  // Generate sitemap data for a single page
-  private static generateSitemapForSinglePage(page: ScrapedContent): SitemapData {
-    // Create a basic sitemap with just the main page
-    const nodes: SitemapNode[] = [
-      {
-        id: 'home', // Change from 'main' to 'home' for consistency
-        type: 'siteNode',
-        position: { x: 250, y: 0 }, // Position at the top
-        data: {
-          label: page.title || 'Home Page',
-          path: '/',
-          handles: ['top', 'bottom', 'left', 'right'],
-          url: page.url
-        }
-      }
-    ];
-    
-    // No edges for a single page
-    const edges: SitemapEdge[] = [];
-    
-    return { nodes, edges };
-  }
-  
-  // Generate sitemap data based on crawled pages
-  private static generateSitemapForProject(): SitemapData {
-    const nodes: SitemapNode[] = [];
-    const edges: SitemapEdge[] = [];
-    const nodeMap: Map<string, string> = new Map(); // URL to node ID mapping
-    
-    if (this.results.length === 0) {
-      return { nodes, edges };
-    }
-    
-    // Find the home/starting page from results (match with the initial startUrl)
-    const homePageIndex = this.results.findIndex(page => page.url === this.startUrl);
-    const homePage = homePageIndex !== -1 ? this.results[homePageIndex] : this.results[0];
-    
-    // First, create a node for the home/starting page
-    const homeNodeId = 'home';
-    nodeMap.set(homePage.url, homeNodeId);
-    
-    nodes.push({
-      id: homeNodeId,
-      type: 'siteNode',
-      position: { x: 250, y: 0 },
-      data: {
-        label: homePage.title || 'Home Page',
-        path: '/',
-        handles: ['bottom'],
-        url: homePage.url
-      }
-    });
-    
-    // Helper to get node ID for a URL
-    const getNodeId = (url: string): string => {
-      if (nodeMap.has(url)) {
-        return nodeMap.get(url)!;
-      }
-      
-      const id = `page-${nodeMap.size}`;
-      nodeMap.set(url, id);
-      return id;
-    };
-    
-    // Helper to simplify URL for display
-    const getPathFromUrl = (url: string): string => {
-      try {
-        const urlObj = new URL(url);
-        return urlObj.pathname || '/';
-      } catch (e) {
-        return url;
-      }
-    };
-    
-    // Process each page to create nodes
-    let rowIndex = 1;
-    const maxNodesPerRow = 5;
-    let processedUrls = new Set([homePage.url]);
-    
-    // Add nodes for other pages (after the home page)
-    for (let i = 0; i < this.results.length; i++) {
-      // Skip the home page as we've already added it
-      const page = this.results[i];
-      if (page.url === homePage.url) continue;
-      
-      // Skip if already processed
-      if (processedUrls.has(page.url)) continue;
-      processedUrls.add(page.url);
-      
-      const nodeId = getNodeId(page.url);
-      const colPosition = (i - 1) % maxNodesPerRow;
-      const rowPosition = Math.floor((i - 1) / maxNodesPerRow) + 1;
-      
-      nodes.push({
-        id: nodeId,
-        type: 'siteNode',
-        position: { x: 100 + colPosition * 200, y: rowPosition * 150 },
-        data: {
-          label: page.title || getPathFromUrl(page.url),
-          path: getPathFromUrl(page.url),
-          handles: ['top', 'bottom', 'left', 'right'],
-          url: page.url
-        }
-      });
-    }
-    
-    // Create edges based on page links
-    for (const page of this.results) {
-      const sourceId = nodeMap.get(page.url);
-      if (!sourceId) continue;
-      
-      // Process each link in the page
-      for (const link of page.links) {
-        let linkUrl = link.url;
-        
-        // Handle relative URLs
-        if (linkUrl.startsWith('/')) {
-          linkUrl = this.baseUrl + linkUrl;
-        } else if (!linkUrl.startsWith('http')) {
-          continue; // Skip non-HTTP links
-        }
-        
-        try {
-          const linkUrlObj = new URL(linkUrl);
-          // Only include links to the same domain
-          if (linkUrlObj.hostname === this.baseDomain && nodeMap.has(linkUrl)) {
-            const targetId = nodeMap.get(linkUrl);
-            
-            // Avoid duplicate edges
-            const edgeId = `${sourceId}-${targetId}`;
-            if (!edges.some(e => e.id === edgeId)) {
-              edges.push({
-                id: edgeId,
-                source: sourceId,
-                target: targetId!,
-                animated: true,
-                style: { stroke: '#3b82f6' }
-              });
-            }
-          }
-        } catch (e) {
-          // Invalid URL, skip
-          continue;
-        }
-      }
-    }
-    
-    return { nodes, edges };
-  }
-  
+  /**
+   * Get all crawled results
+   */
   static getAllResults(): ScrapedContent[] {
     return this.results;
   }
   
+  /**
+   * Get results for a specific project
+   */
   static getResultsByProject(projectId: string): ScrapedContent[] {
     return this.results.filter(result => result.projectId === projectId);
   }
   
+  /**
+   * Get the current project
+   */
   static getCurrentProject(): CrawlProject | null {
-    return this.projects.find(p => p.id === this.currentProjectId) || null;
+    return ProjectService.getProject(this.currentProjectId);
   }
   
+  /**
+   * Get all projects
+   */
   static getAllProjects(): CrawlProject[] {
-    return [...this.projects];
+    return ProjectService.getAllProjects();
   }
   
+  /**
+   * Check if the scraper is currently crawling
+   */
   static isCurrentlyCrawling(): boolean {
     return this.isCrawling;
   }
   
+  /**
+   * Stop the crawling process
+   */
   static stopCrawling(): void {
     this.queue = [];
     this.isCrawling = false;
@@ -495,9 +303,10 @@ export class ScraperService {
     });
   }
   
-  // Get sitemap data for a specific project
+  /**
+   * Get sitemap data for a specific project
+   */
   static getSitemapData(projectId: string): SitemapData | undefined {
-    const project = this.projects.find(p => p.id === projectId);
-    return project?.sitemapData;
+    return ProjectService.getSitemapData(projectId);
   }
 }

@@ -3,9 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectSitemap } from "./ProjectSitemap";
 import { ProjectContentView } from "./ProjectContentView";
 import { useProject } from "@/context/ProjectContext";
+import { SitemapData, SitemapNode, SitemapEdge } from "@/services/ScraperTypes";
 
 export function ProjectTabs() {
-  const { activeTab, setActiveTab } = useProject();
+  const { activeTab, setActiveTab, projectPages, project } = useProject();
   
   return (
     <Tabs defaultValue={activeTab} className="mb-6" onValueChange={setActiveTab}>
@@ -26,14 +27,14 @@ export function ProjectTabs() {
 }
 
 // Generate sitemap data from project pages
-function generateSitemapData() {
+function generateSitemapData(): SitemapData | undefined {
   const { projectPages, project } = useProject();
   
   if (!projectPages || projectPages.length === 0) return undefined;
 
-  const nodes = [];
-  const edges = [];
-  const nodeMap = new Map();
+  const nodes: SitemapNode[] = [];
+  const edges: SitemapEdge[] = [];
+  const nodeMap = new Map<string, string>();
 
   // Ensure we use the project's URL as the starting point/home page
   const projectUrl = project?.url || "";

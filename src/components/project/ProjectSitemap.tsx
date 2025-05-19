@@ -1,8 +1,8 @@
 
-import { SitemapData } from '@/services/ScraperService';
+import { SitemapData } from '@/services/ScraperTypes';
 import { ProjectSitemapFlow } from '@/components/sitemap/ProjectSitemapFlow';
 import { EmptySitemap } from '@/components/sitemap/EmptySitemap';
-import { organizeSitemapData } from '@/components/sitemap/sitemapOrganizer';
+import { organizeSitemapData } from '@/components/sitemap/organizeSitemapData';
 
 interface ProjectSitemapProps {
   sitemapData?: SitemapData;

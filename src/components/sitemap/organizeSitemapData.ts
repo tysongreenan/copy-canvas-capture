@@ -1,4 +1,4 @@
-import { SitemapData } from '@/services/ScraperService';
+import { SitemapData } from '@/services/ScraperTypes';
 
 // Function to organize the sitemap in a waterfall structure with simplified connections
 export function organizeSitemapData(sitemapData: SitemapData): SitemapData {

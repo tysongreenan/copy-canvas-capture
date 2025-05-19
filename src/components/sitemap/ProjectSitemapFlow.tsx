@@ -1,8 +1,8 @@
 
 import { ReactFlow, MiniMap, Controls, Background } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { SitemapNode } from '../sitemap/SitemapNode';
-import { SitemapData } from '@/services/ScraperService';
+import { SitemapNode } from './SitemapNode';
+import { SitemapData } from '@/services/ScraperTypes';
 
 interface ProjectSitemapFlowProps {
   nodes: any[];

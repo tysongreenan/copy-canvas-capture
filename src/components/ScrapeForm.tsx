@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScraperService } from "@/services/ScraperService";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperTypes";
 import { toast } from "@/hooks/use-toast";
 import { Search, Upload, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ProjectService } from "@/services/ProjectService";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
@@ -39,7 +40,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       const options = {
         crawlEntireSite,
         maxPages: maxPages,
-        projectName: projectName || getDomainFromUrl(url)
+        projectName: projectName || ProjectService.getProjectNameFromUrl(url)
       };
       
       const result = await ScraperService.scrapeWebsite(url, options);
@@ -56,7 +57,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
               allResults,
               // We'll use a URL-based project name if none is provided
               undefined,
-              projectName || getDomainFromUrl(url)
+              projectName || ProjectService.getProjectNameFromUrl(url)
             );
           }
         } else {
@@ -68,16 +69,6 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       }
     } finally {
       setLoading(false);
-    }
-  };
-  
-  // Get domain from URL for default project name
-  const getDomainFromUrl = (url: string) => {
-    try {
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      return new URL(fullUrl).hostname;
-    } catch (e) {
-      return url;
     }
   };
 
@@ -131,7 +122,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
               <Input
                 id="project-name"
                 type="text"
-                placeholder={getDomainFromUrl(url) || "My Project"}
+                placeholder={ProjectService.getProjectNameFromUrl(url) || "My Project"}
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 className="flex-1"
@@ -161,7 +152,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
             <Button 
               type="button" 
               variant="destructive"
-              onClick={() => { /* Add stop crawl function */ }}
+              onClick={() => ScraperService.stopCrawling()}
               className="px-6 font-medium"
             >
               Stop Crawl

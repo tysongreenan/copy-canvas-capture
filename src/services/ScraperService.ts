@@ -71,6 +71,7 @@ export class ScraperService {
   private static maxPages: number = 10; // Default limit
   private static currentProjectId: string = '';
   private static projects: CrawlProject[] = [];
+  private static startUrl: string = ''; // Store the starting URL for reference
   
   static async scrapeWebsite(url: string, options?: CrawlOptions): Promise<ScrapedContent | null> {
     try {
@@ -78,6 +79,9 @@ export class ScraperService {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url;
       }
+      
+      // Store the start URL to ensure it's always at the top of the sitemap
+      this.startUrl = url;
       
       // Validate URL format
       try {
@@ -317,11 +321,11 @@ export class ScraperService {
     // Create a basic sitemap with just the main page
     const nodes: SitemapNode[] = [
       {
-        id: 'main',
+        id: 'home', // Change from 'main' to 'home' for consistency
         type: 'siteNode',
-        position: { x: 250, y: 150 },
+        position: { x: 250, y: 0 }, // Position at the top
         data: {
-          label: page.title || 'Main Page',
+          label: page.title || 'Home Page',
           path: '/',
           handles: ['top', 'bottom', 'left', 'right'],
           url: page.url
@@ -345,8 +349,11 @@ export class ScraperService {
       return { nodes, edges };
     }
     
+    // Find the home/starting page from results (match with the initial startUrl)
+    const homePageIndex = this.results.findIndex(page => page.url === this.startUrl);
+    const homePage = homePageIndex !== -1 ? this.results[homePageIndex] : this.results[0];
+    
     // First, create a node for the home/starting page
-    const homePage = this.results[0];
     const homeNodeId = 'home';
     nodeMap.set(homePage.url, homeNodeId);
     
@@ -389,8 +396,10 @@ export class ScraperService {
     let processedUrls = new Set([homePage.url]);
     
     // Add nodes for other pages (after the home page)
-    for (let i = 1; i < this.results.length; i++) {
+    for (let i = 0; i < this.results.length; i++) {
+      // Skip the home page as we've already added it
       const page = this.results[i];
+      if (page.url === homePage.url) continue;
       
       // Skip if already processed
       if (processedUrls.has(page.url)) continue;

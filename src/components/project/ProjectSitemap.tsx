@@ -48,7 +48,10 @@ function organizeSitemapData(sitemapData: SitemapData): SitemapData {
   const homeNodeIndex = nodes.findIndex(node => 
     node.id === 'home' || 
     node.data.path === '/' || 
-    node.data.label.toLowerCase().includes('home')
+    node.data.label.toLowerCase().includes('home') ||
+    // Make sure that the crawl URL (which should be the project start URL) is always at the top
+    node.id === 'main' || 
+    node.data.url === sitemapData.nodes[0]?.data.url
   );
   
   // If we found a home node, make sure it's at the top
@@ -225,9 +228,9 @@ function organizeSitemapData(sitemapData: SitemapData): SitemapData {
 }
 
 // Helper function to reduce the number of edges to prevent visual clutter
-function simplifyEdges(edges: SitemapEdge[]): SitemapEdge[] {
+function simplifyEdges(edges: Edge[]): Edge[] {
   // Group edges by source
-  const edgesBySource = new Map<string, SitemapEdge[]>();
+  const edgesBySource = new Map<string, Edge[]>();
   
   edges.forEach(edge => {
     if (!edgesBySource.has(edge.source)) {
@@ -237,7 +240,7 @@ function simplifyEdges(edges: SitemapEdge[]): SitemapEdge[] {
   });
   
   // Keep only a limited number of edges per source
-  const simplifiedEdges: SitemapEdge[] = [];
+  const simplifiedEdges: Edge[] = [];
   
   edgesBySource.forEach((sourceEdges, source) => {
     // Limit to 3 outgoing edges per node

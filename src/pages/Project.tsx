@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -104,8 +103,14 @@ const Project = () => {
     const edges = [];
     const nodeMap = new Map();
 
-    // Create home node (first page)
-    const homePage = projectPages[0];
+    // Ensure we use the project's URL as the starting point/home page
+    const projectUrl = project?.url || "";
+    
+    // Find the homepage (matching the project URL) or use the first page
+    const homePageIndex = projectPages.findIndex(page => page.url === projectUrl);
+    const homePage = homePageIndex !== -1 ? projectPages[homePageIndex] : projectPages[0];
+    
+    // Create home node
     const homeId = 'home';
     nodeMap.set(homePage.url, homeId);
 
@@ -127,7 +132,9 @@ const Project = () => {
     const maxNodesPerRow = 4;
     const processedUrls = new Set([homePage.url]);
 
-    for (let i = 1; i < projectPages.length; i++) {
+    // Process remaining pages
+    for (let i = 0; i < projectPages.length; i++) {
+      // Skip the home page as it's already added
       const page = projectPages[i];
       if (processedUrls.has(page.url)) continue;
       processedUrls.add(page.url);

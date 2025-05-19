@@ -6,7 +6,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrapeForm } from "@/components/ScrapeForm";
-import { ScrapedContent } from "@/services/ScraperService";
+import { ScrapedContent } from "@/services/ScraperTypes";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { ArrowRight, Search, TestTube, Archive, CheckCircle, Clock, CreditCard } from "lucide-react";
 

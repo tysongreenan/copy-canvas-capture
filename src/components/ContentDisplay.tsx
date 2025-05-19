@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, Globe, Link, Square, SquareCheck } from "lucide-react";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperTypes";
 import { SaveButton } from "@/components/SaveButton";
 import { useAuth } from "@/context/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";

@@ -1,5 +1,5 @@
 
-import { ScrapedContent } from "@/services/ScraperService";
+import { ScrapedContent } from "@/services/ScraperTypes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PageListItem } from "./PageListItem";
 import { DomainCard } from "./DomainCard";

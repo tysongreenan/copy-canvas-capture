@@ -1,6 +1,5 @@
-
 import { LinkIcon } from "lucide-react";
-import { ScrapedContent } from "@/services/ScraperService";
+import { ScrapedContent } from "@/services/ScraperTypes";
 
 interface PageListItemProps {
   page: ScrapedContent;

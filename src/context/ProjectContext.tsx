@@ -3,7 +3,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from "react
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperTypes";
 import { ContentService } from "@/services/ContentService";
 
 export type ProjectContextType = {

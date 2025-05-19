@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ContentService } from "@/services/ContentService";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperTypes";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Bookmark } from "lucide-react";

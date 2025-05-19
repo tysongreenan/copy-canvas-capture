@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { ScrapedContent } from "@/services/ScraperService";
+import type { ScrapedContent } from "@/services/ScraperTypes";
 import { toast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 

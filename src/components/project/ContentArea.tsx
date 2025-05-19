@@ -1,5 +1,5 @@
 
-import { ScrapedContent } from "@/services/ScraperService";
+import { ScrapedContent } from "@/services/ScraperTypes";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { Globe } from "lucide-react";
 

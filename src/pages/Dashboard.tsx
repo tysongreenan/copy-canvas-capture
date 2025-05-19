@@ -5,7 +5,7 @@ import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, Link } from "react-router-dom";
-import type { ScrapedContent, CrawlProject } from "@/services/ScraperService";
+import type { ScrapedContent, CrawlProject } from "@/services/ScraperTypes";
 import { ScraperService } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight, Map } from "lucide-react";

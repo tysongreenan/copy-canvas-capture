@@ -1,312 +1,192 @@
+// Make sure ScraperService imports types from ScraperTypes
+import { ScrapedContent, CrawlProject, SitemapData, CrawlOptions } from './ScraperTypes';
 
-import { toast } from "@/hooks/use-toast";
+import { JSDOM } from 'jsdom';
+import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  ScrapedContent, 
-  CrawlProject, 
-  CrawlOptions, 
-  SitemapData 
-} from './ScraperTypes';
-import { SitemapService } from './SitemapService';
 import { ProjectService } from './ProjectService';
+import { SitemapService } from './SitemapService';
 
 export class ScraperService {
-  private static visited: Set<string> = new Set();
-  private static queue: string[] = [];
   private static results: ScrapedContent[] = [];
+  private static currentProject: CrawlProject | null = null;
   private static baseUrl: string = '';
   private static baseDomain: string = '';
-  private static isCrawling: boolean = false;
-  private static maxPages: number = 10; // Default limit
-  private static currentProjectId: string = '';
-  private static startUrl: string = ''; // Store the starting URL for reference
   
   /**
-   * Main entry point to scrape a website
+   * Scrape content from a single page
    */
-  static async scrapeWebsite(url: string, options?: CrawlOptions): Promise<ScrapedContent | null> {
+  public static async scrapeContent(url: string): Promise<ScrapedContent> {
     try {
-      // Add https:// if missing
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-      }
+      const response = await axios.get(url);
+      const html = response.data;
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
       
-      // Store the start URL to ensure it's always at the top of the sitemap
-      this.startUrl = url;
+      // Extract data
+      const title = document.title;
+      const headings: { text: string; tag: string }[] = [];
+      const paragraphs: string[] = [];
+      const links: { text: string; url: string }[] = [];
+      const listItems: string[] = [];
+      const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content');
+      const metaKeywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content');
       
-      // Validate URL format
-      try {
-        new URL(url);
-      } catch (e) {
-        toast({
-          title: "Invalid URL",
-          description: "Please enter a valid website URL",
-          variant: "destructive"
+      // Collect headings
+      const headingElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headingElements.forEach(heading => {
+        headings.push({
+          text: heading.textContent?.trim() || '',
+          tag: heading.tagName.toLowerCase()
         });
-        return null;
-      }
-
-      // Generate a new project ID for this crawl session
-      this.currentProjectId = uuidv4();
-      const projectName = options?.projectName || ProjectService.getProjectNameFromUrl(url);
-      const newProject = ProjectService.createProject(this.currentProjectId, projectName, url);
-
-      // If not crawling the entire site, just scrape the single page
-      if (!options?.crawlEntireSite) {
-        const singlePageResult = await this.scrapeSinglePage(url);
-        if (singlePageResult) {
-          singlePageResult.projectId = this.currentProjectId;
-          this.results = [singlePageResult];
-          
-          // Update the project page count
-          ProjectService.updateProjectPageCount(this.currentProjectId, 1);
-          
-          // Generate basic sitemap data for single page
-          newProject.sitemapData = SitemapService.generateSitemapForSinglePage(singlePageResult);
-          
-          toast({
-            title: "Scrape Complete",
-            description: `Successfully scraped page: ${singlePageResult.title || url}`,
-          });
-        }
-        return singlePageResult;
-      }
-      
-      // If already crawling, don't start another crawl
-      if (this.isCrawling) {
-        toast({
-          title: "Crawl in Progress",
-          description: "Please wait for the current crawl to complete",
-          variant: "destructive"
-        });
-        return null;
-      }
-      
-      // Initialize crawl
-      this.visited.clear();
-      this.queue = [url];
-      this.results = [];
-      this.isCrawling = true;
-      this.maxPages = options?.maxPages || 10;
-      
-      try {
-        const urlObj = new URL(url);
-        this.baseUrl = urlObj.origin;
-        this.baseDomain = urlObj.hostname;
-      } catch (e) {
-        toast({
-          title: "Invalid URL",
-          description: "Please enter a valid website URL",
-          variant: "destructive"
-        });
-        this.isCrawling = false;
-        return null;
-      }
-      
-      // Start crawling
-      await this.crawl();
-      
-      // Generate sitemap data after crawling is complete
-      ProjectService.updateProjectSitemap(
-        this.currentProjectId,
-        this.results,
-        this.startUrl,
-        this.baseUrl,
-        this.baseDomain
-      );
-      
-      // Return the first page results
-      toast({
-        title: "Crawl Complete",
-        description: `Successfully crawled ${this.results.length} pages into project "${projectName}"`,
       });
       
-      // Update the project page count
-      ProjectService.updateProjectPageCount(this.currentProjectId, this.results.length);
-      
-      this.isCrawling = false;
-      return this.results.length > 0 ? this.results[0] : null;
-    } catch (error) {
-      console.error('Error during website crawl:', error);
-      toast({
-        title: "Crawling Error",
-        description: "Failed to crawl website content. Please check the URL and try again.",
-        variant: "destructive"
+      // Collect paragraphs
+      const paragraphElements = document.querySelectorAll('p');
+      paragraphElements.forEach(paragraph => {
+        paragraphs.push(paragraph.textContent?.trim() || '');
       });
-      this.isCrawling = false;
-      return null;
-    }
-  }
-  
-  /**
-   * Crawl the website starting from the queue
-   */
-  static async crawl(): Promise<void> {
-    while (this.queue.length > 0 && this.visited.size < this.maxPages) {
-      const currentUrl = this.queue.shift()!;
       
-      if (this.visited.has(currentUrl)) {
-        continue;
-      }
+      // Collect links
+      const linkElements = document.querySelectorAll('a[href]');
+      linkElements.forEach(link => {
+        const href = link.getAttribute('href') || '';
+        const absoluteUrl = new URL(href, url).href; // Resolve relative URLs
+        links.push({
+          text: link.textContent?.trim() || '',
+          url: absoluteUrl
+        });
+      });
       
-      this.visited.add(currentUrl);
+      // Collect list items
+      const listItemElements = document.querySelectorAll('li');
+      listItemElements.forEach(item => {
+        listItems.push(item.textContent?.trim() || '');
+      });
       
-      // Scrape the current page
-      const scrapedContent = await this.scrapeSinglePage(currentUrl);
-      
-      if (scrapedContent) {
-        // Add project ID to the scraped content
-        scrapedContent.projectId = this.currentProjectId;
-        this.results.push(scrapedContent);
-        
-        // Process links to add to queue
-        for (const link of scrapedContent.links) {
-          let linkUrl = link.url;
-          
-          // Handle relative URLs
-          if (linkUrl.startsWith('/')) {
-            linkUrl = this.baseUrl + linkUrl;
-          } else if (!linkUrl.startsWith('http')) {
-            // Skip non-http links (like mailto:, tel:, etc.)
-            continue;
-          }
-          
-          try {
-            const linkUrlObj = new URL(linkUrl);
-            
-            // Only follow links with the same domain
-            if (linkUrlObj.hostname === this.baseDomain && !this.visited.has(linkUrl) && !this.queue.includes(linkUrl)) {
-              this.queue.push(linkUrl);
-            }
-          } catch (e) {
-            // Invalid URL, skip
-            continue;
-          }
-        }
-        
-        // Notify progress
-        if (this.results.length % 3 === 0 || this.results.length === 1) {
-          toast({
-            title: "Crawling in Progress",
-            description: `Crawled ${this.visited.size} pages, found ${this.queue.length} more links`,
-          });
-        }
-      }
-    }
-  }
-  
-  /**
-   * Scrape a single page
-   */
-  static async scrapeSinglePage(url: string): Promise<ScrapedContent | null> {
-    try {
-      // Using a proxy service to bypass CORS
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-      
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch website content');
-      }
-      
-      const html = await response.text();
-      
-      // Create a DOM parser to parse the HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      // Extract content
-      const title = doc.title || '';
-      
-      const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(el => ({
-        text: el.textContent?.trim() || '',
-        tag: el.tagName.toLowerCase()
-      })).filter(h => h.text.length > 0);
-      
-      const paragraphs = Array.from(doc.querySelectorAll('p')).map(el => 
-        el.textContent?.trim() || ''
-      ).filter(p => p.length > 0);
-      
-      const links = Array.from(doc.querySelectorAll('a[href]')).map(el => ({
-        text: el.textContent?.trim() || '',
-        url: el.getAttribute('href') || ''
-      })).filter(l => l.text.length > 0);
-      
-      const listItems = Array.from(doc.querySelectorAll('li')).map(el => 
-        el.textContent?.trim() || ''
-      ).filter(l => l.length > 0);
-
-      // Extract meta description and keywords
-      const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || null;
-      const metaKeywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content') || null;
-      
-      return {
-        url,
-        title,
-        headings,
-        paragraphs,
-        links,
-        listItems,
-        metaDescription,
-        metaKeywords
+      const scrapedContent: ScrapedContent = {
+        url: url,
+        title: title,
+        headings: headings,
+        paragraphs: paragraphs,
+        links: links,
+        listItems: listItems,
+        metaDescription: metaDescription,
+        metaKeywords: metaKeywords,
       };
       
-    } catch (error) {
-      console.error('Error scraping page:', error);
-      return null;
+      return scrapedContent;
+    } catch (error: any) {
+      console.error(`Error scraping ${url}: ${error.message}`);
+      
+      // Return a default object in case of an error
+      return {
+        url: url,
+        title: 'Error',
+        headings: [],
+        paragraphs: [],
+        links: [],
+        listItems: [],
+        metaDescription: null,
+        metaKeywords: null,
+      };
     }
   }
   
   /**
-   * Get all crawled results
+   * Crawl an entire site
    */
-  static getAllResults(): ScrapedContent[] {
+  public static async crawlSite(startUrl: string, options: CrawlOptions): Promise<ScrapedContent[]> {
+    this.results = []; // Reset results for a new crawl
+    
+    // Set base URL and domain for the project
+    this.baseUrl = startUrl;
+    try {
+      this.baseDomain = new URL(startUrl).hostname;
+    } catch (error) {
+      console.error("Invalid URL:", startUrl);
+      return [];
+    }
+    
+    const projectId = uuidv4();
+    
+    // Create a new project
+    const projectName = options.projectName || ProjectService.getProjectNameFromUrl(startUrl);
+    this.currentProject = ProjectService.createProject(projectId, projectName, startUrl);
+    
+    let visited = new Set<string>();
+    let queue: string[] = [startUrl];
+    let pageCount = 0;
+    
+    while (queue.length > 0 && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
+      const url = queue.shift()!;
+      
+      if (visited.has(url)) continue;
+      visited.add(url);
+      
+      console.log(`Crawling ${url}`);
+      const content = await this.scrapeContent(url);
+      content.projectId = projectId; // Assign the project ID to the content
+      this.results.push(content);
+      pageCount++;
+      
+      // Extract and enqueue links, only if crawlEntireSite is true
+      if (options.crawlEntireSite) {
+        const links = content.links.map(link => link.url);
+        for (const link of links) {
+          try {
+            const linkUrl = new URL(link);
+            // Only crawl links within the same domain
+            if (linkUrl.hostname === this.baseDomain && !visited.has(link)) {
+              queue.push(link);
+            }
+          } catch (error) {
+            console.error("Invalid URL:", link);
+          }
+        }
+      }
+    }
+    
+    // Update project page count
+    ProjectService.updateProjectPageCount(projectId, pageCount);
+    
+    // Generate sitemap data
+    ProjectService.updateProjectSitemap(
+      projectId, 
+      this.results,
+      startUrl,
+      this.baseUrl,
+      this.baseDomain
+    );
+    
     return this.results;
   }
   
   /**
-   * Get results for a specific project
+   * Get results by project ID
    */
-  static getResultsByProject(projectId: string): ScrapedContent[] {
+  public static getResultsByProject(projectId: string): ScrapedContent[] {
     return this.results.filter(result => result.projectId === projectId);
   }
   
   /**
    * Get the current project
    */
-  static getCurrentProject(): CrawlProject | null {
-    return ProjectService.getProject(this.currentProjectId);
+  public static getCurrentProject(): CrawlProject | null {
+    return this.currentProject;
   }
   
   /**
-   * Get all projects
+   * Get base URL
    */
-  static getAllProjects(): CrawlProject[] {
-    return ProjectService.getAllProjects();
+  public static getBaseUrl(): string {
+    return this.baseUrl;
   }
   
   /**
-   * Check if the scraper is currently crawling
+   * Get base domain
    */
-  static isCurrentlyCrawling(): boolean {
-    return this.isCrawling;
-  }
-  
-  /**
-   * Stop the crawling process
-   */
-  static stopCrawling(): void {
-    this.queue = [];
-    this.isCrawling = false;
-    toast({
-      title: "Crawl Stopped",
-      description: `Crawl stopped after processing ${this.visited.size} pages`,
-    });
-  }
-  
-  /**
-   * Get sitemap data for a specific project
-   */
-  static getSitemapData(projectId: string): SitemapData | undefined {
-    return ProjectService.getSitemapData(projectId);
+  public static getBaseDomain(): string {
+    return this.baseDomain;
   }
 }

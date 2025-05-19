@@ -1,3 +1,4 @@
+
 // Make sure ScraperService imports types from ScraperTypes
 import { ScrapedContent, CrawlProject, SitemapData, CrawlOptions } from './ScraperTypes';
 
@@ -12,6 +13,40 @@ export class ScraperService {
   private static currentProject: CrawlProject | null = null;
   private static baseUrl: string = '';
   private static baseDomain: string = '';
+  private static isCrawling: boolean = false;
+  
+  /**
+   * Main method to scrape a website (single page or crawl)
+   */
+  public static async scrapeWebsite(url: string, options: CrawlOptions): Promise<ScrapedContent | null> {
+    if (options.crawlEntireSite) {
+      this.isCrawling = true;
+      await this.crawlSite(url, options);
+      this.isCrawling = false;
+      
+      // Return the first result as the main content
+      return this.results.length > 0 ? this.results[0] : null;
+    } else {
+      // Single page scrape
+      const result = await this.scrapeContent(url);
+      this.results = [result]; // Store for potential access later
+      return result;
+    }
+  }
+  
+  /**
+   * Stop an ongoing crawling process
+   */
+  public static stopCrawling(): void {
+    this.isCrawling = false;
+  }
+  
+  /**
+   * Get all results from the last scrape operation
+   */
+  public static getAllResults(): ScrapedContent[] {
+    return this.results;
+  }
   
   /**
    * Scrape content from a single page
@@ -98,6 +133,7 @@ export class ScraperService {
    */
   public static async crawlSite(startUrl: string, options: CrawlOptions): Promise<ScrapedContent[]> {
     this.results = []; // Reset results for a new crawl
+    this.isCrawling = true;
     
     // Set base URL and domain for the project
     this.baseUrl = startUrl;
@@ -118,7 +154,7 @@ export class ScraperService {
     let queue: string[] = [startUrl];
     let pageCount = 0;
     
-    while (queue.length > 0 && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
+    while (queue.length > 0 && this.isCrawling && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
       const url = queue.shift()!;
       
       if (visited.has(url)) continue;
@@ -159,6 +195,7 @@ export class ScraperService {
       this.baseDomain
     );
     
+    this.isCrawling = false;
     return this.results;
   }
   

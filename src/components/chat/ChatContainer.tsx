@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle, Loader2, Menu, MessageSquare, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Menu, MessageSquare, X, Info } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { EmbeddingService } from "@/services/EmbeddingService";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ import { SavedProject } from "@/services/ContentService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ContentService } from "@/services/ContentService";
 
 interface ChatContainerProps {
   project: SavedProject;
@@ -22,7 +24,8 @@ export function ChatContainer({ project }: ChatContainerProps) {
   const [processingEmbeddings, setProcessingEmbeddings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hasEmbeddings, setHasEmbeddings] = useState(false);
-  const [embeddingStatus, setEmbeddingStatus] = useState<'none' | 'processing' | 'success' | 'partial'>('none');
+  const [embeddingStatus, setEmbeddingStatus] = useState<'none' | 'processing' | 'success' | 'partial' | 'no-content'>('none');
+  const [projectPages, setProjectPages] = useState<any[]>([]);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
@@ -42,6 +45,18 @@ export function ChatContainer({ project }: ChatContainerProps) {
     };
     
     checkEmbeddings();
+    
+    // Fetch project pages
+    const fetchPages = async () => {
+      try {
+        const pages = await ContentService.getProjectPages(project.id);
+        setProjectPages(pages);
+      } catch (error) {
+        console.error("Error fetching project pages:", error);
+      }
+    };
+    
+    fetchPages();
   }, [project.id]);
   
   const handleGenerateEmbeddings = async () => {
@@ -50,25 +65,49 @@ export function ChatContainer({ project }: ChatContainerProps) {
     
     try {
       // Get all pages for this project
-      const pages = await ScraperService.getAllResults();
-      
-      if (!pages || pages.length === 0) {
+      if (!projectPages || projectPages.length === 0) {
         toast({
           title: "No content",
           description: "No scraped content available to process",
           variant: "destructive"
         });
-        setEmbeddingStatus('none');
+        setEmbeddingStatus('no-content');
+        setProcessingEmbeddings(false);
         return;
       }
       
+      // Convert database records to ScrapedContent format
+      const scrapedPages = projectPages.map(page => {
+        // Safely type the content object
+        const contentObj = page.content as {
+          headings: Array<{tag: string; text: string}>;
+          paragraphs: string[];
+          links: Array<{url: string; text: string}>;
+          listItems: string[];
+          metaDescription: string;
+          metaKeywords: string;
+        };
+        
+        // Convert the database record to ScrapedContent format
+        return {
+          url: page.url,
+          title: page.title || "",
+          headings: contentObj.headings || [],
+          paragraphs: contentObj.paragraphs || [],
+          links: contentObj.links || [],
+          listItems: contentObj.listItems || [],
+          metaDescription: contentObj.metaDescription || "",
+          metaKeywords: contentObj.metaKeywords || ""
+        };
+      });
+      
       toast({
         title: "Processing",
-        description: `Processing ${pages.length} pages for AI chat...`
+        description: `Processing ${scrapedPages.length} pages for AI chat...`
       });
       
       // Process embeddings
-      const success = await EmbeddingService.processProject(project.id, pages);
+      const success = await EmbeddingService.processProject(project.id, scrapedPages);
       
       if (success) {
         setHasEmbeddings(true);
@@ -123,6 +162,18 @@ export function ChatContainer({ project }: ChatContainerProps) {
           <AlertTitle>Processing content</AlertTitle>
           <AlertDescription>
             We're processing your content to make it available for AI chat. This may take a few moments.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (embeddingStatus === 'no-content') {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <Info className="h-4 w-4 mr-2" />
+          <AlertTitle>No content available</AlertTitle>
+          <AlertDescription className="flex flex-col space-y-2">
+            <p>No scraped content available to process. Please make sure you have crawled website content first.</p>
           </AlertDescription>
         </Alert>
       );

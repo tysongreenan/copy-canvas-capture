@@ -74,6 +74,30 @@ serve(async (req) => {
       }
     }
     
+    // First check if there are any embeddings for this project
+    const { count } = await supabase
+      .from('document_chunks')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', projectId);
+      
+    if (!count || count === 0) {
+      // No embeddings found, return a helpful message
+      const noContentResponse = {
+        response: "I don't have any information about this website yet. Please process the website content first by clicking the 'Process Content for Chat' button.",
+        sources: []
+      };
+      
+      // Save conversation and messages if needed
+      if (conversationId) {
+        await saveMessages(supabase, conversationId, query, noContentResponse.response);
+      }
+      
+      return new Response(
+        JSON.stringify(noContentResponse),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Perform vector similarity search
     const { data: similarDocs, error } = await supabase.rpc(
       'match_documents',
@@ -93,6 +117,22 @@ serve(async (req) => {
     let context = '';
     if (similarDocs && similarDocs.length > 0) {
       context = similarDocs.map((doc: any) => doc.content).join('\n\n');
+    } else {
+      // No similar documents found
+      const noSimilarDocsResponse = {
+        response: "I couldn't find any relevant information about your query in the processed content. Please try asking about something else related to this website.",
+        sources: []
+      };
+      
+      // Save conversation and messages if needed
+      if (conversationId) {
+        await saveMessages(supabase, conversationId, query, noSimilarDocsResponse.response);
+      }
+      
+      return new Response(
+        JSON.stringify(noSimilarDocsResponse),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Construct message history for the API call
@@ -140,23 +180,7 @@ serve(async (req) => {
 
     // Save messages to conversation if conversation ID is provided
     if (conversationId) {
-      // Save user message
-      await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversationId,
-          role: 'user',
-          content: query
-        });
-      
-      // Save assistant message
-      await supabase
-        .from('chat_messages')
-        .insert({
-          conversation_id: conversationId,
-          role: 'assistant',
-          content: aiResponse
-        });
+      await saveMessages(supabase, conversationId, query, aiResponse);
     }
 
     return new Response(
@@ -178,3 +202,29 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to save messages
+async function saveMessages(supabase: any, conversationId: string, userQuery: string, aiResponse: string) {
+  try {
+    // Save user message
+    await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: conversationId,
+        role: 'user',
+        content: userQuery
+      });
+    
+    // Save assistant message
+    await supabase
+      .from('chat_messages')
+      .insert({
+        conversation_id: conversationId,
+        role: 'assistant',
+        content: aiResponse
+      });
+  } catch (error) {
+    console.error("Error saving messages:", error);
+    // Continue even if saving messages fails
+  }
+}

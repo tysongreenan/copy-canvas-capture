@@ -1,4 +1,3 @@
-
 // Make sure ScraperService imports types from ScraperTypes
 import { ScrapedContent, CrawlProject, SitemapData, CrawlOptions } from './ScraperTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,7 +35,7 @@ export class ScraperService {
       
       // Only process embeddings if there was no error, embeddings are enabled, and we have a projectId
       if (this.generateEmbeddings && result.projectId && result.title !== 'Error') {
-        await EmbeddingService.processContent(result, result.projectId);
+        await EmbeddingService.processProject(result.projectId, [result]);
       }
       
       return result;
@@ -175,6 +174,6 @@ export class ScraperService {
       return false;
     }
     
-    return EmbeddingService.processContent(content, projectId);
+    return EmbeddingService.processProject(projectId, [content]);
   }
 }

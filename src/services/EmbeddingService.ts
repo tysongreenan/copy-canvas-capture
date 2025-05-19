@@ -1,5 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ScrapedContent } from "@/services/ScraperTypes";
+import { TextChunk, TextChunkGenerator } from "@/services/TextChunkGenerator";
 
 export class EmbeddingService {
   /**
@@ -15,6 +17,12 @@ export class EmbeddingService {
         return false;
       }
       
+      // Check if we have valid pages to process
+      if (!pages || pages.length === 0) {
+        console.error("No valid pages provided for processing");
+        return false;
+      }
+      
       let successCount = 0;
       let failureCount = 0;
       
@@ -27,40 +35,20 @@ export class EmbeddingService {
         }
         
         try {
-          // Process title
-          if (page.title) {
-            const titleSuccess = await this.generateEmbedding(
-              page.title,
-              projectId,
-              {
-                source: page.url,
-                title: page.title,
-                type: 'title'
-              }
-            );
-            
-            if (titleSuccess) successCount++;
-            else failureCount++;
-          }
+          // Generate chunks from the page content
+          const chunks = TextChunkGenerator.generateChunks(page);
           
-          // Process main content
-          if (page.content && typeof page.content === 'object') {
-            // Process each content section
-            for (const [key, value] of Object.entries(page.content)) {
-              if (typeof value === 'string' && value.trim().length > 20) {
-                const contentSuccess = await this.generateEmbedding(
-                  value,
-                  projectId,
-                  {
-                    source: page.url,
-                    title: page.title,
-                    type: key
-                  }
-                );
-                
-                if (contentSuccess) successCount++;
-                else failureCount++;
-              }
+          // Process each chunk
+          for (const chunk of chunks) {
+            if (chunk.text && chunk.text.trim().length > 20) {
+              const chunkSuccess = await this.generateEmbedding(
+                chunk.text,
+                projectId,
+                chunk.metadata
+              );
+              
+              if (chunkSuccess) successCount++;
+              else failureCount++;
             }
           }
         } catch (error) {

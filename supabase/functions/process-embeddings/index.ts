@@ -16,6 +16,7 @@ serve(async (req) => {
 
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIApiKey) {
+    console.error("OpenAI API key not configured");
     return new Response(
       JSON.stringify({ error: 'OpenAI API key not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -25,18 +26,27 @@ serve(async (req) => {
   try {
     const { text, projectId, metadata } = await req.json();
 
-    if (!text || !projectId) {
+    if (!text) {
+      console.error("No text provided for embedding generation");
       return new Response(
-        JSON.stringify({ error: 'Text and projectId are required' }),
+        JSON.stringify({ error: 'Text is required', success: false }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!projectId) {
+      console.error("No projectId provided for embedding generation");
+      return new Response(
+        JSON.stringify({ error: 'ProjectId is required', success: false }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Skip processing if text is related to an error page
-    if (text.includes('Error') && (metadata?.type === 'title' || text.length < 20)) {
-      console.log(`Skipping embedding generation for likely error content: "${text}"`);
+    // Skip processing if text is too short or related to an error page
+    if (text.length < 10 || (text.includes('Error') && (metadata?.type === 'title' || text.length < 20))) {
+      console.log(`Skipping embedding generation for likely error content or short text: "${text.substring(0, 20)}..."`);
       return new Response(
-        JSON.stringify({ success: false, skipped: true, reason: 'Error content detected' }),
+        JSON.stringify({ success: false, skipped: true, reason: 'Error content or short text detected' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -110,7 +120,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing embeddings:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, success: false }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -140,6 +140,11 @@ export function ChatInterface({
     }
   };
   
+  // Handler for input changes that's compatible with the AnimatedAIChat component
+  const handleInputChange = (newValue: string) => {
+    setInput(newValue);
+  };
+  
   return (
     <div className="flex flex-col h-full bg-gray-900">
       <ScrollArea className="flex-1 p-4 mb-4">
@@ -197,7 +202,7 @@ export function ChatInterface({
       <div className="p-4">
         <AnimatedAIChat 
           value={input}
-          onChange={setInput}
+          onChange={handleInputChange}
           onSend={handleSend}
           isLoading={loading}
         />

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { ChatProvider } from '@/context/ChatContext';
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
 import { Button } from "@/components/ui/button";
@@ -272,13 +273,15 @@ export function ChatContainer({ project }: ChatContainerProps) {
             )}
           </div>
           
-          {/* Chat interface */}
+          {/* Chat interface wrapped in provider */}
           <div className="flex-1">
-            <ChatInterface 
-              projectId={project.id} 
-              conversationId={selectedConversationId}
-              onConversationCreated={handleConversationCreated}
-            />
+            <ChatProvider>
+              <ChatInterface 
+                projectId={project.id} 
+                conversationId={selectedConversationId}
+                onConversationCreated={handleConversationCreated}
+              />
+            </ChatProvider>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 
 import { AnimatedAIChat } from "@/components/ui/animated-ai-chat";
 import { useState } from "react";
+import { ChatProvider } from "@/context/ChatContext";
 
 const ChatDemo = () => {
     const [inputValue, setInputValue] = useState("");

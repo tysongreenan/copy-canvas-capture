@@ -18,7 +18,7 @@ export function Header() {
             </div>
             <span className="text-xl uppercase tracking-tight text-jet">Lumen</span>
           </Link>
-          <div className="hidden md:flex items-center border-l pl-2">
+          <div className="flex items-center pl-2">
             <Link to="/dashboard" className="text-sm font-medium hover:text-indigo-600 transition-colors flex items-center">
               <Home className="h-4 w-4 mr-1" />
               Dashboard

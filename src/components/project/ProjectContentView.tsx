@@ -16,6 +16,7 @@ export function ProjectContentView() {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <PageList 
         projectUrl={project?.url}
+        projectId={project?.id}
         pages={projectPages}
         selectedPage={selectedPage}
         setSelectedPage={setSelectedPage}

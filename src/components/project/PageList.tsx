@@ -6,6 +6,7 @@ import { DomainCard } from "./DomainCard";
 
 interface PageListProps {
   projectUrl: string | undefined;
+  projectId: string | undefined;
   pages: ScrapedContent[];
   selectedPage: ScrapedContent | null;
   setSelectedPage: (page: ScrapedContent) => void;
@@ -16,6 +17,7 @@ interface PageListProps {
 
 export const PageList = ({
   projectUrl,
+  projectId,
   pages,
   selectedPage,
   setSelectedPage,
@@ -57,6 +59,7 @@ export const PageList = ({
               isMainUrl={isMainUrl}
               getPathFromUrl={getPathFromUrl}
               onSelect={() => setSelectedPage(page)}
+              projectId={projectId}
             />
           ))}
           

@@ -34,7 +34,7 @@ export class ScraperService {
       const result = await this.scrapeContent(url);
       this.results = [result]; // Store for potential access later
       
-      // Only process embeddings if there was no error and embeddings are enabled
+      // Only process embeddings if there was no error, embeddings are enabled, and we have a projectId
       if (this.generateEmbeddings && result.projectId && result.title !== 'Error') {
         await EmbeddingService.processContent(result, result.projectId);
       }
@@ -89,7 +89,6 @@ export class ScraperService {
     let visited = new Set<string>();
     let queue: string[] = [startUrl];
     let pageCount = 0;
-    let hasErrors = false;
     
     while (queue.length > 0 && this.isCrawling && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
       const url = queue.shift()!;
@@ -103,17 +102,7 @@ export class ScraperService {
       this.results.push(content);
       pageCount++;
       
-      // Check if this page had an error
-      if (content.title === 'Error') {
-        hasErrors = true;
-        console.error(`Error encountered while crawling ${url}`);
-      }
-      
-      // Process embeddings for this page if enabled and no errors
-      if (this.generateEmbeddings && !hasErrors) {
-        console.log(`Generating embeddings for ${url}`);
-        await EmbeddingService.processContent(content, projectId);
-      }
+      // We don't process embeddings during crawl anymore - we'll do it separately later
       
       // Extract and enqueue links, only if crawlEntireSite is true
       if (options.crawlEntireSite) {
@@ -174,5 +163,18 @@ export class ScraperService {
    */
   public static getBaseDomain(): string {
     return this.baseDomain;
+  }
+
+  /**
+   * Process embeddings for a specific page
+   */
+  public static async generateEmbeddingsForPage(content: ScrapedContent, projectId: string): Promise<boolean> {
+    // Skip if the content has errors
+    if (content.title === 'Error') {
+      console.log(`Skipping embedding generation for error content at ${content.url}`);
+      return false;
+    }
+    
+    return EmbeddingService.processContent(content, projectId);
   }
 }

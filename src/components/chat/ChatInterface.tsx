@@ -55,7 +55,7 @@ export function ChatInterface({
   }, [conversationId, setLoading, setMessages, toast]);
   
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col h-full bg-white">
       <MessageList />
       <ChatInput 
         projectId={projectId} 

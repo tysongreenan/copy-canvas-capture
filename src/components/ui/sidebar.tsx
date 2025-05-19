@@ -96,19 +96,19 @@ export function SessionNavBar() {
       onMouseLeave={() => setIsCollapsed(true)}
     >
       <motion.div
-        className={`relative z-40 flex text-muted-foreground h-full shrink-0 flex-col bg-gray-900 border-r border-white/5 transition-all`}
+        className={`relative z-40 flex text-muted-foreground h-full shrink-0 flex-col bg-white border-r border-gray-200 transition-all`}
         variants={contentVariants}
       >
         <motion.ul variants={staggerVariants} className="flex h-full flex-col">
           <div className="flex grow flex-col items-center">
-            <div className="flex h-[54px] w-full shrink-0 border-b border-white/5 p-2">
+            <div className="flex h-[54px] w-full shrink-0 border-b border-gray-200 p-2">
               <div className=" mt-[1.5px] flex w-full">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger className="w-full" asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-fit items-center gap-2 text-white px-2" 
+                      className="flex w-fit items-center gap-2 text-gray-800 px-2" 
                     >
                       <Avatar className='rounded size-4'>
                         <AvatarFallback>O</AvatarFallback>
@@ -122,24 +122,24 @@ export function SessionNavBar() {
                             <p className="text-sm font-medium">
                               {"Organization"}
                             </p>
-                            <ChevronsUpDown className="h-4 w-4 text-white/50" />
+                            <ChevronsUpDown className="h-4 w-4 text-gray-500" />
                           </>
                         )}
                       </motion.li>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="bg-gray-900 border-white/10 text-white">
+                  <DropdownMenuContent align="start" className="bg-white border-gray-200 text-gray-800">
                     <DropdownMenuItem
-                      className="flex items-center gap-2 text-white hover:bg-white/5 focus:bg-white/10 cursor-pointer"
+                      className="flex items-center gap-2 text-gray-800 hover:bg-gray-50 focus:bg-gray-100 cursor-pointer"
                     >
                       <UserCog className="h-4 w-4" /> Manage members
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="flex items-center gap-2 text-white hover:bg-white/5 focus:bg-white/10 cursor-pointer"
+                      className="flex items-center gap-2 text-gray-800 hover:bg-gray-50 focus:bg-gray-100 cursor-pointer"
                     >
                       <Blocks className="h-4 w-4" /> Integrations
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-white hover:bg-white/5 focus:bg-white/10 cursor-pointer">
+                    <DropdownMenuItem className="text-gray-800 hover:bg-gray-50 focus:bg-gray-100 cursor-pointer">
                       <div className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
                         Create organization
@@ -157,9 +157,9 @@ export function SessionNavBar() {
                     <a
                       href="/dashboard"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 text-white transition hover:bg-white/5",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 text-gray-700 transition hover:bg-gray-100",
                         pathname.includes("dashboard") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <LayoutDashboard className="h-4 w-4" />{" "}
@@ -172,10 +172,10 @@ export function SessionNavBar() {
                     <a
                       href="/reports"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
                         pathname.includes("reports") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <FileClock className="h-4 w-4" />{" "}
@@ -190,8 +190,8 @@ export function SessionNavBar() {
                     <a
                       href="/chat"
                       className={cn(
-                        "flex h-8 flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
-                        pathname.includes("chat") && "bg-white/5 text-blue-400",
+                        "flex h-8 flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                        pathname.includes("chat") && "bg-gray-100 text-blue-600",
                       )}
                     >
                       <MessagesSquare className="h-4 w-4" />
@@ -201,7 +201,7 @@ export function SessionNavBar() {
                             <p className="text-sm font-medium">Chat</p>
                             <Badge
                               className={cn(
-                                "flex h-fit w-fit items-center gap-1.5 rounded border-none bg-blue-500/20 px-1.5 text-blue-400",
+                                "flex h-fit w-fit items-center gap-1.5 rounded border-none bg-blue-50 px-1.5 text-blue-600",
                               )}
                               variant="outline"
                             >
@@ -211,13 +211,13 @@ export function SessionNavBar() {
                         )}
                       </motion.li>
                     </a>
-                    <Separator className="w-full my-2 bg-white/10" />
+                    <Separator className="w-full my-2 bg-gray-200" />
                     <a
                       href="/deals"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
-                        pathname.includes("deals") && "bg-white/5 text-blue-400",
+                        pathname.includes("deals") && "bg-gray-100 text-blue-600",
                       )}
                     >
                       <Layout className="h-4 w-4" />{" "}
@@ -230,10 +230,10 @@ export function SessionNavBar() {
                     <a
                       href="/accounts"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
                         pathname.includes("accounts") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <UserCircle className="h-4 w-4" />{" "}
@@ -246,10 +246,10 @@ export function SessionNavBar() {
                     <a
                       href="/competitors"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
                         pathname.includes("competitors") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <UserSearch className="h-4 w-4" />
@@ -261,14 +261,14 @@ export function SessionNavBar() {
                         )}
                       </motion.li>
                     </a>
-                    <Separator className="w-full my-2 bg-white/10" />
+                    <Separator className="w-full my-2 bg-gray-200" />
                     <a
                       href="/library/knowledge"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
                         pathname.includes("library") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <GraduationCap className="h-4 w-4" />{" "}
@@ -283,9 +283,9 @@ export function SessionNavBar() {
                     <a
                       href="/feedback"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                         pathname.includes("feedback") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <MessageSquareText className="h-4 w-4" />{" "}
@@ -298,10 +298,10 @@ export function SessionNavBar() {
                     <a
                       href="/review"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-white/70 hover:bg-white/5 hover:text-white",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition text-gray-600 hover:bg-gray-100 hover:text-gray-900",
 
                         pathname.includes("review") &&
-                          "bg-white/5 text-blue-400",
+                          "bg-gray-100 text-blue-600",
                       )}
                     >
                       <FileClock className="h-4 w-4" />{" "}
@@ -319,7 +319,7 @@ export function SessionNavBar() {
               <div className="flex flex-col p-2">
                 <a
                   href="/settings/integrations"
-                  className="mt-auto flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 text-white/70 transition hover:bg-white/5 hover:text-white"
+                  className="mt-auto flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
                 >
                   <Settings className="h-4 w-4 shrink-0" />{" "}
                   <motion.li variants={variants}>
@@ -331,7 +331,7 @@ export function SessionNavBar() {
                 <div>
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
-                      <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 text-white/70 transition hover:bg-white/5 hover:text-white">
+                      <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900">
                         <Avatar className="size-4">
                           <AvatarFallback>
                             A
@@ -344,13 +344,13 @@ export function SessionNavBar() {
                           {!isCollapsed && (
                             <>
                               <p className="text-sm font-medium">Account</p>
-                              <ChevronsUpDown className="ml-auto h-4 w-4 text-white/50" />
+                              <ChevronsUpDown className="ml-auto h-4 w-4 text-gray-500" />
                             </>
                           )}
                         </motion.li>
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent sideOffset={5} className="bg-gray-900 border-white/10 text-white">
+                    <DropdownMenuContent sideOffset={5} className="bg-white border-gray-200 text-gray-800">
                       <div className="flex flex-row items-center gap-2 p-2">
                         <Avatar className="size-6">
                           <AvatarFallback>
@@ -361,19 +361,19 @@ export function SessionNavBar() {
                           <span className="text-sm font-medium">
                             {"User"}
                           </span>
-                          <span className="line-clamp-1 text-xs text-white/60">
+                          <span className="line-clamp-1 text-xs text-gray-500">
                             {"user@example.com"}
                           </span>
                         </div>
                       </div>
-                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuSeparator className="bg-gray-200" />
                       <DropdownMenuItem
-                        className="flex items-center gap-2 text-white hover:bg-white/5 focus:bg-white/10 cursor-pointer"
+                        className="flex items-center gap-2 text-gray-800 hover:bg-gray-50 focus:bg-gray-100 cursor-pointer"
                       >
                         <UserCircle className="h-4 w-4" /> Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="flex items-center gap-2 text-white hover:bg-white/5 focus:bg-white/10 cursor-pointer"
+                        className="flex items-center gap-2 text-gray-800 hover:bg-gray-50 focus:bg-gray-100 cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" /> Sign out
                       </DropdownMenuItem>

@@ -19,10 +19,10 @@ export function MessageList() {
   if (messages.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-white/60">
+        <p className="text-gray-500">
           Start a conversation by sending a message. Ask questions about your website content.
         </p>
-        <p className="text-sm text-white/40 mt-2">
+        <p className="text-sm text-gray-400 mt-2">
           The AI is designed to handle typos and spelling mistakes, so don't worry about perfect spelling.
         </p>
       </div>
@@ -43,20 +43,20 @@ export function MessageList() {
               <div className="mt-1 flex justify-end opacity-70 hover:opacity-100 transition-opacity">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs flex items-center gap-1 text-white/60">
+                    <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs flex items-center gap-1 text-gray-600">
                       <BookOpen className="h-3 w-3" />
                       <span>View sources</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 max-h-60 overflow-auto p-4 bg-gray-800 text-white border-white/10" align="end">
-                    <h4 className="font-medium mb-2 text-white">Sources</h4>
+                  <PopoverContent className="w-80 max-h-60 overflow-auto p-4 bg-white text-gray-800 border-gray-200" align="end">
+                    <h4 className="font-medium mb-2 text-gray-900">Sources</h4>
                     <div className="space-y-3">
                       {lastSources.map((source, idx) => (
-                        <div key={idx} className="text-sm border-l-2 border-primary/30 pl-2">
-                          <div className="font-medium text-xs text-white/60 mb-1">
+                        <div key={idx} className="text-sm border-l-2 border-indigo-300 pl-2">
+                          <div className="font-medium text-xs text-gray-600 mb-1">
                             {source.metadata.title || source.metadata.source}
                           </div>
-                          <p className="text-xs text-white/80">{source.content}</p>
+                          <p className="text-xs text-gray-700">{source.content}</p>
                         </div>
                       ))}
                     </div>

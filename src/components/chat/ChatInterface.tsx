@@ -6,7 +6,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "./ChatMessage";
 import { ChatMessage as ChatMessageType, ChatService, ChatResponse } from "@/services/ChatService";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, BookOpen } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface ChatSource {
+  content: string;
+  similarity: number;
+  metadata: {
+    source: string;
+    title?: string;
+    type: string;
+  };
+}
 
 interface ChatInterfaceProps {
   projectId: string;
@@ -23,6 +34,7 @@ export function ChatInterface({
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId);
+  const [lastSources, setLastSources] = useState<ChatSource[]>([]);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -85,6 +97,13 @@ export function ChatInterface({
         }
       }
       
+      // Store sources if available
+      if (response.sources && response.sources.length > 0) {
+        setLastSources(response.sources);
+      } else {
+        setLastSources([]);
+      }
+      
       // Add AI response to UI
       const aiMessage: ChatMessageType = {
         role: 'assistant',
@@ -128,13 +147,44 @@ export function ChatInterface({
           {messages.length === 0 && !loading && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                Start a conversation by sending a message.
+                Start a conversation by sending a message. Ask questions about your website content.
               </p>
             </div>
           )}
           
           {messages.map((message, index) => (
-            <ChatMessage key={index} message={message} />
+            <div key={index} className="group">
+              <ChatMessage message={message} />
+              
+              {/* Show sources button after AI messages if sources are available */}
+              {message.role === 'assistant' && 
+               index === messages.length - 1 && 
+               lastSources.length > 0 && (
+                <div className="mt-1 flex justify-end opacity-70 hover:opacity-100 transition-opacity">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-auto py-1 px-2 text-xs flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        <span>View sources</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 max-h-60 overflow-auto p-4" align="end">
+                      <h4 className="font-medium mb-2">Sources</h4>
+                      <div className="space-y-3">
+                        {lastSources.map((source, idx) => (
+                          <div key={idx} className="text-sm border-l-2 border-primary/30 pl-2">
+                            <div className="font-medium text-xs text-muted-foreground mb-1">
+                              {source.metadata.title || source.metadata.source}
+                            </div>
+                            <p className="text-xs">{source.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+            </div>
           ))}
           
           {loading && (
@@ -160,7 +210,7 @@ export function ChatInterface({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder="Ask a question about your website content..."
             className="resize-none"
             disabled={loading}
           />

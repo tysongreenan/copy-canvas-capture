@@ -16,9 +16,19 @@ export interface ChatConversation {
   updated_at: string;
 }
 
+export interface ChatSource {
+  content: string;
+  similarity: number;
+  metadata: {
+    source: string;
+    title?: string;
+    type: string;
+  };
+}
+
 export interface ChatResponse {
   response: string;
-  sources?: any[];
+  sources?: ChatSource[];
 }
 
 export class ChatService {

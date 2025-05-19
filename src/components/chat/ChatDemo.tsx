@@ -4,7 +4,8 @@ import { ChatProvider } from "@/context/ChatContext";
 import { AnimatedAIChat } from "@/components/ui/animated-ai-chat";
 import { ContentService, SavedProject } from "@/services/ContentService";
 import { Sidebar } from "./Sidebar";
-import { ChatMessage } from "@/services/ChatService";
+import { ChatMessage as ChatMessageType } from "@/services/ChatService";
+import { ChatMessage } from "./ChatMessage"; // Import the ChatMessage component
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useParams } from "react-router-dom";
 import { ChatService } from "@/services/ChatService"; 
@@ -18,7 +19,7 @@ const ChatDemo = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [projects, setProjects] = useState<SavedProject[]>([]);
     const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
     const { toast } = useToast();
     
@@ -78,7 +79,7 @@ const ChatDemo = () => {
         if (!inputValue.trim() || isLoading || !selectedProject) return;
         
         // Add user message to UI immediately
-        const userMessage: ChatMessage = {
+        const userMessage: ChatMessageType = {
             role: 'user',
             content: inputValue
         };
@@ -101,7 +102,7 @@ const ChatDemo = () => {
             }
             
             // Add AI response to UI
-            const aiMessage: ChatMessage = {
+            const aiMessage: ChatMessageType = {
                 role: 'assistant',
                 content: response.response
             };

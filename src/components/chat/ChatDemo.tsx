@@ -1,16 +1,16 @@
 
 import { useEffect, useState } from "react";
 import { ChatProvider } from "@/context/ChatContext";
-import { AnimatedAIChat } from "@/components/ui/animated-ai-chat";
 import { ContentService, SavedProject } from "@/services/ContentService";
 import { Sidebar } from "./Sidebar";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
-import { ChatMessage } from "./ChatMessage"; // Import the ChatMessage component
+import { ChatMessage } from "./ChatMessage";
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, useParams } from "react-router-dom";
 import { ChatService } from "@/services/ChatService"; 
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
+import { ChatInput } from "./ChatInput";
 
 const ChatDemo = () => {
     const { id } = useParams<{ id: string }>();
@@ -132,6 +132,10 @@ const ChatDemo = () => {
         setSelectedConversationId(conversationId);
     };
     
+    const handleConversationCreated = (conversationId: string) => {
+        setSelectedConversationId(conversationId);
+    };
+    
     return (
         <div className="flex h-screen w-full bg-white">
             {/* Sidebar */}
@@ -149,7 +153,7 @@ const ChatDemo = () => {
                     <>
                         {/* Chat header */}
                         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                            <h1 className="text-lg font-medium">Chat with {selectedProject.title}</h1>
+                            <h1 className="text-lg font-medium text-black">Chat with {selectedProject.title}</h1>
                             
                             {/* File upload */}
                             <FileUpload 
@@ -164,30 +168,43 @@ const ChatDemo = () => {
                         </div>
                         
                         {/* Messages display */}
-                        <div className="flex-1 overflow-y-auto p-4">
+                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
                             {messages.map((message, index) => (
                                 <ChatMessage key={index} message={message} />
                             ))}
                             
                             {messages.length === 0 && !isLoading && (
-                                <div className="h-full flex items-center justify-center text-gray-400">
+                                <div className="h-full flex items-center justify-center text-gray-500">
                                     <p>Start a conversation with your project data</p>
                                 </div>
                             )}
                         </div>
                         
                         {/* Chat input */}
-                        <div className="p-4 border-t border-gray-200">
-                            <AnimatedAIChat
-                                value={inputValue}
-                                onChange={handleInputChange}
-                                onSend={handleSend}
-                                isLoading={isLoading}
-                            />
-                        </div>
+                        <ChatProvider
+                            value={{
+                                messages: messages,
+                                setMessages: setMessages,
+                                input: inputValue,
+                                setInput: setInputValue,
+                                loading: isLoading,
+                                setLoading: setIsLoading,
+                                selectedConversationId: selectedConversationId,
+                                setSelectedConversationId: setSelectedConversationId,
+                                lastSources: [],
+                                setLastSources: () => {}
+                            }}
+                        >
+                            {selectedProject && (
+                                <ChatInput 
+                                    projectId={selectedProject.id}
+                                    onConversationCreated={handleConversationCreated}
+                                />
+                            )}
+                        </ChatProvider>
                     </>
                 ) : (
-                    <div className="h-full flex items-center justify-center text-gray-400 p-4">
+                    <div className="h-full flex items-center justify-center text-gray-500 p-4">
                         <div className="text-center">
                             <p className="text-lg mb-2">Select a project to start chatting</p>
                             <p>Or create a new project from the dashboard</p>

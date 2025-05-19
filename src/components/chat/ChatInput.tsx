@@ -1,8 +1,9 @@
 
 import { useChat } from '@/context/ChatContext';
-import { AnimatedAIChat } from '@/components/ui/animated-ai-chat';
 import { ChatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
+import { Paperclip, Send } from 'lucide-react';
+import { Input } from "@/components/ui/input";
 
 interface ChatInputProps {
   projectId: string;
@@ -22,19 +23,12 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
   } = useChat();
   const { toast } = useToast();
   
-  // Normalize text to help with handling typos and spelling mistakes
-  const normalizeInput = (text: string): string => {
-    return text.trim();
-  };
-
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     
-    const normalizedInput = normalizeInput(input);
-    
     const userMessage = {
       role: 'user' as const,
-      content: normalizedInput
+      content: input.trim()
     };
     
     // Add user message to UI immediately
@@ -45,7 +39,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     try {
       // If we don't have a conversation ID yet, one will be created
       const { response, conversationId: newConversationId } = await ChatService.sendMessage(
-        normalizedInput, 
+        input.trim(), 
         projectId,
         selectedConversationId,
         messages
@@ -92,18 +86,40 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     }
   };
   
-  const handleInputChange = (newValue: string) => {
-    setInput(newValue);
-  };
-  
   return (
-    <div className="p-4">
-      <AnimatedAIChat 
+    <div className="p-4 border-t border-gray-200 flex items-center gap-2">
+      <button 
+        className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors"
+        aria-label="Attach file"
+      >
+        <Paperclip className="w-5 h-5" />
+      </button>
+      
+      <Input
         value={input}
-        onChange={handleInputChange}
-        onSend={handleSend}
-        isLoading={loading}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
+        placeholder="Ask a question..."
+        className="flex-1 bg-white text-black border-gray-200"
       />
+      
+      <button
+        onClick={handleSend}
+        disabled={loading || !input.trim()}
+        className={`p-2 rounded-full transition-colors ${
+          input.trim() 
+            ? 'bg-primary text-white hover:bg-primary/90' 
+            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        }`}
+        aria-label="Send message"
+      >
+        <Send className="w-5 h-5" />
+      </button>
     </div>
   );
 }

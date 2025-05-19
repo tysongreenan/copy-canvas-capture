@@ -3,6 +3,7 @@ import { SitemapFlow } from '@/components/sitemap/SitemapFlow';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { initialNodes, initialEdges } from '@/components/sitemap/sitemapData';
 
 export default function Sitemap() {
   return (
@@ -18,7 +19,7 @@ export default function Sitemap() {
           </Button>
         </div>
         <div className="w-full h-[calc(100vh-160px)] border border-border rounded-lg overflow-hidden">
-          <SitemapFlow />
+          <SitemapFlow nodes={initialNodes} edges={initialEdges} />
         </div>
       </div>
     </div>

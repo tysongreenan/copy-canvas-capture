@@ -34,8 +34,8 @@ export class ScraperService {
       const result = await this.scrapeContent(url);
       this.results = [result]; // Store for potential access later
       
-      // If embeddings are enabled, process the page
-      if (this.generateEmbeddings && result.projectId) {
+      // Only process embeddings if there was no error and embeddings are enabled
+      if (this.generateEmbeddings && result.projectId && result.title !== 'Error') {
         await EmbeddingService.processContent(result, result.projectId);
       }
       
@@ -89,6 +89,7 @@ export class ScraperService {
     let visited = new Set<string>();
     let queue: string[] = [startUrl];
     let pageCount = 0;
+    let hasErrors = false;
     
     while (queue.length > 0 && this.isCrawling && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
       const url = queue.shift()!;
@@ -102,8 +103,14 @@ export class ScraperService {
       this.results.push(content);
       pageCount++;
       
-      // Process embeddings for this page if enabled
-      if (this.generateEmbeddings) {
+      // Check if this page had an error
+      if (content.title === 'Error') {
+        hasErrors = true;
+        console.error(`Error encountered while crawling ${url}`);
+      }
+      
+      // Process embeddings for this page if enabled and no errors
+      if (this.generateEmbeddings && !hasErrors) {
         console.log(`Generating embeddings for ${url}`);
         await EmbeddingService.processContent(content, projectId);
       }

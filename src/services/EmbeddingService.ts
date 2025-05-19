@@ -17,6 +17,12 @@ export class EmbeddingService {
    */
   public static async processContent(content: ScrapedContent, projectId: string): Promise<boolean> {
     try {
+      // Skip processing if content has an error
+      if (content.title === 'Error') {
+        console.log(`Skipping embedding generation for error content at ${content.url}`);
+        return false;
+      }
+      
       const chunks = this.chunkContent(content);
       
       console.log(`Generated ${chunks.length} chunks from content at ${content.url}`);

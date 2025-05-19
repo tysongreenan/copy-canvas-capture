@@ -31,6 +31,15 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Skip processing if text is related to an error page
+    if (text.includes('Error') && (metadata?.type === 'title' || text.length < 20)) {
+      console.log(`Skipping embedding generation for likely error content: "${text}"`);
+      return new Response(
+        JSON.stringify({ success: false, skipped: true, reason: 'Error content detected' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log(`Processing text for project ${projectId} (length: ${text.length})`);
     
@@ -58,13 +67,26 @@ serve(async (req) => {
     const embedding = embeddingData.data[0].embedding;
     
     console.log(`Successfully generated embedding vector (dimensions: ${embedding.length})`);
-
-    // Store in Supabase
+    
+    // Verify project exists before inserting
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // First check if project exists
+    const { data: projectData, error: projectError } = await supabase
+      .from('scraped_projects')
+      .select('id')
+      .eq('id', projectId)
+      .single();
+      
+    if (projectError || !projectData) {
+      console.error(`Project verification error: Project ${projectId} does not exist`, projectError);
+      throw new Error(`Project ${projectId} not found. Embedding storage aborted.`);
+    }
+
+    // Then store embedding
     const { data, error } = await supabase
       .from('document_chunks')
       .insert({

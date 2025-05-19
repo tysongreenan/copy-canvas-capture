@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
@@ -130,7 +129,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
     }
     
     return (
-      <Alert variant="warning" className="mb-4">
+      <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-4 w-4 mr-2" />
         <AlertTitle>Content needs processing</AlertTitle>
         <AlertDescription className="flex flex-col space-y-2">

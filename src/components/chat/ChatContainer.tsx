@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
@@ -10,7 +9,7 @@ import { EmbeddingService } from "@/services/EmbeddingService";
 import { useToast } from "@/hooks/use-toast";
 import { ScraperService } from "@/services/ScraperService";
 import { SavedProject } from "@/services/ContentService";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatContainerProps {
   project: SavedProject;
@@ -21,7 +20,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
   const [processingEmbeddings, setProcessingEmbeddings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const handleGenerateEmbeddings = async () => {
     setProcessingEmbeddings(true);

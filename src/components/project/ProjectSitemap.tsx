@@ -228,9 +228,9 @@ function organizeSitemapData(sitemapData: SitemapData): SitemapData {
 }
 
 // Helper function to reduce the number of edges to prevent visual clutter
-function simplifyEdges(edges: Edge[]): Edge[] {
+function simplifyEdges(edges: any[]): any[] {
   // Group edges by source
-  const edgesBySource = new Map<string, Edge[]>();
+  const edgesBySource = new Map<string, any[]>();
   
   edges.forEach(edge => {
     if (!edgesBySource.has(edge.source)) {
@@ -240,7 +240,7 @@ function simplifyEdges(edges: Edge[]): Edge[] {
   });
   
   // Keep only a limited number of edges per source
-  const simplifiedEdges: Edge[] = [];
+  const simplifiedEdges: any[] = [];
   
   edgesBySource.forEach((sourceEdges, source) => {
     // Limit to 3 outgoing edges per node

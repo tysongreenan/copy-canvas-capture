@@ -1,12 +1,13 @@
 
 import { Link } from "react-router-dom";
 import { UserMenu } from "@/components/UserMenu";
+import { Home } from "lucide-react";
 
 export function Header() {
   return (
     <header className="sticky top-0 border-b border-[#F3F4F6] bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 z-10">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 font-sans font-bold tracking-tight">
             <div className="relative w-8 h-8">
               {/* Lumen Logo - Circle with diagonal beam */}
@@ -17,8 +18,11 @@ export function Header() {
             </div>
             <span className="text-xl uppercase tracking-tight text-jet">Lumen</span>
           </Link>
-          <div className="hidden md:block ml-2 border-l pl-2">
-            <span className="text-xs text-slate tracking-tight">Shedding Light on Hidden Copy</span>
+          <div className="hidden md:flex items-center border-l pl-2">
+            <Link to="/dashboard" className="text-sm font-medium hover:text-indigo-600 transition-colors flex items-center">
+              <Home className="h-4 w-4 mr-1" />
+              Dashboard
+            </Link>
           </div>
         </div>
         

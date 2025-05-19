@@ -1,7 +1,7 @@
 
 -- Create function to search for similar documents based on embedding
 CREATE OR REPLACE FUNCTION match_documents(
-  query_embedding vector(1536),
+  query_embedding extensions.vector(1536),
   match_threshold float,
   match_count int,
   p_project_id uuid

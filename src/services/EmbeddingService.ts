@@ -3,7 +3,8 @@ import { ScrapedContent } from "./ScraperTypes";
 import { TextChunkGenerator, TextChunk } from "./TextChunkGenerator";
 import { EmbeddingProcessor } from "./EmbeddingProcessor";
 
-export { TextChunk };
+// Fix the re-export to use 'export type' for TypeScript compatibility with isolatedModules
+export type { TextChunk };
 
 export class EmbeddingService {
   /**

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -8,7 +7,7 @@ import { Navigate, Link } from "react-router-dom";
 import type { ScrapedContent, CrawlProject } from "@/services/ScraperTypes";
 import { ScraperService } from "@/services/ScraperService";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight, Map } from "lucide-react";
+import { Search, Upload, Globe, Link as LinkIcon, Calendar, ChevronRight, Map, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContentService, SavedProject } from "@/services/ContentService";
@@ -205,35 +204,45 @@ const Dashboard = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
                   {savedProjects.map((project) => (
-                    <Link 
-                      to={`/project/${project.id}`} 
+                    <Card 
                       key={project.id}
-                      className="block"
+                      className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow h-full"
                     >
-                      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow h-full cursor-pointer">
-                        <div className="w-full h-24 bg-green-50 flex items-center justify-center overflow-hidden p-2">
-                          <div className="text-center px-4 truncate font-medium">
-                            {project.title || getDomainFromUrl(project.url)}
-                          </div>
+                      <div className="w-full h-24 bg-green-50 flex items-center justify-center overflow-hidden p-2">
+                        <div className="text-center px-4 truncate font-medium">
+                          {project.title || getDomainFromUrl(project.url)}
                         </div>
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center text-sm font-medium truncate" title={project.url}>
-                              <Globe className="h-3 w-3 mr-1 text-green-600" />
-                              {getDomainFromUrl(project.url)}
-                            </div>
-                            
-                            <Badge variant="outline" className="ml-2">
-                              {project.page_count} pages
-                            </Badge>
+                      </div>
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center text-sm font-medium truncate" title={project.url}>
+                            <Globe className="h-3 w-3 mr-1 text-green-600" />
+                            {getDomainFromUrl(project.url)}
                           </div>
-                          <div className="flex items-center text-xs text-gray-500 truncate" title={project.url}>
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {formatDate(project.created_at)}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                          
+                          <Badge variant="outline" className="ml-2">
+                            {project.page_count} pages
+                          </Badge>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-500 truncate" title={project.url}>
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {formatDate(project.created_at)}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                          <Link to={`/project/${project.id}`}>
+                            <Button variant="outline" size="sm">
+                              View Project
+                            </Button>
+                          </Link>
+                          <Link to={`/chat/${project.id}`}>
+                            <Button variant="default" size="sm">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              Chat
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </div>

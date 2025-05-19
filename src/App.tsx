@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Project from "./pages/Project";
 import Sitemap from "./pages/Sitemap";
+import Chat from "./pages/Chat";
 
 // Update document title
 document.title = "Lumen - Extract Website Content";
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/project/:id" element={<Project />} />
               <Route path="/sitemap" element={<Sitemap />} />
+              <Route path="/chat/:id" element={<Chat />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -12,37 +12,33 @@ interface ProjectHeaderProps {
 
 export const ProjectHeader = ({ project, loading, getDomainFromUrl }: ProjectHeaderProps) => {
   return (
-    <div className="mb-4">
+    <div className="mb-6">
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         asChild
-        className="mb-2"
+        className="mb-4"
       >
         <Link to="/dashboard">
-          <ArrowLeft className="h-3 w-3 mr-1" />
+          <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Link>
       </Button>
       
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">
-            {loading ? "Loading project..." : project?.title || "Project Details"}
-          </h1>
-          
-          {project?.url && (
-            <div className="text-xs text-gray-500 mt-0.5">
-              <a href={project.url} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 inline-flex items-center">
-                <Globe className="h-3 w-3 mr-1" />
-                {getDomainFromUrl(project.url)}
-              </a>
-              <span className="mx-2">•</span>
-              <span>{project.page_count || 0} pages</span>
-            </div>
-          )}
+      <h1 className="text-2xl font-bold">
+        {loading ? "Loading project..." : project?.title || "Project Details"}
+      </h1>
+      
+      {project?.url && (
+        <div className="text-sm text-gray-500 mt-1">
+          <a href={project.url} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 inline-flex items-center">
+            <Globe className="h-3 w-3 mr-1" />
+            {getDomainFromUrl(project.url)}
+          </a>
+          <span className="mx-2">•</span>
+          <span>{project.page_count || 0} pages</span>
         </div>
-      </div>
+      )}
     </div>
   );
 };

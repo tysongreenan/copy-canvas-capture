@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -210,7 +209,7 @@ const Project = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1 container max-w-6xl px-6 md:px-0 py-4">
+      <main className="flex-1 container max-w-6xl px-6 md:px-0 py-6">
         <ProjectHeader 
           project={project} 
           loading={loading} 

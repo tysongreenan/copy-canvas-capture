@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -211,8 +210,11 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="headings" className="mt-6">
+      <Tabs defaultValue="structured" className="mt-6">
         <TabsList className="mb-4">
+          <TabsTrigger value="structured">
+            Structured
+          </TabsTrigger>
           <TabsTrigger value="headings">
             Headings <Badge variant="outline" className="ml-2">{data.headings.length}</Badge>
           </TabsTrigger>
@@ -225,10 +227,46 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
           <TabsTrigger value="listItems">
             List Items <Badge variant="outline" className="ml-2">{data.listItems.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="structured">
-            Structured
-          </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="structured">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-center">
+                <CardTitle>Structured Content</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCopy(structuredContent, "Structured")}
+                  className="h-8 w-8"
+                >
+                  {copied["Structured"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <CardDescription>
+                <div className="flex items-center gap-1">
+                  <Link className="h-3 w-3" />
+                  <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate">
+                    {data.url}
+                  </a>
+                </div>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96 text-left">
+                <pre className="whitespace-pre-wrap text-sm text-left font-mono">{structuredContent}</pre>
+              </div>
+              <div className="mt-4">
+                <Button 
+                  onClick={() => handleCopy(structuredContent, "Structured")}
+                  className="w-full"
+                >
+                  {copied["Structured"] ? "Copied!" : "Copy All Content"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         <TabsContent value="headings">
           <Card>
@@ -350,45 +388,6 @@ export function ContentDisplay({ data }: ContentDisplayProps) {
               ) : (
                 <p className="text-muted-foreground">No list items found on this page</p>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="structured">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-center">
-                <CardTitle>Structured Content</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCopy(structuredContent, "Structured")}
-                  className="h-8 w-8"
-                >
-                  {copied["Structured"] ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <CardDescription>
-                <div className="flex items-center gap-1">
-                  <Link className="h-3 w-3" />
-                  <a href={data.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate">
-                    {data.url}
-                  </a>
-                </div>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-md p-4 bg-gray-50 overflow-auto max-h-96 text-left">
-                <pre className="whitespace-pre-wrap text-sm text-left font-mono">{structuredContent}</pre>
-              </div>
-              <div className="mt-4">
-                <Button 
-                  onClick={() => handleCopy(structuredContent, "Structured")}
-                  className="w-full"
-                >
-                  {copied["Structured"] ? "Copied!" : "Copy All Content"}
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

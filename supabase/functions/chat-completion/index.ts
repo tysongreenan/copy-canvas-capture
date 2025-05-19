@@ -59,6 +59,21 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // Get JWT from the authorization header
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Authenticate client if token is provided
+    if (token) {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (!user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
     // Perform vector similarity search
     const { data: similarDocs, error } = await supabase.rpc(
       'match_documents',

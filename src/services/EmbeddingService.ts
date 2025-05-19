@@ -1,51 +1,115 @@
-
-import { ScrapedContent } from "./ScraperTypes";
-import { TextChunkGenerator, TextChunk } from "./TextChunkGenerator";
-import { EmbeddingProcessor } from "./EmbeddingProcessor";
-
-// Fix the re-export to use 'export type' for TypeScript compatibility with isolatedModules
-export type { TextChunk };
+import { supabase } from "@/integrations/supabase/client";
+import { ScrapedContent } from "@/services/ScraperTypes";
 
 export class EmbeddingService {
   /**
-   * Process scraped content to generate embeddings
+   * Process a project's content for AI chat by generating embeddings
    */
-  public static async processContent(content: ScrapedContent, projectId: string): Promise<boolean> {
+  public static async processProject(projectId: string, pages: ScrapedContent[]): Promise<boolean> {
     try {
-      // Skip processing if content has an error
-      if (content.title === 'Error') {
-        console.log(`Skipping embedding generation for error content at ${content.url}`);
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("User not authenticated");
         return false;
       }
       
-      const chunks = TextChunkGenerator.generateChunks(content);
+      let successCount = 0;
+      let failureCount = 0;
       
-      console.log(`Generated ${chunks.length} chunks from content at ${content.url}`);
+      // Process each page
+      for (const page of pages) {
+        // Skip error pages
+        if (page.title === "Error" || page.url.includes("error")) {
+          console.log(`Skipping error page: ${page.url}`);
+          continue;
+        }
+        
+        try {
+          // Process title
+          if (page.title) {
+            const titleSuccess = await this.generateEmbedding(
+              page.title,
+              projectId,
+              {
+                source: page.url,
+                title: page.title,
+                type: 'title'
+              }
+            );
+            
+            if (titleSuccess) successCount++;
+            else failureCount++;
+          }
+          
+          // Process main content
+          if (page.content && typeof page.content === 'object') {
+            // Process each content section
+            for (const [key, value] of Object.entries(page.content)) {
+              if (typeof value === 'string' && value.trim().length > 20) {
+                const contentSuccess = await this.generateEmbedding(
+                  value,
+                  projectId,
+                  {
+                    source: page.url,
+                    title: page.title,
+                    type: key
+                  }
+                );
+                
+                if (contentSuccess) successCount++;
+                else failureCount++;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing page ${page.url}:`, error);
+          failureCount++;
+        }
+      }
       
-      return EmbeddingProcessor.processChunks(chunks, projectId);
+      console.log(`Embedding generation complete. Success: ${successCount}, Failures: ${failureCount}`);
+      
+      // Return true if at least some embeddings were successful
+      return successCount > 0;
     } catch (error) {
-      console.error("Error processing content embeddings:", error);
+      console.error("Error processing project for embeddings:", error);
       return false;
     }
   }
   
   /**
-   * Process all pages in a project
+   * Generate an embedding for a single piece of text
    */
-  public static async processProject(projectId: string, pages: ScrapedContent[]): Promise<boolean> {
+  private static async generateEmbedding(
+    text: string,
+    projectId: string,
+    metadata: { source: string; title?: string; type: string }
+  ): Promise<boolean> {
     try {
-      let success = true;
-      
-      for (const page of pages) {
-        const pageSuccess = await this.processContent(page, projectId);
-        if (!pageSuccess) {
-          success = false;
-        }
+      // Skip very short text
+      if (text.trim().length < 10) {
+        return false;
       }
       
-      return success;
+      // Call the edge function to generate the embedding
+      const { data, error } = await supabase.functions.invoke("process-embeddings", {
+        body: {
+          text,
+          projectId,
+          metadata
+        }
+      });
+      
+      if (error) {
+        console.error("Error generating embedding:", error);
+        return false;
+      }
+      
+      return data?.success || false;
     } catch (error) {
-      console.error("Error processing project embeddings:", error);
+      console.error("Error generating embedding:", error);
       return false;
     }
   }

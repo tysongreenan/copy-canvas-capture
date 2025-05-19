@@ -37,11 +37,20 @@ export class ChatService {
    */
   public static async createConversation(projectId: string, title: string): Promise<string | null> {
     try {
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("User not authenticated");
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('chat_conversations')
         .insert({
           project_id: projectId,
-          title: title || 'New Conversation'
+          title: title || 'New Conversation',
+          user_id: user.id  // Set the user_id explicitly to the authenticated user
         })
         .select('id')
         .single();
@@ -63,10 +72,19 @@ export class ChatService {
    */
   public static async getConversations(projectId: string): Promise<ChatConversation[]> {
     try {
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("User not authenticated");
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('chat_conversations')
         .select('*')
         .eq('project_id', projectId)
+        .eq('user_id', user.id)  // Filter by the current user's ID
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -114,6 +132,13 @@ export class ChatService {
     history?: ChatMessage[]
   ): Promise<{ response: ChatResponse; conversationId: string }> {
     try {
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
       let activeConversationId = conversationId;
       
       // If no conversation ID is provided, create a new one
@@ -161,10 +186,19 @@ export class ChatService {
    */
   public static async deleteConversation(conversationId: string): Promise<boolean> {
     try {
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error("User not authenticated");
+        return false;
+      }
+      
       const { error } = await supabase
         .from('chat_conversations')
         .delete()
-        .eq('id', conversationId);
+        .eq('id', conversationId)
+        .eq('user_id', user.id);  // Ensure deleting only the user's conversations
       
       if (error) {
         console.error("Error deleting conversation:", error);

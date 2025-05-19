@@ -1,13 +1,13 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage } from "./ChatMessage";
 import { ChatMessage as ChatMessageType, ChatService, ChatResponse } from "@/services/ChatService";
-import { Loader2, Send, BookOpen } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { AIChatInput } from "@/components/ui/ai-chat-input";
 
 interface ChatSource {
   content: string;
@@ -140,16 +140,9 @@ export function ChatInterface({
     }
   };
   
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-  
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4 mb-4">
         <div className="space-y-4">
           {messages.length === 0 && !loading && (
             <div className="text-center py-8">
@@ -214,25 +207,13 @@ export function ChatInterface({
         </div>
       </ScrollArea>
       
-      <div className="border-t p-4">
-        <div className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Ask a question about your website content..."
-            className="resize-none"
-            disabled={loading}
-          />
-          <Button
-            size="icon"
-            onClick={handleSend}
-            disabled={!input.trim() || loading}
-          >
-            <Send className="h-4 w-4" />
-            <span className="sr-only">Send</span>
-          </Button>
-        </div>
+      <div className="p-4">
+        <AIChatInput 
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          isLoading={loading}
+        />
       </div>
     </div>
   );

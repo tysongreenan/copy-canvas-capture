@@ -46,7 +46,7 @@ const Chat = () => {
   }, [id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
 
       <main className="flex-1 container max-w-6xl px-6 md:px-0 py-6">

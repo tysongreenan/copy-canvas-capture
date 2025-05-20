@@ -40,25 +40,25 @@ export function AccountMenu() {
         </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-white text-gray-800 border-gray-200">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-gray-800">My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2" />
+          <DropdownMenuItem className="text-gray-800 cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCard className="mr-2" />
+          <DropdownMenuItem className="text-gray-800 cursor-pointer">
+            <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2" />
+          <DropdownMenuItem className="text-gray-800 cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()} className="text-red-600 cursor-pointer">
-          <LogOut className="mr-2" />
+          <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

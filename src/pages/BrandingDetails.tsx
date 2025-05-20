@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save } from "lucide-react";
+import { Brush, Globe, Edit, Save, Wand2 } from "lucide-react";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +30,7 @@ const BrandingDetails = () => {
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("tone");
   
   const form = useForm<Partial<BrandVoice>>({
@@ -122,6 +123,48 @@ const BrandingDetails = () => {
     }
   };
   
+  const generateFromContent = async () => {
+    if (!id) return;
+    
+    setGenerating(true);
+    try {
+      // Get all pages for this project
+      const pages = await ContentService.getProjectPages(id);
+      
+      if (!pages || pages.length === 0) {
+        toast({
+          title: "No Content",
+          description: "Cannot generate brand voice - no scraped content found.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Generate brand voice from content
+      const generatedBrandVoice = BrandingService.generateBrandVoiceFromContent(id, pages);
+      
+      // Update the form with generated values
+      form.reset({
+        ...form.getValues(),
+        ...generatedBrandVoice
+      });
+      
+      toast({
+        title: "Generated",
+        description: "Brand voice settings were generated from your website content!",
+      });
+    } catch (error: any) {
+      console.error("Error generating brand voice:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate brand voice settings",
+        variant: "destructive"
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+  
   // Redirect if not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -152,19 +195,43 @@ const BrandingDetails = () => {
                 )}
               </div>
               
-              <Button onClick={form.handleSubmit(onSubmit)} disabled={saving}>
-                {saving ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </div>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Settings
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={generateFromContent} 
+                  variant="outline" 
+                  className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
+                  disabled={generating || saving}
+                >
+                  {generating ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                      Generating...
+                    </div>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Auto-Generate
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={form.handleSubmit(onSubmit)} 
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Settings
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             
             <Card className="mb-6">
@@ -172,6 +239,7 @@ const BrandingDetails = () => {
                 <CardTitle>Brand Voice Configuration</CardTitle>
                 <CardDescription>
                   Define how the AI should communicate on behalf of this brand. These settings will be used to customize AI outputs.
+                  Click "Auto-Generate" to extract brand voice settings from your website content.
                 </CardDescription>
               </CardHeader>
             </Card>

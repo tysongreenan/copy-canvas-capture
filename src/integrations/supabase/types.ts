@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      brand_voices: {
+        Row: {
+          audience: string | null
+          avoid_phrases: Json | null
+          created_at: string
+          id: string
+          key_messages: Json | null
+          language: string | null
+          project_id: string
+          style: string | null
+          terminology: Json | null
+          tone: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience?: string | null
+          avoid_phrases?: Json | null
+          created_at?: string
+          id?: string
+          key_messages?: Json | null
+          language?: string | null
+          project_id: string
+          style?: string | null
+          terminology?: Json | null
+          tone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience?: string | null
+          avoid_phrases?: Json | null
+          created_at?: string
+          id?: string
+          key_messages?: Json | null
+          language?: string | null
+          project_id?: string
+          style?: string | null
+          terminology?: Json | null
+          tone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_voices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string

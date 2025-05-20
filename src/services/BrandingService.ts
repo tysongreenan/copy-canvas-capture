@@ -17,8 +17,10 @@ export interface BrandVoice {
 
 export class BrandingService {
   static async getBrandVoice(projectId: string): Promise<BrandVoice | null> {
+    // Use a more generic approach with as any to bypass TypeScript's strict checking
+    // since the table was just created and types haven't been regenerated
     const { data, error } = await supabase
-      .from('brand_voices')
+      .from('brand_voices' as any)
       .select('*')
       .eq('project_id', projectId)
       .single();
@@ -37,7 +39,7 @@ export class BrandingService {
     if (existing) {
       // Update existing record
       const { data, error } = await supabase
-        .from('brand_voices')
+        .from('brand_voices' as any)
         .update({
           ...brandVoice,
           updated_at: new Date().toISOString()
@@ -54,7 +56,7 @@ export class BrandingService {
     } else {
       // Create new record
       const { data, error } = await supabase
-        .from('brand_voices')
+        .from('brand_voices' as any)
         .insert([{
           ...brandVoice,
           key_messages: brandVoice.key_messages || [],

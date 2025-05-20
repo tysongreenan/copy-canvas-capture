@@ -46,7 +46,7 @@ export function AnimatedMessage({ message, isLatest }: AnimatedMessageProps) {
         <div className={`${isUser ? 'bg-blue-50 border-blue-200 text-gray-800' : 'bg-indigo-50 border-indigo-200 text-gray-800'} 
                         px-4 py-3 rounded-lg shadow-sm border`}>
           <div className="whitespace-pre-wrap text-sm">
-            {isUser ? message.content : (isLatest ? animatedContent : message.content)}
+            {isUser ? message.content : (isLatest && !isUser ? animatedContent : message.content)}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ContentService, SavedProject } from "@/services/ContentService";
 import { ChevronLeft } from "lucide-react";
 import { ChatContainer } from "@/components/chat/ChatContainer";
+import { AccountMenu } from "@/components/AccountMenu";
 
 const Chat = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,14 +53,16 @@ const Chat = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full mix-blend-normal filter blur-[128px] animate-pulse delay-700" />
 
       <main className="flex-1 container max-w-6xl px-6 md:px-0 py-6 z-10">
-        {/* Back button */}
-        <div className="mb-6">
+        {/* Back button and Account Menu */}
+        <div className="mb-6 flex items-center justify-between">
           <Link to="/dashboard">
             <Button variant="ghost" size="sm" className="pl-0 text-white/70 hover:text-white hover:bg-white/5">
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
           </Link>
+          
+          <AccountMenu />
         </div>
 
         {loading ? (

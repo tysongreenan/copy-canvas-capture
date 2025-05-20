@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SavedProject } from "@/services/ContentService";
 import { ChatService } from "@/services/ChatService";
-import { Globe, MessageSquare, Plus, FileText } from "lucide-react";
+import { Globe, MessageSquare, Plus, Brush } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface SidebarProps {
@@ -170,16 +170,16 @@ export function Sidebar({
             {/* Project pages section (when a project is selected) */}
             {selectedProject && (
                 <div className="p-3 border-t border-gray-200">
-                    <h2 className="text-sm font-semibold text-gray-500 mb-2">PAGES</h2>
+                    <h2 className="text-sm font-semibold text-gray-500 mb-2">BRAND</h2>
                     <Button
                         variant="outline"
                         size="sm"
                         className="w-full"
                         asChild
                     >
-                        <Link to={`/project/${selectedProject.id}`}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            View Content
+                        <Link to={`/branding/${selectedProject.id}`}>
+                            <Brush className="h-4 w-4 mr-2" />
+                            Branding Details
                         </Link>
                     </Button>
                 </div>

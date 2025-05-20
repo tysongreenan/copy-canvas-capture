@@ -5,7 +5,7 @@ import { ProjectSitemap } from "@/components/project/ProjectSitemap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectImport } from "@/components/project/ProjectImport";
 import { Link } from "react-router-dom";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Brush } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ProjectTabs() {
@@ -24,12 +24,21 @@ export function ProjectTabs() {
             <TabsTrigger value="import">Import</TabsTrigger>
           </TabsList>
           
-          <Link to={`/chat/${projectId}`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Chat with content
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link to={`/branding/${projectId}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Brush className="h-4 w-4" />
+                Branding Details
+              </Button>
+            </Link>
+            
+            <Link to={`/chat/${projectId}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chat with content
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <TabsContent value="content" className="mt-4">

@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Project from "./pages/Project";
 import Sitemap from "./pages/Sitemap";
 import ScrapCopy from "./pages/ScrapCopy";
+import BrandingDetails from "./pages/BrandingDetails";
 import { ChatDemo } from "./components/chat/ChatDemo";
 
 // Update document title
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/project/:id" element={<Project />} />
+              <Route path="/branding/:id" element={<BrandingDetails />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/scrapcopy" element={<ScrapCopy />} />
               <Route path="/chat" element={<ChatDemo />} />

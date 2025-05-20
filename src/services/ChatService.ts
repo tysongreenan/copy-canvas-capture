@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { BrandingService } from './BrandingService';
 
 // Define message type
 export interface ChatMessage {
@@ -126,6 +127,14 @@ export class ChatService {
       conversationId = await this.createConversation(projectId);
     }
     
+    // Try to get brand voice settings
+    let brandVoice = null;
+    try {
+      brandVoice = await BrandingService.getBrandVoice(projectId);
+    } catch (error) {
+      console.warn("Could not retrieve brand voice settings:", error);
+    }
+    
     // Add the user message to the database
     await this.sendMessage(conversationId, 'user', content);
     
@@ -133,6 +142,15 @@ export class ChatService {
     // In a real implementation, you would call your backend API here
     const assistantResponse = "This is a placeholder response. Implement your actual API call here.";
     const sources = [];
+    
+    // If we have brand voice settings, use them to generate a system message
+    if (brandVoice) {
+      // In a real implementation, you would use the brand voice settings to influence the AI response
+      console.log("Using brand voice settings:", brandVoice);
+      
+      // Here you could modify the assistantResponse based on the brand voice
+      // or include the brand voice as part of your API call
+    }
     
     // Add the assistant response to the database
     await this.sendMessage(conversationId, 'assistant', assistantResponse);

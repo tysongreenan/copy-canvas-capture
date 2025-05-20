@@ -111,74 +111,97 @@ export function AI_Prompt({
         minHeight: 72,
         maxHeight: 300,
     });
-    const [selectedModel, setSelectedModel] = useState("GPT-4-1 Mini");
+    const [selectedAssistant, setSelectedAssistant] = useState("Marketing Research");
 
-    const AI_MODELS = [
-        "o3-mini",
-        "Gemini 2.5 Flash",
-        "Claude 3.5 Sonnet",
-        "GPT-4-1 Mini",
-        "GPT-4-1",
+    const ASSISTANTS = [
+        "Marketing Research",
+        "Content Writer",
+        "SEO Specialist",
+        "Brand Strategist",
+        "General Assistant"
     ];
 
-    const MODEL_ICONS: Record<string, React.ReactNode> = {
-        "o3-mini": OPENAI_ICON,
-        "Gemini 2.5 Flash": (
+    const ASSISTANT_ICONS: Record<string, React.ReactNode> = {
+        "Marketing Research": (
             <svg
-                height="1em"
-                className="w-4 h-4"
-                viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
             >
-                <title>Gemini</title>
-                <defs>
-                    <linearGradient
-                        id="lobe-icons-gemini-fill"
-                        x1="0%"
-                        x2="68.73%"
-                        y1="100%"
-                        y2="30.395%"
-                    >
-                        <stop offset="0%" stopColor="#1C7DFF" />
-                        <stop offset="52.021%" stopColor="#1C69FF" />
-                        <stop offset="100%" stopColor="#F0DCD6" />
-                    </linearGradient>
-                </defs>
-                <path
-                    d="M12 24A14.304 14.304 0 000 12 14.304 14.304 0 0012 0a14.305 14.305 0 0012 12 14.305 14.305 0 00-12 12"
-                    fill="url(#lobe-icons-gemini-fill)"
-                    fillRule="nonzero"
-                />
+                <path d="M21 17a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2Z"></path>
+                <path d="M6 15v-2"></path>
+                <path d="M12 15V9"></path>
+                <path d="M18 15v-6"></path>
             </svg>
         ),
-        "Claude 3.5 Sonnet": (
-            <>
-                <svg
-                    fill="#000"
-                    fillRule="evenodd"
-                    className="w-4 h-4 dark:hidden block"
-                    viewBox="0 0 24 24"
-                    width="1em"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <title>Anthropic Icon Light</title>
-                    <path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z" />
-                </svg>
-                <svg
-                    fill="#fff"
-                    fillRule="evenodd"
-                    className="w-4 h-4 hidden dark:block"
-                    viewBox="0 0 24 24"
-                    width="1em"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <title>Anthropic Icon Dark</title>
-                    <path d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z" />
-                </svg>
-            </>
+        "Content Writer": (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+            >
+                <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
+                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
+                <path d="M9 17h6"></path>
+                <path d="M9 13h6"></path>
+            </svg>
         ),
-        "GPT-4-1 Mini": OPENAI_ICON,
-        "GPT-4-1": OPENAI_ICON,
+        "SEO Specialist": (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+            >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+        ),
+        "Brand Strategist": (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+            >
+                <path d="M2 12h5"></path>
+                <path d="M17 12h5"></path>
+                <path d="M12 2v5"></path>
+                <path d="M12 17v5"></path>
+                <path d="m14 4-4 4"></path>
+                <path d="m4 14 4 4"></path>
+                <path d="m20 10-4 4"></path>
+                <path d="m10 20 4-4"></path>
+                <circle cx="12" cy="12" r="4"></circle>
+            </svg>
+        ),
+        "General Assistant": OPENAI_ICON,
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -206,7 +229,7 @@ export function AI_Prompt({
                             <Textarea
                                 id="ai-input"
                                 value={value}
-                                placeholder={"What can I do for you?"}
+                                placeholder={"What marketing research can I help you with today?"}
                                 className={cn(
                                     "w-full rounded-xl rounded-b-none px-4 py-3 bg-black/5 dark:bg-white/5 border-none dark:text-white placeholder:text-black/70 dark:placeholder:text-white/70 resize-none focus-visible:ring-0 focus-visible:ring-offset-0",
                                     "min-h-[72px]"
@@ -232,7 +255,7 @@ export function AI_Prompt({
                                             >
                                                 <AnimatePresence mode="wait">
                                                     <motion.div
-                                                        key={selectedModel}
+                                                        key={selectedAssistant}
                                                         initial={{
                                                             opacity: 0,
                                                             y: -5,
@@ -251,11 +274,11 @@ export function AI_Prompt({
                                                         className="flex items-center gap-1"
                                                     >
                                                         {
-                                                            MODEL_ICONS[
-                                                                selectedModel
+                                                            ASSISTANT_ICONS[
+                                                                selectedAssistant
                                                             ]
                                                         }
-                                                        {selectedModel}
+                                                        {selectedAssistant}
                                                         <ChevronDown className="w-3 h-3 opacity-50" />
                                                     </motion.div>
                                                 </AnimatePresence>
@@ -268,22 +291,22 @@ export function AI_Prompt({
                                                 "bg-gradient-to-b from-white via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-800"
                                             )}
                                         >
-                                            {AI_MODELS.map((model) => (
+                                            {ASSISTANTS.map((assistant) => (
                                                 <DropdownMenuItem
-                                                    key={model}
+                                                    key={assistant}
                                                     onSelect={() =>
-                                                        setSelectedModel(model)
+                                                        setSelectedAssistant(assistant)
                                                     }
                                                     className="flex items-center justify-between gap-2"
                                                 >
                                                     <div className="flex items-center gap-2">
-                                                        {MODEL_ICONS[model] || (
+                                                        {ASSISTANT_ICONS[assistant] || (
                                                             <Bot className="w-4 h-4 opacity-50" />
                                                         )}
-                                                        <span>{model}</span>
+                                                        <span>{assistant}</span>
                                                     </div>
-                                                    {selectedModel ===
-                                                        model && (
+                                                    {selectedAssistant ===
+                                                        assistant && (
                                                         <Check className="w-4 h-4 text-blue-500" />
                                                     )}
                                                 </DropdownMenuItem>

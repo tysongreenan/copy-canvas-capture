@@ -1,7 +1,8 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AI_Prompt } from "../ui/animated-ai-input";
 import { useToast } from "@/hooks/use-toast";
+import { AssistantService } from "@/services/AssistantService";
 
 interface AIPromptContainerProps {
   onSendMessage?: (message: string, response: string) => void;
@@ -11,6 +12,8 @@ export function AIPromptContainer({ onSendMessage }: AIPromptContainerProps) {
   const [inputValue, setValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const threadIdRef = useRef<string | undefined>(undefined);
+  const [selectedAssistant, setSelectedAssistant] = useState("Marketing Research");
   
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -18,18 +21,21 @@ export function AIPromptContainer({ onSendMessage }: AIPromptContainerProps) {
     setIsLoading(true);
     
     try {
-      // Here you would normally call your AI service
-      console.log("Sending message:", inputValue);
+      // Get the appropriate assistant ID
+      const assistantId = AssistantService.getAssistantId(selectedAssistant);
       
-      // Simulate AI response delay
-      const mockResponse = await new Promise<string>((resolve) => {
-        setTimeout(() => {
-          resolve(`This is a simulated response to: "${inputValue}"`);
-        }, 1500);
-      });
+      // Send the message to the OpenAI assistant
+      const { message: aiResponse, threadId } = await AssistantService.sendMessage(
+        inputValue,
+        threadIdRef.current,
+        assistantId
+      );
+      
+      // Save the thread ID for future messages in this conversation
+      threadIdRef.current = threadId;
       
       if (onSendMessage) {
-        onSendMessage(inputValue, mockResponse);
+        onSendMessage(inputValue, aiResponse);
       }
       
       setValue("");
@@ -37,7 +43,7 @@ export function AIPromptContainer({ onSendMessage }: AIPromptContainerProps) {
       console.error("Error sending message:", error);
       toast({
         title: "Error",
-        description: "Failed to get a response from the AI. Please try again.",
+        description: "Failed to get a response from the assistant. Please try again.",
         variant: "destructive"
       });
     } finally {

@@ -19,12 +19,17 @@ import { ProjectSitemap } from "@/components/project/ProjectSitemap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Dashboard = () => {
-  const { user } = useAuth();
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
   const [currentProject, setCurrentProject] = useState<CrawlProject | null>(null);
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("create");
+  const { user } = useAuth();
+
+  // Redirect if not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // Fetch saved projects when component mounts
   useEffect(() => {
@@ -89,11 +94,6 @@ const Dashboard = () => {
       return url;
     }
   };
-
-  // Redirect if not logged in
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

@@ -19,18 +19,20 @@ export function MessageList() {
   }, [messages]);
   
   // Check scroll position to show/hide scroll to top button
-  const handleScroll = () => {
-    if (scrollAreaRef.current) {
-      const { scrollTop } = scrollAreaRef.current;
-      setShowScrollTop(scrollTop > 300);
-    }
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLDivElement;
+    const scrollTop = target.scrollTop;
+    setShowScrollTop(scrollTop > 300);
   };
   
   const scrollToTop = () => {
-    scrollAreaRef.current?.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    const viewportElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewportElement) {
+      viewportElement.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
   };
   
   if (messages.length === 0) {
@@ -50,7 +52,7 @@ export function MessageList() {
     <ScrollArea 
       className="flex-1 p-4 mb-4" 
       scrollHideDelay={100}
-      onScroll={handleScroll}
+      onScrollCapture={handleScroll}
       ref={scrollAreaRef}
     >
       <div className="space-y-4">

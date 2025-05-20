@@ -1,214 +1,56 @@
+import { supabase } from '@/integrations/supabase/client';
 
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
-
+// Define message type
 export interface ChatMessage {
-  id?: string;
+  id: string;
+  conversation_id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  created_at?: string;
-}
-
-export interface ChatConversation {
-  id: string;
-  title: string;
   created_at: string;
-  updated_at: string;
-}
-
-export interface ChatSource {
-  content: string;
-  similarity: number;
-  metadata: {
-    source: string;
-    title?: string;
-    type: string;
-  };
-}
-
-export interface ChatResponse {
-  response: string;
-  sources?: ChatSource[];
 }
 
 export class ChatService {
-  /**
-   * Create a new conversation
-   */
-  public static async createConversation(projectId: string, title: string): Promise<string | null> {
-    try {
-      // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("User not authenticated");
-        return null;
-      }
-      
-      const { data, error } = await supabase
-        .from('chat_conversations')
-        .insert({
-          project_id: projectId,
-          title: title || 'New Conversation',
-          user_id: user.id  // Set the user_id explicitly to the authenticated user
-        })
-        .select('id')
-        .single();
-      
-      if (error) {
-        console.error("Error creating conversation:", error);
-        return null;
-      }
-      
-      return data.id;
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      return null;
+  // Get messages for a conversation with optional limit parameter
+  static async getMessages(conversationId: string, limit: number = 20): Promise<ChatMessage[]> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(limit);
+    
+    if (error) {
+      throw new Error(`Error fetching messages: ${error.message}`);
     }
+    
+    return data as ChatMessage[];
   }
-  
-  /**
-   * Get user's conversations for a project
-   */
-  public static async getConversations(projectId: string): Promise<ChatConversation[]> {
-    try {
-      // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("User not authenticated");
-        return [];
-      }
-      
-      const { data, error } = await supabase
-        .from('chat_conversations')
-        .select('*')
-        .eq('project_id', projectId)
-        .eq('user_id', user.id)  // Filter by the current user's ID
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching conversations:", error);
-        return [];
-      }
-      
-      return data as ChatConversation[];
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-      return [];
+
+  static async createConversation(projectId: string) {
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert([{ project_id: projectId }])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error creating conversation: ${error.message}`);
     }
+
+    return data.id;
   }
-  
-  /**
-   * Get messages for a conversation
-   */
-  public static async getMessages(conversationId: string): Promise<ChatMessage[]> {
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching messages:", error);
-        return [];
-      }
-      
-      return data as ChatMessage[];
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      return [];
+
+  static async sendMessage(conversationId: string, role: string, content: string) {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([{ conversation_id: conversationId, role: role, content: content }])
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error sending message: ${error.message}`);
     }
-  }
-  
-  /**
-   * Send a message to the AI and get a response
-   */
-  public static async sendMessage(
-    query: string, 
-    projectId: string, 
-    conversationId?: string,
-    history?: ChatMessage[]
-  ): Promise<{ response: ChatResponse; conversationId: string }> {
-    try {
-      // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-      
-      let activeConversationId = conversationId;
-      
-      // If no conversation ID is provided, create a new one
-      if (!activeConversationId) {
-        activeConversationId = await this.createConversation(projectId, query.substring(0, 50));
-        
-        if (!activeConversationId) {
-          throw new Error("Failed to create conversation");
-        }
-      }
-      
-      // Format history for the API if provided
-      const formattedHistory = history?.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-      
-      // Get response from AI
-      const { data, error } = await supabase.functions.invoke("chat-completion", {
-        body: {
-          query,
-          projectId,
-          conversationId: activeConversationId,
-          history: formattedHistory
-        }
-      });
-      
-      if (error) {
-        console.error("Error sending message:", error);
-        throw new Error(`Failed to get response: ${error.message}`);
-      }
-      
-      return {
-        response: data as ChatResponse,
-        conversationId: activeConversationId
-      };
-    } catch (error: any) {
-      console.error("Error in chat service:", error);
-      throw new Error(`Chat error: ${error.message}`);
-    }
-  }
-  
-  /**
-   * Delete a conversation
-   */
-  public static async deleteConversation(conversationId: string): Promise<boolean> {
-    try {
-      // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("User not authenticated");
-        return false;
-      }
-      
-      const { error } = await supabase
-        .from('chat_conversations')
-        .delete()
-        .eq('id', conversationId)
-        .eq('user_id', user.id);  // Ensure deleting only the user's conversations
-      
-      if (error) {
-        console.error("Error deleting conversation:", error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      return false;
-    }
+
+    return data as ChatMessage;
   }
 }

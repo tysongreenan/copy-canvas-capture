@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,10 +47,7 @@ export function Sidebar({
         if (!selectedProject) return;
         
         try {
-            const conversationId = await ChatService.createConversation(
-                selectedProject.id, 
-                "New Conversation"
-            );
+            const conversationId = await ChatService.createConversation(selectedProject.id);
             
             if (conversationId) {
                 // Refresh conversations
@@ -67,6 +63,7 @@ export function Sidebar({
     };
     
     return (
+        
         <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
             {/* Header with logo */}
             <div className="p-4 border-b border-gray-200">

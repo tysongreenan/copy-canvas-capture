@@ -1,38 +1,24 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { ChatService, ChatConversation } from "@/services/ChatService";
-import { MoreHorizontal, MessageSquare, Plus, Trash2 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from "date-fns";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { ChatService, ChatConversation } from '@/services/ChatService';
 
 interface ConversationsListProps {
   projectId: string;
   selectedConversationId?: string;
   onSelectConversation: (id: string) => void;
-  onNewConversation: () => void;
 }
 
-export function ConversationsList({ 
-  projectId, 
-  selectedConversationId, 
-  onSelectConversation,
-  onNewConversation
+export function ConversationsList({
+  projectId,
+  selectedConversationId,
+  onSelectConversation
 }: ConversationsListProps) {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   
-  // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
       setLoading(true);
@@ -40,125 +26,102 @@ export function ConversationsList({
         const fetchedConversations = await ChatService.getConversations(projectId);
         setConversations(fetchedConversations);
       } catch (error) {
-        console.error("Error loading conversations:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load conversations",
-          variant: "destructive"
-        });
+        console.error('Error loading conversations:', error);
       } finally {
         setLoading(false);
       }
     };
     
-    if (projectId) {
-      loadConversations();
-    }
-  }, [projectId, toast]);
+    loadConversations();
+  }, [projectId]);
   
-  // Delete conversation
-  const handleDeleteConversation = async (id: string) => {
+  const handleNewChat = async () => {
     try {
-      await ChatService.deleteConversation(id);
+      const conversationId = await ChatService.createConversation(projectId);
       
-      // Remove from list
-      setConversations(prev => prev.filter(conv => conv.id !== id));
+      // Refresh conversations
+      const fetchedConversations = await ChatService.getConversations(projectId);
+      setConversations(fetchedConversations);
       
-      // If deleted conversation was selected, reset selection
-      if (id === selectedConversationId) {
-        onNewConversation();
-      }
-      
-      toast({
-        title: "Deleted",
-        description: "Conversation has been deleted"
-      });
+      // Select the new conversation
+      onSelectConversation(conversationId);
     } catch (error) {
-      console.error("Error deleting conversation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete conversation",
-        variant: "destructive"
-      });
+      console.error('Error creating conversation:', error);
     }
   };
   
-  const formatDate = (dateString: string) => {
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
+    e.stopPropagation();
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch (e) {
-      return 'Invalid date';
+      await ChatService.deleteConversation(conversationId);
+      
+      // Refresh conversations
+      const updatedConversations = await ChatService.getConversations(projectId);
+      setConversations(updatedConversations);
+      
+      // If the deleted conversation was selected, reset selection
+      if (selectedConversationId === conversationId) {
+        onSelectConversation(updatedConversations[0]?.id || '');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
     }
   };
   
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <Button onClick={onNewConversation} className="w-full" variant="default">
-          <Plus className="h-4 w-4 mr-2" />
-          New Chat
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-medium text-gray-700">Conversations</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-7 w-7 p-0"
+          onClick={handleNewChat}
+        >
+          <Plus className="h-3.5 w-3.5" />
         </Button>
       </div>
       
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          {loading ? (
-            <div className="flex justify-center p-4">
-              <div className="animate-pulse">Loading...</div>
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No conversations yet</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {conversations.map(conversation => (
-                <div 
-                  key={conversation.id}
-                  className={`
-                    flex justify-between items-center px-3 py-2 rounded-md cursor-pointer
-                    ${selectedConversationId === conversation.id ? 'bg-muted' : 'hover:bg-muted/50'}
-                  `}
-                  onClick={() => onSelectConversation(conversation.id)}
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <div className="truncate">
-                      <div className="truncate text-sm font-medium">
-                        {conversation.title || "New Conversation"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatDate(conversation.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={e => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="text-red-500 cursor-pointer" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteConversation(conversation.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      <ScrollArea className="h-[300px] pr-2">
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <span className="text-sm text-gray-500">Loading...</span>
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="text-center py-4">
+            <span className="text-sm text-gray-500">No conversations yet</span>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {conversations.map(conversation => (
+              <div 
+                key={conversation.id}
+                className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer group ${
+                  selectedConversationId === conversation.id 
+                    ? 'bg-gray-100' 
+                    : 'hover:bg-gray-50'
+                }`}
+                onClick={() => onSelectConversation(conversation.id)}
+              >
+                <div className="flex items-center space-x-3 truncate">
+                  <MessageSquare className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm truncate">
+                    {conversation.title || 'New Conversation'}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                  onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-gray-400 hover:text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </ScrollArea>
     </div>
   );

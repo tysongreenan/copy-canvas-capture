@@ -63,7 +63,7 @@ export function MessageList() {
             {/* Show sources button after AI messages if sources are available */}
             {message.role === 'assistant' && 
              index === messages.length - 1 && 
-             lastSources.length > 0 && (
+             lastSources && lastSources.length > 0 && (
               <div className="mt-1 flex justify-end opacity-70 hover:opacity-100 transition-opacity">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -78,7 +78,7 @@ export function MessageList() {
                       {lastSources.map((source, idx) => (
                         <div key={idx} className="text-sm border-l-2 border-indigo-300 pl-2">
                           <div className="font-medium text-xs text-gray-600 mb-1">
-                            {source.metadata.title || source.metadata.source}
+                            {source.metadata?.title || source.metadata?.source || 'Source'}
                           </div>
                           <p className="text-xs text-gray-700">{source.content}</p>
                         </div>

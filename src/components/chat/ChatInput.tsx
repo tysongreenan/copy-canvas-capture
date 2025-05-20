@@ -1,6 +1,6 @@
 
 import { useChat } from '@/context/ChatContext';
-import { ChatService } from '@/services/ChatService';
+import { ChatService, ChatMessage } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import { AI_Prompt } from "@/components/ui/animated-ai-input";
 
@@ -25,18 +25,11 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     
-    const userMessage = {
-      role: 'user' as const,
-      content: input.trim()
-    };
-    
-    // Add user message to UI immediately
-    setMessages(prev => [...prev, userMessage]);
     setLoading(true);
     
     try {
       // Send message to API
-      const { response, conversationId: newConversationId } = await ChatService.sendMessage(
+      const result = await ChatService.sendMessageToAPI(
         input.trim(), 
         projectId,
         selectedConversationId,
@@ -44,24 +37,24 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
       );
       
       // If this created a new conversation, update the selected conversation ID
-      if (!selectedConversationId && newConversationId && onConversationCreated) {
-        onConversationCreated(newConversationId);
+      if (!selectedConversationId && result.conversationId && onConversationCreated) {
+        onConversationCreated(result.conversationId);
       }
       
       // Store sources if available
-      if (response.sources && response.sources.length > 0) {
-        setLastSources(response.sources);
+      if (result.sources && result.sources.length > 0) {
+        setLastSources(result.sources);
       } else {
         setLastSources([]);
       }
       
-      // Add AI response to UI
-      const aiMessage = {
-        role: 'assistant' as const,
-        content: response.response
-      };
+      // Messages will be fetched from the database, so we don't need to add them here
+      // Just fetch the latest messages after sending
+      if (result.conversationId) {
+        const updatedMessages = await ChatService.getMessages(result.conversationId);
+        setMessages(updatedMessages);
+      }
       
-      setMessages(prev => [...prev, aiMessage]);
       setInput("");
       
     } catch (error: any) {
@@ -73,13 +66,12 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
       });
       
       // Add error message to chat
-      setMessages(prev => [
-        ...prev, 
-        {
-          role: 'assistant' as const,
-          content: "I'm sorry, I encountered an error while processing your request. Please try again."
-        }
-      ]);
+      const errorMessage: Partial<ChatMessage> = {
+        role: 'assistant',
+        content: "I'm sorry, I encountered an error while processing your request. Please try again."
+      };
+      
+      setMessages(prev => [...prev, errorMessage as ChatMessage]);
     } finally {
       setLoading(false);
     }

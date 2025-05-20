@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScraperService } from "@/services/ScraperService";
 import type { ScrapedContent } from "@/services/ScraperTypes";
 import { toast } from "@/hooks/use-toast";
-import { Search, Upload, Globe } from "lucide-react";
+import { Search, Upload, Globe, ArrowRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ProjectService } from "@/services/ProjectService";
@@ -20,8 +20,6 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
   const [loading, setLoading] = useState(false);
   const [crawlEntireSite, setCrawlEntireSite] = useState(false);
   const [maxPages, setMaxPages] = useState(10);
-  const [projectName, setProjectName] = useState("");
-  const [generateEmbeddings, setGenerateEmbeddings] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +27,16 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
     if (!url.trim()) {
       toast({
         title: "URL Required",
-        description: "Please enter a website URL to illuminate",
+        description: "Please enter a website URL to extract content",
         variant: "destructive"
       });
       return;
+    }
+    
+    // Add http:// if no protocol specified
+    let processedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      processedUrl = 'https://' + url;
     }
     
     setLoading(true);
@@ -41,11 +45,11 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       const options = {
         crawlEntireSite,
         maxPages: maxPages,
-        projectName: projectName || ProjectService.getProjectNameFromUrl(url),
-        generateEmbeddings: !crawlEntireSite && generateEmbeddings // Only generate embeddings for single pages
+        projectName: ProjectService.getProjectNameFromUrl(processedUrl),
+        generateEmbeddings: false
       };
       
-      const result = await ScraperService.scrapeWebsite(url, options);
+      const result = await ScraperService.scrapeWebsite(processedUrl, options);
       
       if (result) {
         onResult(result);
@@ -57,145 +61,99 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
           if (onCrawlComplete) {
             onCrawlComplete(
               allResults,
-              // We'll use a URL-based project name if none is provided
               undefined,
-              projectName || ProjectService.getProjectNameFromUrl(url)
+              ProjectService.getProjectNameFromUrl(processedUrl)
             );
           }
           
-          const embeddingsMessage = generateEmbeddings ? 
-            " You can now process individual pages for AI chat in the project view." : 
-            "";
-            
           toast({
-            title: "Crawling Complete",
-            description: `${allResults.length} pages crawled successfully.${embeddingsMessage}`,
+            title: "Extraction Complete",
+            description: `${allResults.length} pages extracted successfully.`,
           });
         } else {
-          const embeddingsMessage = generateEmbeddings ? 
-            " AI embeddings were generated for this page." : 
-            "";
-            
           toast({
             title: "Success",
-            description: `Website content illuminated successfully.${embeddingsMessage}`,
+            description: "Website content extracted successfully.",
           });
         }
       }
+    } catch (error: any) {
+      console.error("Error scraping:", error);
+      toast({
+        title: "Extraction Failed",
+        description: error.message || "Failed to extract website content. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto">
+    <form onSubmit={handleSubmit} className="w-full">
       <div className="flex flex-col gap-4 w-full">
-        <div className="relative flex-1">
+        <div className="relative">
           <Input
             type="text"
             placeholder="Enter website URL (e.g., example.com)"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-md"
+            className="w-full pl-10 pr-4 py-3 rounded-md text-lg shadow-sm border border-gray-200 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             disabled={loading}
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="crawl-toggle"
-            checked={crawlEntireSite}
-            onCheckedChange={setCrawlEntireSite}
-          />
-          <Label htmlFor="crawl-toggle" className="flex items-center cursor-pointer">
-            <Globe className="mr-2 h-4 w-4" />
-            Crawl entire website (follows links on the same domain)
-          </Label>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="embedding-toggle"
-            checked={generateEmbeddings}
-            onCheckedChange={setGenerateEmbeddings}
-            disabled={crawlEntireSite} // Disable when crawling entire site
-          />
-          <Label 
-            htmlFor="embedding-toggle" 
-            className={`flex items-center ${crawlEntireSite ? 'text-gray-400' : 'cursor-pointer'}`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-            Generate AI embeddings for chat
-            {crawlEntireSite && (
-              <span className="ml-2 text-xs">(Available in project view)</span>
-            )}
-          </Label>
-        </div>
-        
-        {crawlEntireSite && (
-          <>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="crawl-toggle"
+              checked={crawlEntireSite}
+              onCheckedChange={setCrawlEntireSite}
+            />
+            <Label htmlFor="crawl-toggle" className="flex items-center cursor-pointer">
+              <Globe className="mr-2 h-4 w-4 text-gray-600" />
+              Extract entire website (follows links automatically)
+            </Label>
+          </div>
+          
+          {crawlEntireSite && (
             <div className="flex items-center space-x-2">
-              <Label htmlFor="max-pages" className="min-w-[120px]">Maximum pages:</Label>
+              <Label htmlFor="max-pages" className="text-gray-700">Max pages:</Label>
               <Input
                 id="max-pages"
                 type="number"
                 min="1"
-                max="100"
+                max="50"
                 value={maxPages}
                 onChange={(e) => setMaxPages(Number(e.target.value))}
-                className="w-20"
-              />
-              <span className="text-sm text-gray-500">
-                (Higher values may take longer)
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="project-name" className="min-w-[120px]">Project name:</Label>
-              <Input
-                id="project-name"
-                type="text"
-                placeholder={ProjectService.getProjectNameFromUrl(url) || "My Project"}
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="flex-1"
+                className="w-20 h-8 text-sm"
               />
             </div>
-          </>
-        )}
+          )}
+        </div>
         
-        <div className="flex gap-2">
+        <div className="pt-2">
           <Button 
             type="submit" 
             disabled={loading}
-            className="px-6 font-medium transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="w-full py-3 font-medium text-lg transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2"
           >
-            {loading ? (crawlEntireSite ? "Crawling..." : "Illuminating...") : "Go"}
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {crawlEntireSite ? "Extracting Website..." : "Extracting Content..."}
+              </>
+            ) : (
+              <>
+                Extract Content Now
+                <ArrowRight className="ml-1 h-5 w-5" />
+              </>
+            )}
           </Button>
-          <Button 
-            type="button" 
-            disabled={loading}
-            variant="outline"
-            className="px-6 font-medium transition-all duration-200 border border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload
-          </Button>
-          {loading && crawlEntireSite && (
-            <Button 
-              type="button" 
-              variant="destructive"
-              onClick={() => ScraperService.stopCrawling()}
-              className="px-6 font-medium"
-            >
-              Stop Crawl
-            </Button>
-          )}
         </div>
       </div>
     </form>

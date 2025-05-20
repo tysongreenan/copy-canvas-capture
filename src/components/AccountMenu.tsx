@@ -1,40 +1,28 @@
-
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { Settings, CreditCard, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/radix-dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/radix-dropdown-menu";
 import { motion } from "framer-motion";
-
 export function AccountMenu() {
-  const { user, signOut } = useAuth();
-
+  const {
+    user,
+    signOut
+  } = useAuth();
   if (!user) {
-    return (
-      <Button asChild variant="outline" size="sm">
+    return <Button asChild variant="outline" size="sm">
         <Link to="/auth">Sign In</Link>
-      </Button>
-    );
+      </Button>;
   }
-
-  return (
-    <DropdownMenu>
+  return <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <motion.button
-          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white/10 hover:bg-white/20 text-white rounded-md transition-colors"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <User className="h-4 w-4" />
-          <span className="max-w-[100px] truncate">
+        <motion.button className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white/10 hover:bg-white/20 text-white rounded-md transition-colors" whileHover={{
+        scale: 1.03
+      }} whileTap={{
+        scale: 0.97
+      }}>
+          <User className="h-4 w-4 bg-transparent" />
+          <span className="max-w-[100px] truncate text-neutral-950">
             {user.email?.split('@')[0]}
           </span>
         </motion.button>
@@ -62,6 +50,5 @@ export function AccountMenu() {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
-  );
+    </DropdownMenu>;
 }

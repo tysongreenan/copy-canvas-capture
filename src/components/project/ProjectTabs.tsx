@@ -21,12 +21,14 @@ export function ProjectTabs() {
             <TabsTrigger value="import">Import</TabsTrigger>
           </TabsList>
           
-          <Link to={`/chat/${project?.id}`}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Chat with content
-            </Button>
-          </Link>
+          {project?.id && (
+            <Link to={`/chat/${project.id}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Chat with content
+              </Button>
+            </Link>
+          )}
         </div>
 
         <TabsContent value="content" className="mt-4">

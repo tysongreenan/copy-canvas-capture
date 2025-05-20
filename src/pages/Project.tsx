@@ -9,7 +9,7 @@ import { ProjectFooter } from "@/components/project/ProjectFooter";
 const Project = () => {
   const { user } = useAuth();
 
-  // Redirect if not logged in
+  // Move this conditional after all hook calls
   if (!user) {
     return <Navigate to="/auth" replace />;
   }

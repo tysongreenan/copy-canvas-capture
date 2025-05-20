@@ -2,8 +2,7 @@
 import { useChat } from '@/context/ChatContext';
 import { ChatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
-import { Paperclip, Send } from 'lucide-react';
-import { Input } from "@/components/ui/input";
+import { AI_Prompt } from "@/components/ui/animated-ai-input";
 
 interface ChatInputProps {
   projectId: string;
@@ -34,10 +33,9 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     // Add user message to UI immediately
     setMessages(prev => [...prev, userMessage]);
     setLoading(true);
-    setInput("");
     
     try {
-      // If we don't have a conversation ID yet, one will be created
+      // Send message to API
       const { response, conversationId: newConversationId } = await ChatService.sendMessage(
         input.trim(), 
         projectId,
@@ -45,7 +43,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         messages
       );
       
-      // If this is a new conversation, update state and call the callback
+      // If this created a new conversation, update the selected conversation ID
       if (!selectedConversationId && newConversationId && onConversationCreated) {
         onConversationCreated(newConversationId);
       }
@@ -64,6 +62,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      setInput("");
       
     } catch (error: any) {
       console.error("Error sending message:", error);
@@ -87,39 +86,13 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
   };
   
   return (
-    <div className="p-4 border-t border-gray-200 flex items-center gap-2">
-      <button 
-        className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors"
-        aria-label="Attach file"
-      >
-        <Paperclip className="w-5 h-5" />
-      </button>
-      
-      <Input
+    <div className="p-4 border-t border-gray-200">
+      <AI_Prompt
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-          }
-        }}
-        placeholder="Ask a question..."
-        className="flex-1 bg-white text-black border-gray-200"
+        onChange={setInput}
+        onSend={handleSend}
+        isLoading={loading}
       />
-      
-      <button
-        onClick={handleSend}
-        disabled={loading || !input.trim()}
-        className={`p-2 rounded-full transition-colors ${
-          input.trim() 
-            ? 'bg-primary text-white hover:bg-primary/90' 
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-        }`}
-        aria-label="Send message"
-      >
-        <Send className="w-5 h-5" />
-      </button>
     </div>
   );
 }

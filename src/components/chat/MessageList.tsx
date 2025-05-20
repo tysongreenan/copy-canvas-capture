@@ -36,7 +36,7 @@ export function MessageList() {
           <div key={index} className="group">
             <AnimatedMessage 
               message={message} 
-              isLatest={index === messages.length - 1 && message.role === 'assistant'}
+              isLatest={index === messages.length - 1}
             />
             
             {/* Show sources button after AI messages if sources are available */}

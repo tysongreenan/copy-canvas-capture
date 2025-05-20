@@ -17,9 +17,10 @@ export function AnimatedMessage({ message, isLatest }: AnimatedMessageProps) {
   const [animationComplete, setAnimationComplete] = useState(false);
   
   // Use word-by-word animation only for AI responses that are the latest message
+  const shouldAnimate = isLatest && !isUser;
   const animatedContent = useAnimatedText(
     message.content,
-    isUser || !isLatest ? "" : " "
+    shouldAnimate ? " " : ""
   );
   
   // Mark animation as complete when the animated content equals the original content
@@ -46,7 +47,7 @@ export function AnimatedMessage({ message, isLatest }: AnimatedMessageProps) {
         <div className={`${isUser ? 'bg-blue-50 border-blue-200 text-gray-800' : 'bg-indigo-50 border-indigo-200 text-gray-800'} 
                         px-4 py-3 rounded-lg shadow-sm border`}>
           <div className="whitespace-pre-wrap text-sm">
-            {isUser ? message.content : (isLatest && !isUser ? animatedContent : message.content)}
+            {shouldAnimate ? animatedContent : message.content}
           </div>
         </div>
       </div>

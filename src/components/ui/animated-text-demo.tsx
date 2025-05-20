@@ -46,7 +46,7 @@ export function ChunkToCharacterDemo() {
 
   return (
     <div className="space-y-6">
-      <AnimationDemo originalText={chunkText} animatedText={characterText} />
+      <AnimationDemo originalText={DEMO_TEXT} animatedText={characterText} />
       <div className="flex justify-center">
         <Button
           variant="outline"
@@ -72,7 +72,7 @@ export function ChunkToWordDemo() {
 
   return (
     <div className="space-y-6">
-      <AnimationDemo originalText={chunkText} animatedText={wordText} />
+      <AnimationDemo originalText={DEMO_TEXT} animatedText={wordText} />
       <div className="flex justify-center">
         <Button
           variant="outline"

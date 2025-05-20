@@ -1,6 +1,6 @@
 
 import { useChat } from '@/context/ChatContext';
-import { ChatMessage } from './ChatMessage';
+import { AnimatedMessage } from './AnimatedMessage';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRef, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,7 +34,10 @@ export function MessageList() {
       <div className="space-y-4">
         {messages.map((message, index) => (
           <div key={index} className="group">
-            <ChatMessage message={message} />
+            <AnimatedMessage 
+              message={message} 
+              isLatest={index === messages.length - 1 && message.role === 'assistant'}
+            />
             
             {/* Show sources button after AI messages if sources are available */}
             {message.role === 'assistant' && 

@@ -4,7 +4,6 @@ import { ChatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import { Paperclip, Send } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
 
 interface ChatInputProps {
   projectId: string;
@@ -89,14 +88,12 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
   
   return (
     <div className="p-4 border-t border-gray-200 flex items-center gap-2">
-      <motion.button 
+      <button 
         className="p-2 text-black hover:bg-gray-100 rounded-full transition-colors"
         aria-label="Attach file"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
       >
         <Paperclip className="w-5 h-5" />
-      </motion.button>
+      </button>
       
       <Input
         value={input}
@@ -111,7 +108,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         className="flex-1 bg-white text-black border-gray-200"
       />
       
-      <motion.button
+      <button
         onClick={handleSend}
         disabled={loading || !input.trim()}
         className={`p-2 rounded-full transition-colors ${
@@ -120,11 +117,9 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
         aria-label="Send message"
-        whileHover={input.trim() ? { scale: 1.05 } : {}}
-        whileTap={input.trim() ? { scale: 0.95 } : {}}
       >
         <Send className="w-5 h-5" />
-      </motion.button>
+      </button>
     </div>
   );
 }

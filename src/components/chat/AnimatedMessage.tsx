@@ -18,6 +18,11 @@ export function AnimatedMessage({ message, isLatest }: AnimatedMessageProps) {
   
   // Use word-by-word animation only for AI responses that are the latest message
   const shouldAnimate = isLatest && !isUser;
+  
+  // For debugging
+  console.log("Message:", message.content.substring(0, 30), "isLatest:", isLatest, "isUser:", isUser, "shouldAnimate:", shouldAnimate);
+  
+  // Always use delimiter=" " for AI responses to animate word by word
   const animatedContent = useAnimatedText(
     message.content,
     shouldAnimate ? " " : ""

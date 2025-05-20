@@ -13,15 +13,17 @@ import { ProjectService } from "@/services/ProjectService";
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
   onCrawlComplete?: (data: ScrapedContent[], projectId?: string, projectName?: string) => void;
+  projectId?: string;
+  inProjectView?: boolean;
 }
 
-export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
+export function ScrapeForm({ onResult, onCrawlComplete, projectId, inProjectView = false }: ScrapeFormProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [crawlEntireSite, setCrawlEntireSite] = useState(false);
   const [maxPages, setMaxPages] = useState(10);
   const [projectName, setProjectName] = useState("");
-  const [generateEmbeddings, setGenerateEmbeddings] = useState(false);
+  const [generateEmbeddings, setGenerateEmbeddings] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +49,9 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       const options = {
         crawlEntireSite,
         maxPages: maxPages,
-        projectName: projectName || ProjectService.getProjectNameFromUrl(processedUrl),
-        generateEmbeddings: !crawlEntireSite && generateEmbeddings // Only generate embeddings for single pages
+        projectName: inProjectView ? undefined : projectName || ProjectService.getProjectNameFromUrl(processedUrl),
+        generateEmbeddings: generateEmbeddings,
+        useExistingProjectId: inProjectView ? projectId : undefined
       };
       
       const result = await ScraperService.scrapeWebsite(processedUrl, options);
@@ -64,13 +67,13 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
             onCrawlComplete(
               allResults,
               // We'll use a URL-based project name if none is provided
-              undefined,
-              projectName || ProjectService.getProjectNameFromUrl(processedUrl)
+              projectId || undefined,
+              inProjectView ? undefined : projectName || ProjectService.getProjectNameFromUrl(processedUrl)
             );
           }
           
           const embeddingsMessage = generateEmbeddings ? 
-            " You can now process individual pages for AI chat in the project view." : 
+            " Content is now ready for AI chat." : 
             "";
             
           toast({
@@ -79,7 +82,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
           });
         } else {
           const embeddingsMessage = generateEmbeddings ? 
-            " AI embeddings were generated for this page." : 
+            " AI embeddings were generated for this content." : 
             "";
             
           toast({
@@ -125,11 +128,10 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
             id="embedding-toggle"
             checked={generateEmbeddings}
             onCheckedChange={setGenerateEmbeddings}
-            disabled={crawlEntireSite} // Disable when crawling entire site
           />
           <Label 
             htmlFor="embedding-toggle" 
-            className={`flex items-center ${crawlEntireSite ? 'text-gray-400' : 'cursor-pointer'}`}
+            className="flex items-center cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -137,9 +139,6 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
             Generate AI embeddings for chat
-            {crawlEntireSite && (
-              <span className="ml-2 text-xs">(Available in project view)</span>
-            )}
           </Label>
         </div>
         
@@ -161,17 +160,19 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
               </span>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="project-name" className="min-w-[120px]">Project name:</Label>
-              <Input
-                id="project-name"
-                type="text"
-                placeholder={ProjectService.getProjectNameFromUrl(url) || "My Project"}
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="flex-1"
-              />
-            </div>
+            {!inProjectView && (
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="project-name" className="min-w-[120px]">Project name:</Label>
+                <Input
+                  id="project-name"
+                  type="text"
+                  placeholder={ProjectService.getProjectNameFromUrl(url) || "My Project"}
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            )}
           </>
         )}
         
@@ -182,15 +183,6 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
             className="px-6 font-medium transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             {loading ? (crawlEntireSite ? "Crawling..." : "Illuminating...") : "Go"}
-          </Button>
-          <Button 
-            type="button" 
-            disabled={loading}
-            variant="outline"
-            className="px-6 font-medium transition-all duration-200 border border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload
           </Button>
           {loading && crawlEntireSite && (
             <Button 

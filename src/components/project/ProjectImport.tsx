@@ -1,0 +1,121 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { ScrapeForm } from "@/components/ScrapeForm";
+import { FileUpload } from "@/components/chat/FileUpload";
+import { Globe, Upload, FileText } from "lucide-react";
+import { useProject } from "@/context/ProjectContext";
+
+export function ProjectImport() {
+  const [activeTab, setActiveTab] = useState<string>("url");
+  const { toast } = useToast();
+  const { project } = useProject();
+  
+  const handleImportSuccess = () => {
+    toast({
+      title: "Import successful",
+      description: "Your content has been imported and processed",
+    });
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Import Content</h2>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Add content to your project</CardTitle>
+          <CardDescription>
+            Import content from websites or upload files to enhance your project
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="url" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="url" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span>Website URL</span>
+              </TabsTrigger>
+              <TabsTrigger value="file" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                <span>Upload Files</span>
+              </TabsTrigger>
+              <TabsTrigger value="text" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span>Paste Text</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="url" className="p-4 border rounded-md mt-4">
+              <h3 className="text-lg font-medium mb-4">Import from URL</h3>
+              <div className="mb-4">
+                <p className="text-gray-500 text-sm mb-4">
+                  Enter a website URL to scrape its content and add it to your project
+                </p>
+                <ScrapeForm 
+                  onResult={() => {}} 
+                  projectId={project?.id}
+                  inProjectView={true}
+                  onCrawlComplete={handleImportSuccess}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="file" className="p-4 border rounded-md mt-4">
+              <h3 className="text-lg font-medium mb-4">Upload Files</h3>
+              <div className="mb-4">
+                <p className="text-gray-500 text-sm mb-4">
+                  Upload PDF, Word, or Markdown files to add their content to your project
+                </p>
+                
+                <div className="grid gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="file-upload">Select files to upload</Label>
+                    <div className="flex gap-2">
+                      <FileUpload 
+                        projectId={project?.id || ''} 
+                        onSuccess={handleImportSuccess}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">Supported formats: PDF, DOCX, MD (Max size: 10MB)</p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="text" className="p-4 border rounded-md mt-4">
+              <h3 className="text-lg font-medium mb-4">Paste Text</h3>
+              <div className="mb-4">
+                <p className="text-gray-500 text-sm mb-4">
+                  Paste text content directly to add it to your project
+                </p>
+                
+                <div className="grid gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="text-content">Text content</Label>
+                    <textarea
+                      id="text-content"
+                      className="min-h-[200px] p-3 rounded-md border"
+                      placeholder="Paste your text content here..."
+                    />
+                  </div>
+                  
+                  <Button className="w-full md:w-auto">
+                    Import Text
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

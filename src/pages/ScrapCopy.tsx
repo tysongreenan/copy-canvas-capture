@@ -3,22 +3,124 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
+import { useAuth } from "@/context/AuthContext";
 import type { ScrapedContent } from "@/services/ScraperTypes";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { SaveButton } from "@/components/SaveButton";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { ArrowRight, Globe, FileText, Code, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Download, MessageSquare, Check } from "lucide-react";
 
 const ScrapCopy = () => {
   const [scrapedData, setScrapedData] = useState<ScrapedContent | null>(null);
+  const [downloadFormat, setDownloadFormat] = useState<"json" | "text" | "html">("json");
+  const { user } = useAuth();
 
   const handleResult = (data: ScrapedContent) => {
     setScrapedData(data);
     
-    // Scroll to results after a short delay
+    // Scroll to results
     setTimeout(() => {
       document.getElementById("results")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
+  };
+
+  const handleDownload = () => {
+    if (!scrapedData) return;
+
+    let content = "";
+    let filename = "";
+    let mimeType = "";
+
+    if (downloadFormat === "json") {
+      content = JSON.stringify(scrapedData, null, 2);
+      filename = `${scrapedData.title.replace(/\s+/g, "-").toLowerCase()}-content.json`;
+      mimeType = "application/json";
+    } else if (downloadFormat === "text") {
+      content = `Title: ${scrapedData.title}\n\n`;
+      
+      if (scrapedData.metaDescription) {
+        content += `Description: ${scrapedData.metaDescription}\n\n`;
+      }
+      
+      scrapedData.headings.forEach(h => {
+        content += `${h.tag.toUpperCase()}: ${h.text}\n`;
+      });
+      
+      content += "\nParagraphs:\n";
+      scrapedData.paragraphs.forEach(p => {
+        content += `${p}\n\n`;
+      });
+      
+      content += "\nLinks:\n";
+      scrapedData.links.forEach(link => {
+        content += `${link.text} - ${link.url}\n`;
+      });
+      
+      content += "\nList Items:\n";
+      scrapedData.listItems.forEach(item => {
+        content += `- ${item}\n`;
+      });
+      
+      filename = `${scrapedData.title.replace(/\s+/g, "-").toLowerCase()}-content.txt`;
+      mimeType = "text/plain";
+    } else if (downloadFormat === "html") {
+      content = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${scrapedData.title}</title>
+  <meta charset="UTF-8">
+  ${scrapedData.metaDescription ? `<meta name="description" content="${scrapedData.metaDescription}">` : ""}
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.5em; }
+    p { margin-bottom: 1em; }
+    ul { margin-bottom: 1em; }
+  </style>
+</head>
+<body>
+  <h1>${scrapedData.title}</h1>
+
+  ${scrapedData.headings.map(h => `<${h.tag}>${h.text}</${h.tag}>`).join('\n  ')}
+  
+  ${scrapedData.paragraphs.map(p => `<p>${p}</p>`).join('\n  ')}
+  
+  <h2>Links</h2>
+  <ul>
+    ${scrapedData.links.map(link => `<li><a href="${link.url}">${link.text}</a></li>`).join('\n    ')}
+  </ul>
+  
+  <h2>List Items</h2>
+  <ul>
+    ${scrapedData.listItems.map(item => `<li>${item}</li>`).join('\n    ')}
+  </ul>
+  
+  <footer>
+    <p><small>Generated with Lumen Copy Scraper</small></p>
+  </footer>
+</body>
+</html>`;
+      
+      filename = `${scrapedData.title.replace(/\s+/g, "-").toLowerCase()}-content.html`;
+      mimeType = "text/html";
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Download started",
+      description: `Your content is downloading as ${filename}`,
+    });
   };
 
   return (
@@ -27,246 +129,207 @@ const ScrapCopy = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-12 md:py-20 bg-gradient-to-b from-indigo-50 to-white">
-          <div className="container max-w-5xl px-6 md:px-8">
+        <section className="py-12 border-b border-gray-200 bg-gradient-to-br from-indigo-50 to-white">
+          <div className="container max-w-5xl px-6 md:px-0">
             <div className="text-center mb-10">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-                Extract All Copy From Any Website
-                <span className="text-indigo-600">—In Seconds</span>
+              <Badge variant="outline" className="mb-4 px-3 py-1 rounded-full bg-white">
+                Free Website Copy Scraper Tool
+              </Badge>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Extract All Text from Any Website
               </h1>
-              <p className="text-xl md:text-2xl text-gray-700 mb-6 max-w-3xl mx-auto">
-                The fastest way to extract clean, formatted content from any website—ready for immediate use.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" className="px-8 py-6 text-lg font-semibold" onClick={() => document.getElementById("scraper")?.scrollIntoView({ behavior: "smooth" })}>
-                  Try It Now
-                </Button>
-                <Button variant="outline" size="lg" className="px-8 py-6 text-lg font-semibold" asChild>
-                  <Link to="/chat">
-                    Chat With Your Content <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* SEO-friendly keywords */}
-            <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-500 mb-8">
-              <span className="px-3 py-1 rounded-full bg-gray-100">Website Scraper Tool</span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">Extract Website Copy</span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">Website Content Extractor</span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">Copy Scraper</span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">Web Content Scraper</span>
-            </div>
-          </div>
-        </section>
-        
-        {/* Search Section */}
-        <section id="scraper" className="py-12 border-b border-gray-100">
-          <div className="container max-w-5xl px-6 md:px-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                Enter a Website URL Below
-              </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Our tool extracts headings, paragraphs, links and more—giving you clean, structured content in seconds.
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Instantly extract headings, paragraphs, links and more from any website. 
+                Save time and enhance your SEO, content writing, or research.
               </p>
             </div>
 
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-6 border border-gray-100">
               <ScrapeForm onResult={handleResult} />
             </div>
           </div>
         </section>
         
-        {/* Features */}
+        {/* Features Section */}
         <section className="py-12 bg-white">
-          <div className="container max-w-5xl px-6 md:px-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
-              Why Use Our Web Copy Extractor?
-            </h2>
+          <div className="container max-w-5xl px-6 md:px-0">
+            <h2 className="text-2xl font-bold text-center mb-10">Why Use Our Website Copy Scraper</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center text-center p-6 rounded-lg border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="h-14 w-14 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <Globe className="h-6 w-6 text-indigo-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Fast & Easy</h3>
-                <p className="text-gray-600">
-                  Extract website content with a single click—no technical skills required.
-                </p>
-              </div>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                      <Check className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <h3 className="font-bold mb-2">Fast & Easy</h3>
+                    <p className="text-gray-600">
+                      Just paste a URL and get all website content in seconds. No coding or technical knowledge required.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="flex flex-col items-center text-center p-6 rounded-lg border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="h-14 w-14 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="h-6 w-6 text-indigo-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Structured Output</h3>
-                <p className="text-gray-600">
-                  Get clean, organized content separated by headings, paragraphs, and links.
-                </p>
-              </div>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                      <FileText className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <h3 className="font-bold mb-2">Complete Content</h3>
+                    <p className="text-gray-600">
+                      Extract headings, paragraphs, lists, meta descriptions and all text elements from any webpage.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
               
-              <div className="flex flex-col items-center text-center p-6 rounded-lg border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="h-14 w-14 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                  <MessageSquare className="h-6 w-6 text-indigo-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">AI-Ready Content</h3>
-                <p className="text-gray-600">
-                  Extract content that's ready for AI analysis and conversation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* SEO Section */}
-        <section className="py-12 bg-gray-50">
-          <div className="container max-w-5xl px-6 md:px-8">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                  Free Website Copy Scraping Tool
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  Our website content extractor allows you to easily extract all copy from any website. 
-                  Whether you need to analyze competitor content, gather research, or prepare content for AI training, 
-                  our tool makes it simple.
-                </p>
-                <p className="text-gray-600 mb-4">
-                  Just enter the URL of the website you want to scrape, and our tool will extract all the 
-                  headings, paragraphs, links, and more—giving you clean, structured content in seconds.
-                </p>
-                <p className="text-gray-600">
-                  After extracting the content, you can also chat with our AI about the website content, 
-                  making it easy to analyze and understand.
-                </p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-xl font-semibold mb-4">How to use our web scraper:</h3>
-                <ol className="space-y-3 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">1</span>
-                    <span>Enter the URL of the website you want to scrape</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">2</span>
-                    <span>Click "Go" to extract all text content</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">3</span>
-                    <span>Review the structured content (headings, paragraphs, links)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="bg-indigo-100 text-indigo-700 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">4</span>
-                    <span>Chat with our AI about the content or save it for later</span>
-                  </li>
-                </ol>
-              </div>
+              <Card className="border-0 shadow-md">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                      <Download className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <h3 className="font-bold mb-2">Export Options</h3>
+                    <p className="text-gray-600">
+                      Save the content in multiple formats including JSON, plain text, or HTML for easy integration.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
         
         {/* Results Section */}
-        <section id="results" className="py-12 min-h-[400px]">
-          <div className="container max-w-6xl px-6 md:px-8">
-            {scrapedData && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold">Extracted Website Content</h2>
+        {scrapedData && (
+          <section id="results" className="py-12 bg-gray-50 border-t border-gray-200">
+            <div className="container max-w-5xl px-6 md:px-0">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Scraped Content</h2>
+                <div className="flex gap-2">
+                  {user ? (
+                    <SaveButton content={scrapedData} />
+                  ) : (
+                    <Link to="/auth">
+                      <Button variant="outline" size="sm" className="whitespace-nowrap">
+                        Login to Save
+                      </Button>
+                    </Link>
+                  )}
                   
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        if (scrapedData?.projectId) {
-                          toast({
-                            title: "Ready for chat",
-                            description: "Your content is ready for AI chat!",
-                          });
-                        } else {
-                          toast({
-                            title: "AI embeddings needed",
-                            description: "Generate AI embeddings to enable chat functionality",
-                          });
-                        }
-                      }}
+                  <div className="flex items-center gap-2">
+                    <select 
+                      value={downloadFormat}
+                      onChange={(e) => setDownloadFormat(e.target.value as any)}
+                      className="text-sm border rounded p-1"
                     >
-                      Save Content
-                    </Button>
-                    
-                    <Button asChild>
-                      <Link to={scrapedData?.projectId ? `/chat/${scrapedData.projectId}` : "/chat"}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Chat With This Content
-                      </Link>
+                      <option value="json">JSON</option>
+                      <option value="text">Text</option>
+                      <option value="html">HTML</option>
+                    </select>
+                    <Button 
+                      size="sm" 
+                      onClick={handleDownload}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
                     </Button>
                   </div>
                 </div>
-                
+              </div>
+              
+              <div className="bg-white shadow rounded-lg border border-gray-200">
                 <ContentDisplay data={scrapedData} />
-                
-                <div className="mt-10 text-center">
-                  <h3 className="text-xl font-semibold mb-4">Want to do more with this content?</h3>
-                  <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                    Chat with our AI about this website content, save it to your account, 
-                    or explore the full site structure.
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-4">
-                    <Button asChild>
-                      <Link to="/dashboard">
-                        Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+              </div>
+              
+              {/* AI chat upsell */}
+              {scrapedData && !scrapedData.projectId && (
+                <div className="mt-8 bg-indigo-50 rounded-lg p-6 border border-indigo-100">
+                  <div className="flex items-center gap-4">
+                    <div className="hidden md:block h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <MessageSquare className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-1">Want to chat with this content?</h3>
+                      <p className="text-gray-600">
+                        Save this content to your account and use our AI chat to ask questions about this website.
+                      </p>
+                    </div>
+                    <div>
+                      <Link to={user ? "/dashboard" : "/auth"}>
+                        <Button className="whitespace-nowrap">
+                          {user ? "Try AI Chat" : "Sign Up Free"}
+                        </Button>
                       </Link>
-                    </Button>
-                    <Button variant="outline" asChild>
-                      <Link to={`/chat${scrapedData?.projectId ? `/${scrapedData.projectId}` : ""}`}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Chat With Content
-                      </Link>
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            {!scrapedData && (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 mx-auto mb-6 text-gray-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                    <line x1="10" y1="9" x2="8" y2="9"/>
-                  </svg>
-                </div>
-                <p className="text-gray-500 text-lg">Enter a URL above to extract website content</p>
-                <div className="mt-4 text-sm text-gray-400">
-                  Try example sites like <span className="text-indigo-600">apple.com</span> or <span className="text-indigo-600">wikipedia.org</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
+        )}
         
-        {/* CTA Section */}
-        <section className="py-12 bg-indigo-50">
-          <div className="container max-w-5xl px-6 md:px-8 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to do more with your website content?</h2>
-            <p className="text-gray-700 mb-8 max-w-2xl mx-auto">
-              Create a free account to save extracted content, analyze multiple websites, and chat with our AI about any website content.
-            </p>
-            <Button size="lg" className="px-8" asChild>
-              <Link to="/dashboard">
-                Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+        {/* SEO Content Section */}
+        <section className="py-12 bg-white">
+          <div className="container max-w-5xl px-6 md:px-0">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold mb-6">Extract Website Content Quickly & Easily</h2>
+              
+              <div className="prose prose-gray max-w-none">
+                <p>
+                  Our website copy scraper tool helps you extract all the text content from any website with just one click. 
+                  Whether you're a content writer, SEO specialist, researcher, or developer, this tool saves you hours of 
+                  manual copy-pasting and formatting.
+                </p>
+                
+                <h3>How Our Website Content Scraper Works</h3>
+                <p>
+                  Simply enter the URL of the website you want to extract content from. Our tool instantly scans the page
+                  and extracts all text elements including headings, paragraphs, lists, and links. You can view the content 
+                  right in your browser or download it in your preferred format.
+                </p>
+                
+                <h3>Free to Use, No Registration Required</h3>
+                <p>
+                  Our website content scraper is completely free to use. No registration, no hidden fees, and no limits.
+                  However, if you create a free account, you'll get access to our AI chat feature that lets you ask 
+                  questions about the content you've scraped.
+                </p>
+                
+                <h3>Use Cases for Our Website Copy Scraper</h3>
+                <ul>
+                  <li><strong>SEO Analysis:</strong> Extract content to analyze keyword density and content structure</li>
+                  <li><strong>Content Research:</strong> Gather content from multiple sources for research</li>
+                  <li><strong>Competitive Analysis:</strong> Study competitor websites' content strategies</li>
+                  <li><strong>Migration:</strong> Extract content to move between platforms</li>
+                  <li><strong>Content Archive:</strong> Create backups of your web content</li>
+                </ul>
+                
+                <h3>Advanced Features</h3>
+                <p>
+                  Upgrade to access our full suite of content tools including:
+                </p>
+                <ul>
+                  <li>AI-powered chat to ask questions about any website</li>
+                  <li>Bulk website scraping to extract content from multiple pages at once</li>
+                  <li>PDF and document upload to extract and analyze content from files</li>
+                  <li>Content comparison tools to identify similarities and differences</li>
+                </ul>
+                
+                <p>
+                  Try our free website copy scraper today and see how it can save you time and effort in your content workflow.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
       
       <footer className="py-6 text-center text-sm text-gray-500 border-t">
         <div className="container">
-          <p>Lumen © {new Date().getFullYear()} • Free Website Copy Scraper Tool</p>
+          <p>Lumen © {new Date().getFullYear()} • Designed for web professionals</p>
         </div>
       </footer>
     </div>

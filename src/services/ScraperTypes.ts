@@ -59,5 +59,6 @@ export interface CrawlOptions {
   crawlEntireSite: boolean;
   maxPages?: number;
   projectName?: string;
-  generateEmbeddings?: boolean; // New option for embedding generation
+  generateEmbeddings?: boolean;
+  useExistingProjectId?: string; // New option to use an existing project ID
 }

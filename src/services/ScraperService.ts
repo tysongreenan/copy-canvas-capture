@@ -1,3 +1,4 @@
+
 // Make sure ScraperService imports types from ScraperTypes
 import { ScrapedContent, CrawlProject, SitemapData, CrawlOptions } from './ScraperTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,9 +22,12 @@ export class ScraperService {
   public static async scrapeWebsite(url: string, options: CrawlOptions): Promise<ScrapedContent | null> {
     this.generateEmbeddings = options.generateEmbeddings || false;
     
+    // If an existing project ID is provided, use it
+    const projectId = options.useExistingProjectId || uuidv4();
+    
     if (options.crawlEntireSite) {
       this.isCrawling = true;
-      await this.crawlSite(url, options);
+      await this.crawlSite(url, options, projectId);
       this.isCrawling = false;
       
       // Return the first result as the main content
@@ -31,11 +35,15 @@ export class ScraperService {
     } else {
       // Single page scrape
       const result = await this.scrapeContent(url);
+      
+      // Assign the project ID to the result
+      result.projectId = projectId;
+      
       this.results = [result]; // Store for potential access later
       
       // Only process embeddings if there was no error, embeddings are enabled, and we have a projectId
-      if (this.generateEmbeddings && result.projectId && result.title !== 'Error') {
-        await EmbeddingService.processProject(result.projectId, [result]);
+      if (this.generateEmbeddings && result.title !== 'Error') {
+        await EmbeddingService.processProject(projectId, [result]);
       }
       
       return result;
@@ -66,7 +74,7 @@ export class ScraperService {
   /**
    * Crawl an entire site
    */
-  public static async crawlSite(startUrl: string, options: CrawlOptions): Promise<ScrapedContent[]> {
+  public static async crawlSite(startUrl: string, options: CrawlOptions, projectId: string): Promise<ScrapedContent[]> {
     this.results = []; // Reset results for a new crawl
     this.isCrawling = true;
     
@@ -79,17 +87,28 @@ export class ScraperService {
       return [];
     }
     
-    const projectId = uuidv4();
-    
-    // Create a new project
-    const projectName = options.projectName || ProjectService.getProjectNameFromUrl(startUrl);
-    this.currentProject = ProjectService.createProject(projectId, projectName, startUrl);
+    // If we have an existing project ID, use it; otherwise create a new project
+    if (options.useExistingProjectId) {
+      // Get the existing project
+      const existingProject = ProjectService.getProject(options.useExistingProjectId);
+      if (existingProject) {
+        this.currentProject = existingProject;
+      } else {
+        // If project doesn't exist (shouldn't happen), create a new one
+        const projectName = options.projectName || ProjectService.getProjectNameFromUrl(startUrl);
+        this.currentProject = ProjectService.createProject(projectId, projectName, startUrl);
+      }
+    } else {
+      // Create a new project
+      const projectName = options.projectName || ProjectService.getProjectNameFromUrl(startUrl);
+      this.currentProject = ProjectService.createProject(projectId, projectName, startUrl);
+    }
     
     let visited = new Set<string>();
     let queue: string[] = [startUrl];
     let pageCount = 0;
     
-    while (queue.length > 0 && this.isCrawling && (options.crawlEntireSite || (options.maxPages && pageCount < options.maxPages))) {
+    while (queue.length > 0 && this.isCrawling && (options.maxPages && pageCount < options.maxPages)) {
       const url = queue.shift()!;
       
       if (visited.has(url)) continue;
@@ -100,8 +119,6 @@ export class ScraperService {
       content.projectId = projectId; // Assign the project ID to the content
       this.results.push(content);
       pageCount++;
-      
-      // We don't process embeddings during crawl anymore - we'll do it separately later
       
       // Extract and enqueue links, only if crawlEntireSite is true
       if (options.crawlEntireSite) {
@@ -120,8 +137,18 @@ export class ScraperService {
       }
     }
     
-    // Update project page count
-    ProjectService.updateProjectPageCount(projectId, pageCount);
+    // Update project page count if it's an existing project
+    if (options.useExistingProjectId) {
+      // Get current page count and add new pages
+      const currentProject = ProjectService.getProject(projectId);
+      if (currentProject) {
+        const newPageCount = currentProject.pageCount + pageCount;
+        ProjectService.updateProjectPageCount(projectId, newPageCount);
+      }
+    } else {
+      // New project, just set the page count
+      ProjectService.updateProjectPageCount(projectId, pageCount);
+    }
     
     // Generate sitemap data
     ProjectService.updateProjectSitemap(
@@ -131,6 +158,11 @@ export class ScraperService {
       this.baseUrl,
       this.baseDomain
     );
+    
+    // Process embeddings if enabled
+    if (this.generateEmbeddings) {
+      await EmbeddingService.processProject(projectId, this.results);
+    }
     
     this.isCrawling = false;
     return this.results;

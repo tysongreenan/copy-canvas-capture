@@ -70,6 +70,8 @@ serve(async (req) => {
 
     // If projectId is provided, search for relevant documents in our RAG system
     let relevantContexts = "";
+    let hasRAGResults = false;
+    
     if (projectId) {
       // Generate embedding for the query
       const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
@@ -88,8 +90,8 @@ serve(async (req) => {
         const embeddingData = await embeddingResponse.json();
         const embedding = embeddingData.data[0].embedding;
 
-        // Use a lower similarity threshold for better fuzzy matching
-        const similarityThreshold = 0.3;
+        // Use a lower similarity threshold for better fuzzy matching - reduced further to catch more potential matches
+        const similarityThreshold = 0.2; // Lowered from 0.3 to catch more potential matches
         
         // Perform vector similarity search
         const { data: similarDocs, error } = await supabase.rpc(
@@ -97,7 +99,7 @@ serve(async (req) => {
           {
             query_embedding: embedding,
             match_threshold: similarityThreshold,
-            match_count: 5, // Retrieve top 5 relevant documents
+            match_count: 10, // Retrieve more documents (increased from 5)
             p_project_id: projectId
           }
         );
@@ -110,15 +112,63 @@ serve(async (req) => {
             ).join("\n\n");
           
           console.log(`Found ${similarDocs.length} relevant documents from knowledge base`);
+          hasRAGResults = true;
+        } else {
+          console.log(`No relevant documents found with threshold ${similarityThreshold}`);
         }
       }
     }
 
+    // Create a system message with instructions for handling no-context situations
+    let systemPrompt = "";
+    
+    if (projectId && !hasRAGResults) {
+      systemPrompt = `
+You are an AI assistant specializing in marketing research and strategy. 
+When answering, consider both general marketing knowledge and any specific context provided.
+
+IMPORTANT INSTRUCTIONS:
+1. If no context is provided from the knowledge base, use your general knowledge to give a helpful response.
+2. When using general knowledge, make it clear to the user that you're not drawing from their specific documents.
+3. Never say that you couldn't find information or refuse to answer. Instead, provide general marketing insights that might be helpful.
+4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
+`;
+    }
+
     // Add the user's message to the thread, along with relevant context if available
-    const userMessage = relevantContexts 
+    const userMessageContent = relevantContexts 
       ? `${message}\n\n${relevantContexts}` 
       : message;
       
+    const messagePayload: any = {
+      role: 'user',
+      content: userMessageContent
+    };
+    
+    // Add system message if needed (no RAG results found)
+    if (systemPrompt) {
+      // First add system message to guide the assistant
+      const systemMessageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v1'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `[System Note: ${systemPrompt}]`
+        })
+      });
+      
+      if (!systemMessageResponse.ok) {
+        const error = await systemMessageResponse.json();
+        console.error("Failed to add system message:", error);
+        // Continue with the user message even if system message fails
+      }
+    }
+    
+    // Now add the user message
     const messageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
       method: 'POST',
       headers: {
@@ -126,10 +176,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v1'
       },
-      body: JSON.stringify({
-        role: 'user',
-        content: userMessage
-      })
+      body: JSON.stringify(messagePayload)
     });
 
     if (!messageResponse.ok) {

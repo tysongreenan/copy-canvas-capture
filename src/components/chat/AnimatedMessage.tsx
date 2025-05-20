@@ -18,7 +18,7 @@ export function AnimatedMessage({ message, isLatest }: AnimatedMessageProps) {
   
   // Use word-by-word animation only for AI responses that are the latest message
   const animatedContent = useAnimatedText(
-    isUser || !isLatest ? message.content : message.content,
+    message.content,
     isUser || !isLatest ? "" : " "
   );
   

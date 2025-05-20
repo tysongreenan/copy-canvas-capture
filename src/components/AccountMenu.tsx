@@ -1,32 +1,30 @@
+
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { Settings, CreditCard, LogOut, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/radix-dropdown-menu";
-import { motion } from "framer-motion";
+
 export function AccountMenu() {
-  const {
-    user,
-    signOut
-  } = useAuth();
+  const { user, signOut } = useAuth();
+
   if (!user) {
-    return <Button asChild variant="outline" size="sm">
-        <Link to="/auth">Sign In</Link>
-      </Button>;
+    return (
+      <Link to="/auth" className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm border border-gray-200 hover:bg-gray-50">
+        <User className="mr-2 h-4 w-4" />
+        Sign In
+      </Link>
+    );
   }
-  return <DropdownMenu>
+
+  return (
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <motion.button className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white/10 hover:bg-white/20 text-white rounded-md transition-colors" whileHover={{
-        scale: 1.03
-      }} whileTap={{
-        scale: 0.97
-      }}>
-          <User className="h-4 w-4 bg-transparent" />
-          <span className="max-w-[100px] truncate text-neutral-950">
-            {user.email?.split('@')[0]}
-          </span>
-        </motion.button>
+        <button className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm border border-gray-200 hover:bg-gray-50">
+          <User className="mr-2 h-4 w-4" />
+          {user.email?.split('@')[0]}
+        </button>
       </DropdownMenuTrigger>
+      
       <DropdownMenuContent className="w-56 bg-white text-gray-800 border-gray-200">
         <DropdownMenuLabel className="text-gray-800">My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -50,5 +48,6 @@ export function AccountMenu() {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>;
+    </DropdownMenu>
+  );
 }

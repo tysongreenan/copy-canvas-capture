@@ -25,7 +25,7 @@ const ChatDemo = () => {
     const [lastSources, setLastSources] = useState<any[]>([]);
     const { toast } = useToast();
     
-    // IMPORTANT: Move the redirect AFTER all hooks are initialized
+    // Move the authentication check after all hooks are initialized
     if (!user) {
         return <Navigate to="/auth" replace />;
     }

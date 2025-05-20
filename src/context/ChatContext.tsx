@@ -13,6 +13,7 @@ interface ChatContextType {
   setInput: React.Dispatch<React.SetStateAction<string>>;
   lastSources: any[];
   setLastSources: React.Dispatch<React.SetStateAction<any[]>>;
+  messageLimit: number;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -23,6 +24,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
   const [input, setInput] = useState('');
   const [lastSources, setLastSources] = useState<any[]>([]);
+  // Increased message limit to show more context
+  const messageLimit = 100; // We can show up to 100 messages in the chat window
 
   return (
     <ChatContext.Provider
@@ -36,7 +39,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         input,
         setInput,
         lastSources,
-        setLastSources
+        setLastSources,
+        messageLimit
       }}
     >
       {children}

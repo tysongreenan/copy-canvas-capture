@@ -2,19 +2,36 @@
 import { useChat } from '@/context/ChatContext';
 import { ChatMessage } from './ChatMessage';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ArrowUpCircle } from 'lucide-react';
 
 export function MessageList() {
   const { messages, lastSources } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  
+  // Check scroll position to show/hide scroll to top button
+  const handleScroll = () => {
+    if (scrollAreaRef.current) {
+      const { scrollTop } = scrollAreaRef.current;
+      setShowScrollTop(scrollTop > 300);
+    }
+  };
+  
+  const scrollToTop = () => {
+    scrollAreaRef.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
   
   if (messages.length === 0) {
     return (
@@ -30,7 +47,12 @@ export function MessageList() {
   }
   
   return (
-    <ScrollArea className="flex-1 p-4 mb-4">
+    <ScrollArea 
+      className="flex-1 p-4 mb-4" 
+      scrollHideDelay={100}
+      onScroll={handleScroll}
+      ref={scrollAreaRef}
+    >
       <div className="space-y-4">
         {messages.map((message, index) => (
           <div key={index} className="group">
@@ -69,6 +91,18 @@ export function MessageList() {
         
         <div ref={messagesEndRef} />
       </div>
+      
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="fixed bottom-20 right-4 z-10 rounded-full w-10 h-10 p-0 shadow-md bg-white/80 backdrop-blur-sm"
+          onClick={scrollToTop}
+        >
+          <ArrowUpCircle className="h-5 w-5" />
+        </Button>
+      )}
     </ScrollArea>
   );
 }

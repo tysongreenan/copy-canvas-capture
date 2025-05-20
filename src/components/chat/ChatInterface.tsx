@@ -17,7 +17,7 @@ export function ChatInterface({
   conversationId,
   onConversationCreated
 }: ChatInterfaceProps) {
-  const { setMessages, setLoading, setSelectedConversationId } = useChat();
+  const { setMessages, setLoading, setSelectedConversationId, messageLimit } = useChat();
   const { toast } = useToast();
   
   // Set conversation ID in context when it changes
@@ -33,7 +33,8 @@ export function ChatInterface({
       const loadMessages = async () => {
         setLoading(true);
         try {
-          const fetchedMessages = await ChatService.getMessages(conversationId);
+          // Use messageLimit from context to fetch more messages
+          const fetchedMessages = await ChatService.getMessages(conversationId, messageLimit);
           setMessages(fetchedMessages);
         } catch (error) {
           console.error("Error loading messages:", error);
@@ -52,7 +53,7 @@ export function ChatInterface({
       // Reset messages if no conversation is selected
       setMessages([]);
     }
-  }, [conversationId, setLoading, setMessages, toast]);
+  }, [conversationId, setLoading, setMessages, toast, messageLimit]);
   
   return (
     <div className="flex flex-col h-full bg-white">

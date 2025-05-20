@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Project from "./pages/Project";
 import Sitemap from "./pages/Sitemap";
+import ScrapCopy from "./pages/ScrapCopy";
 import { ChatDemo } from "./components/chat/ChatDemo";
 
 // Update document title
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/project/:id" element={<Project />} />
               <Route path="/sitemap" element={<Sitemap />} />
+              <Route path="/scrapcopy" element={<ScrapCopy />} />
               <Route path="/chat" element={<ChatDemo />} />
               <Route path="/chat/:id" element={<ChatDemo />} />
               {/* Redirect old path to new structure */}

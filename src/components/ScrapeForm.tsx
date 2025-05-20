@@ -35,17 +35,23 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
       return;
     }
     
+    // Add http:// if missing
+    let processedUrl = url;
+    if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+      processedUrl = 'https://' + processedUrl;
+    }
+    
     setLoading(true);
     
     try {
       const options = {
         crawlEntireSite,
         maxPages: maxPages,
-        projectName: projectName || ProjectService.getProjectNameFromUrl(url),
+        projectName: projectName || ProjectService.getProjectNameFromUrl(processedUrl),
         generateEmbeddings: !crawlEntireSite && generateEmbeddings // Only generate embeddings for single pages
       };
       
-      const result = await ScraperService.scrapeWebsite(url, options);
+      const result = await ScraperService.scrapeWebsite(processedUrl, options);
       
       if (result) {
         onResult(result);
@@ -59,7 +65,7 @@ export function ScrapeForm({ onResult, onCrawlComplete }: ScrapeFormProps) {
               allResults,
               // We'll use a URL-based project name if none is provided
               undefined,
-              projectName || ProjectService.getProjectNameFromUrl(url)
+              projectName || ProjectService.getProjectNameFromUrl(processedUrl)
             );
           }
           

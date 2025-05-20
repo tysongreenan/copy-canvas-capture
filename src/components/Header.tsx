@@ -1,6 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { UserMenu } from "@/components/UserMenu";
+import { FileText } from "lucide-react";
 
 export function Header() {
   return (
@@ -23,6 +24,15 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-6 mr-6">
+            <Link to="/dashboard" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+              Dashboard
+            </Link>
+            <Link to="/scrapcopy" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              Copy Scraper
+            </Link>
+          </nav>
           <UserMenu />
         </div>
       </div>

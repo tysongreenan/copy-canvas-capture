@@ -8,7 +8,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import Dashboard from "./pages/Dashboard";
 import Project from "./pages/Project";
 import Sitemap from "./pages/Sitemap";
 import ScrapCopy from "./pages/ScrapCopy";
@@ -30,13 +29,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/project/:id" element={<Project />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/scrapcopy" element={<ScrapCopy />} />
               <Route path="/chat" element={<ChatDemo />} />
               <Route path="/chat/:id" element={<ChatDemo />} />
-              {/* Redirect old path to new structure */}
+              {/* Redirect /dashboard to /chat */}
+              <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

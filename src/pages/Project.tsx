@@ -8,8 +8,8 @@ import { ProjectFooter } from "@/components/project/ProjectFooter";
 
 const Project = () => {
   const { user } = useAuth();
-
-  // Redirect if not logged in
+  
+  // Move this after hooks declaration but before any other logic
   if (!user) {
     return <Navigate to="/auth" replace />;
   }

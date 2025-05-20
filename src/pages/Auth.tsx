@@ -23,9 +23,9 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already logged in
+  // Redirect if already logged in - fix: moved this after hooks declaration
   if (user) {
-    navigate("/");
+    navigate("/chat");  // Changed from "/" to "/chat" to redirect to chat
     return null;
   }
 
@@ -43,7 +43,7 @@ const Auth = () => {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate("/");
+      navigate("/chat");  // Changed from "/" to "/chat"
     } catch (error) {
       console.error("Login error:", error);
     } finally {

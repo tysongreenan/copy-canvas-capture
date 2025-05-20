@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 
 export function ProjectTabs() {
   const { activeTab, setActiveTab, project } = useProject();
+  
+  // Make sure we have project before accessing its ID
+  const projectId = project?.id || '';
 
   return (
     <div className="mt-6">
@@ -21,7 +24,7 @@ export function ProjectTabs() {
             <TabsTrigger value="import">Import</TabsTrigger>
           </TabsList>
           
-          <Link to={`/chat/${project?.id}`}>
+          <Link to={`/chat/${projectId}`}>
             <Button variant="outline" size="sm" className="gap-2">
               <MessageSquare className="h-4 w-4" />
               Chat with content

@@ -115,7 +115,10 @@ const Chat = () => {
                 </div>
               )}
               
-              <AIPromptContainer onSendMessage={handleSendMessage} />
+              <AIPromptContainer 
+                onSendMessage={handleSendMessage} 
+                projectId={project.id} 
+              />
             </div>
             
             <ChatContainer project={project} />

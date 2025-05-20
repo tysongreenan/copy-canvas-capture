@@ -18,7 +18,8 @@ export class AssistantService {
   public static async sendMessage(
     message: string, 
     threadId?: string,
-    assistantId: string = "asst_hLaKt8VKignxoY0V0NyZxGWO" // Marketing Research assistant by default
+    assistantId: string = "asst_hLaKt8VKignxoY0V0NyZxGWO", // Marketing Research assistant by default
+    projectId?: string
   ): Promise<AssistantResponse> {
     try {
       // Call the Supabase edge function that handles assistant communication
@@ -26,7 +27,8 @@ export class AssistantService {
         body: {
           message,
           threadId,
-          assistantId
+          assistantId,
+          projectId
         }
       });
       

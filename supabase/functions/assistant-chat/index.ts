@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, assistantId } = await req.json();
+    const { message, threadId, assistantId, projectId } = await req.json();
 
     if (!message || !assistantId) {
       return new Response(
@@ -34,6 +35,16 @@ serve(async (req) => {
     console.log(`Processing message: "${message}" with assistant ${assistantId}`);
 
     let activeThreadId = threadId;
+    
+    // Initialize Supabase client for RAG search
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // If no thread ID is provided, create a new thread
     if (!activeThreadId) {
@@ -57,7 +68,57 @@ serve(async (req) => {
       console.log(`Created new thread with ID: ${activeThreadId}`);
     }
 
-    // Add the user's message to the thread
+    // If projectId is provided, search for relevant documents in our RAG system
+    let relevantContexts = "";
+    if (projectId) {
+      // Generate embedding for the query
+      const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: message,
+          model: 'text-embedding-3-small',
+        }),
+      });
+
+      if (embeddingResponse.ok) {
+        const embeddingData = await embeddingResponse.json();
+        const embedding = embeddingData.data[0].embedding;
+
+        // Use a lower similarity threshold for better fuzzy matching
+        const similarityThreshold = 0.3;
+        
+        // Perform vector similarity search
+        const { data: similarDocs, error } = await supabase.rpc(
+          'match_documents',
+          {
+            query_embedding: embedding,
+            match_threshold: similarityThreshold,
+            match_count: 5, // Retrieve top 5 relevant documents
+            p_project_id: projectId
+          }
+        );
+
+        if (!error && similarDocs && similarDocs.length > 0) {
+          // Format documents for assistant input
+          relevantContexts = "Relevant context from the knowledge base:\n\n" + 
+            similarDocs.map((doc: any, index: number) => 
+              `Document ${index + 1}:\n${doc.content}\nSource: ${doc.metadata?.source || 'Unknown'}`
+            ).join("\n\n");
+          
+          console.log(`Found ${similarDocs.length} relevant documents from knowledge base`);
+        }
+      }
+    }
+
+    // Add the user's message to the thread, along with relevant context if available
+    const userMessage = relevantContexts 
+      ? `${message}\n\n${relevantContexts}` 
+      : message;
+      
     const messageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
       method: 'POST',
       headers: {
@@ -67,7 +128,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         role: 'user',
-        content: message
+        content: userMessage
       })
     });
 

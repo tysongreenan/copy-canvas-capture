@@ -6,9 +6,10 @@ import { AssistantService } from "@/services/AssistantService";
 
 interface AIPromptContainerProps {
   onSendMessage?: (message: string, response: string) => void;
+  projectId?: string;
 }
 
-export function AIPromptContainer({ onSendMessage }: AIPromptContainerProps) {
+export function AIPromptContainer({ onSendMessage, projectId }: AIPromptContainerProps) {
   const [inputValue, setValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -28,7 +29,8 @@ export function AIPromptContainer({ onSendMessage }: AIPromptContainerProps) {
       const { message: aiResponse, threadId } = await AssistantService.sendMessage(
         inputValue,
         threadIdRef.current,
-        assistantId
+        assistantId,
+        projectId
       );
       
       // Save the thread ID for future messages in this conversation

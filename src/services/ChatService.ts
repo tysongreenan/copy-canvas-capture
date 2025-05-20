@@ -15,12 +15,13 @@ export interface ChatConversation {
   id: string;
   title: string;
   project_id: string;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
 
 // Define API response type
-interface ChatApiResponse {
+export interface ChatApiResponse {
   response: string;
   conversationId: string;
   sources?: any[];
@@ -58,9 +59,20 @@ export class ChatService {
   }
 
   static async createConversation(projectId: string, title: string = "New Conversation"): Promise<string> {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error("You must be logged in to create a conversation");
+    }
+    
     const { data, error } = await supabase
       .from('chat_conversations')
-      .insert([{ project_id: projectId, title: title }])
+      .insert([{ 
+        project_id: projectId, 
+        title: title,
+        user_id: user.id 
+      }])
       .select()
       .single();
 
@@ -108,7 +120,7 @@ export class ChatService {
   }
   
   // This method handles API communication for sending a message to the chat API
-  static async sendMessageToAPI(content: string, projectId: string, conversationId?: string, previousMessages: ChatMessage[] = []): Promise<ChatApiResponse> {
+  static async sendMessageToAPI(content: string, projectId: string, conversationId?: string): Promise<ChatApiResponse> {
     // If no conversation ID is provided, create a new conversation
     if (!conversationId) {
       conversationId = await this.createConversation(projectId);

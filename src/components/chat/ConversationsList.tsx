@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Plus, Trash2 } from 'lucide-react';
-import { ChatService } from '@/services/ChatService';
+import { ChatService, ChatConversation } from '@/services/ChatService';
 
 interface ConversationsListProps {
   projectId: string;
   selectedConversationId?: string;
   onSelectConversation: (id: string) => void;
-  onNewConversation?: () => void; // Added this property to fix the error
+  onNewConversation?: () => void; // Added this property for creating new conversations
 }
 
 export function ConversationsList({
@@ -18,7 +18,7 @@ export function ConversationsList({
   onSelectConversation,
   onNewConversation
 }: ConversationsListProps) {
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [loading, setLoading] = useState(false);
   
   useEffect(() => {

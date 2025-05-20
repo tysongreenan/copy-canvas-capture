@@ -17,66 +17,145 @@ export interface BrandVoice {
 
 export class BrandingService {
   static async getBrandVoice(projectId: string): Promise<BrandVoice | null> {
-    // Use a more generic approach with as any to bypass TypeScript's strict checking
-    // since the table was just created and types haven't been regenerated
-    const { data, error } = await supabase
-      .from('brand_voices' as any)
-      .select('*')
-      .eq('project_id', projectId)
-      .single();
-    
-    if (error && error.code !== 'PGSQL_ERROR_22P02') {
-      throw new Error(`Error fetching brand voice: ${error.message}`);
+    try {
+      // Use a more generic approach with as any to bypass TypeScript's strict checking
+      const { data, error } = await supabase
+        .from('brand_voices' as any)
+        .select('*')
+        .eq('project_id', projectId)
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGSQL_ERROR_22P02') {
+        throw new Error(`Error fetching brand voice: ${error.message}`);
+      }
+      
+      return data as BrandVoice | null;
+    } catch (error: any) {
+      console.error("Error in getBrandVoice:", error);
+      return null;
     }
-    
-    return data as BrandVoice | null;
   }
 
   static async saveBrandVoice(brandVoice: Partial<BrandVoice>): Promise<BrandVoice> {
-    // Check if a record already exists
-    const existing = await this.getBrandVoice(brandVoice.project_id as string);
-    
-    if (existing) {
-      // Update existing record
-      const { data, error } = await supabase
-        .from('brand_voices' as any)
-        .update({
-          ...brandVoice,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
+    try {
+      // Check if a record already exists
+      const existing = await this.getBrandVoice(brandVoice.project_id as string);
       
-      if (error) {
-        throw new Error(`Error updating brand voice: ${error.message}`);
+      if (existing) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('brand_voices' as any)
+          .update({
+            ...brandVoice,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) {
+          throw new Error(`Error updating brand voice: ${error.message}`);
+        }
+        
+        return data as BrandVoice;
+      } else {
+        // Create new record
+        const { data, error } = await supabase
+          .from('brand_voices' as any)
+          .insert([{
+            ...brandVoice,
+            key_messages: brandVoice.key_messages || [],
+            terminology: brandVoice.terminology || {},
+            avoid_phrases: brandVoice.avoid_phrases || [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+        
+        if (error) {
+          throw new Error(`Error creating brand voice: ${error.message}`);
+        }
+        
+        return data as BrandVoice;
       }
-      
-      return data as BrandVoice;
-    } else {
-      // Create new record
-      const { data, error } = await supabase
-        .from('brand_voices' as any)
-        .insert([{
-          ...brandVoice,
-          key_messages: brandVoice.key_messages || [],
-          terminology: brandVoice.terminology || {},
-          avoid_phrases: brandVoice.avoid_phrases || [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        throw new Error(`Error creating brand voice: ${error.message}`);
-      }
-      
-      return data as BrandVoice;
+    } catch (error: any) {
+      console.error("Error in saveBrandVoice:", error);
+      throw error;
     }
   }
 
-  // Generate a brand voice profile based on scraped content
+  // Generate brand voice using OpenAI based on scraped content
+  static async generateBrandVoiceFromAI(projectId: string, scrapedContent: any[]): Promise<Partial<BrandVoice>> {
+    try {
+      if (!scrapedContent || scrapedContent.length === 0) {
+        return {
+          project_id: projectId,
+          tone: "",
+          style: "",
+          language: "English",
+          audience: "",
+          key_messages: [],
+          terminology: {},
+          avoid_phrases: []
+        };
+      }
+
+      // Prepare content for AI analysis
+      let aiContent = "";
+      
+      // Extract text content from scraped pages
+      scrapedContent.forEach((page, index) => {
+        const content = page.content || {};
+        aiContent += `--- Page ${index + 1}: ${page.title || 'Untitled'} (${page.url}) ---\n`;
+        
+        // Add meta description
+        if (content.metaDescription) {
+          aiContent += `Meta Description: ${content.metaDescription}\n\n`;
+        }
+        
+        // Add headings
+        if (content.headings && content.headings.length > 0) {
+          aiContent += "Main Headings:\n";
+          content.headings
+            .filter(h => h.tag === 'h1' || h.tag === 'h2')
+            .forEach(h => aiContent += `${h.tag.toUpperCase()}: ${h.text}\n`);
+          aiContent += "\n";
+        }
+        
+        // Add key paragraphs (limit to avoid token limits)
+        if (content.paragraphs && content.paragraphs.length > 0) {
+          aiContent += "Key Content:\n";
+          const paragraphs = content.paragraphs.slice(0, 5);
+          paragraphs.forEach(p => aiContent += `${p}\n\n`);
+        }
+        
+        aiContent += "\n\n";
+      });
+
+      // Call the OpenAI edge function
+      const { data, error } = await supabase.functions.invoke("analyze-brand-voice", {
+        body: {
+          projectId,
+          content: aiContent
+        }
+      });
+      
+      if (error) {
+        console.error("Error from AI analysis:", error);
+        throw new Error(`Failed to analyze brand voice: ${error.message}`);
+      }
+      
+      return data as Partial<BrandVoice>;
+    } catch (error: any) {
+      console.error("Error generating brand voice from AI:", error);
+      
+      // Fallback to basic generation if AI fails
+      return this.generateBrandVoiceFromContent(projectId, scrapedContent);
+    }
+  }
+
+  // Generate a brand voice profile based on scraped content (fallback method)
   static generateBrandVoiceFromContent(projectId: string, scrapedContent: any[]): Partial<BrandVoice> {
     // Default values
     const brandVoice: Partial<BrandVoice> = {
@@ -146,10 +225,10 @@ export class BrandingService {
           allText.includes('enterprise') || allText.includes('company')) {
         brandVoice.audience = 'Business professionals and organizations';
       } else if (allText.includes('developer') || allText.includes('coding') || 
-                 allText.includes('programming') || allText.includes('tech')) {
+                allText.includes('programming') || allText.includes('tech')) {
         brandVoice.audience = 'Developers and technical professionals';
       } else if (allText.includes('customer') || allText.includes('consumer') || 
-                 allText.includes('client')) {
+                allText.includes('client')) {
         brandVoice.audience = 'General consumers and customers';
       }
 
@@ -158,10 +237,10 @@ export class BrandingService {
           allText.includes('trusted')) {
         brandVoice.tone = 'Professional, authoritative, and trustworthy';
       } else if (allText.includes('friendly') || allText.includes('welcome') || 
-                 allText.includes('help')) {
+                allText.includes('help')) {
         brandVoice.tone = 'Friendly, helpful, and approachable';
       } else if (allText.includes('innovat') || allText.includes('future') || 
-                 allText.includes('cutting-edge')) {
+                allText.includes('cutting-edge')) {
         brandVoice.tone = 'Innovative, forward-thinking, and dynamic';
       }
 

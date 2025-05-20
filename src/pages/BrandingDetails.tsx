@@ -6,22 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { Header } from "@/components/Header";
 import { BrandingService, BrandVoice } from "@/services/BrandingService";
 import { ContentService } from "@/services/ContentService";
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormDescription, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save, Wand2 } from "lucide-react";
+import { Brush, Globe } from "lucide-react";
+import { BrandVoiceForm } from "@/components/branding/BrandVoiceForm";
+import { BrandVoiceActions } from "@/components/branding/BrandVoiceActions";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +20,6 @@ const BrandingDetails = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState("tone");
   
   const form = useForm<Partial<BrandVoice>>({
     defaultValues: {
@@ -123,7 +111,7 @@ const BrandingDetails = () => {
     }
   };
   
-  const generateFromContent = async () => {
+  const generateFromAI = async () => {
     if (!id) return;
     
     setGenerating(true);
@@ -140,8 +128,13 @@ const BrandingDetails = () => {
         return;
       }
       
-      // Generate brand voice from content
-      const generatedBrandVoice = BrandingService.generateBrandVoiceFromContent(id, pages);
+      // Generate brand voice from content using AI
+      toast({
+        title: "AI Analysis",
+        description: "Analyzing website content with AI...",
+      });
+      
+      const generatedBrandVoice = await BrandingService.generateBrandVoiceFromAI(id, pages);
       
       // Update the form with generated values
       form.reset({
@@ -150,8 +143,8 @@ const BrandingDetails = () => {
       });
       
       toast({
-        title: "Generated",
-        description: "Brand voice settings were generated from your website content!",
+        title: "AI Analysis Complete",
+        description: "Brand voice settings were generated using AI!",
       });
     } catch (error: any) {
       console.error("Error generating brand voice:", error);
@@ -195,43 +188,12 @@ const BrandingDetails = () => {
                 )}
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  onClick={generateFromContent} 
-                  variant="outline" 
-                  className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
-                  disabled={generating || saving}
-                >
-                  {generating ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                      Generating...
-                    </div>
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4 mr-2" />
-                      Auto-Generate
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  onClick={form.handleSubmit(onSubmit)} 
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Saving...
-                    </div>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Settings
-                    </>
-                  )}
-                </Button>
-              </div>
+              <BrandVoiceActions
+                onGenerateAI={generateFromAI}
+                onSave={form.handleSubmit(onSubmit)}
+                generating={generating}
+                saving={saving}
+              />
             </div>
             
             <Card className="mb-6">
@@ -239,212 +201,16 @@ const BrandingDetails = () => {
                 <CardTitle>Brand Voice Configuration</CardTitle>
                 <CardDescription>
                   Define how the AI should communicate on behalf of this brand. These settings will be used to customize AI outputs.
-                  Click "Auto-Generate" to extract brand voice settings from your website content.
+                  Click "AI Analysis" to have our AI analyze your website content and suggest brand voice settings.
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="mb-6">
-                    <TabsTrigger value="tone">Tone & Style</TabsTrigger>
-                    <TabsTrigger value="content">Content Guidelines</TabsTrigger>
-                    <TabsTrigger value="language">Language Preferences</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="tone" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="tone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Brand Tone</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Professional, friendly, conversational, authoritative..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe the overall tone the AI should adopt when writing as this brand.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="style"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Writing Style</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Concise with short paragraphs, data-driven, storytelling approach..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe the writing style in terms of structure, sentence length, and stylistic choices.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="audience"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Target Audience</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Technical professionals, small business owners, parents of young children..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe who the content is primarily created for to help the AI adjust accordingly.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="content" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="key_messages"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Key Messages</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter key messages or brand points (one per line)" 
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              className="min-h-32"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List important messages or value propositions the brand wants to emphasize (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="avoid_phrases"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phrases to Avoid</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter phrases to avoid (one per line)" 
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              className="min-h-24"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List words, phrases or topics to avoid in brand communications (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="language" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="language"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Language Preferences</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., American English, British English, simple language avoiding jargon..." 
-                              {...field} 
-                              className="min-h-24"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Specify language preferences including regional variations and complexity level.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="terminology"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Brand Terminology</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="product: Lumen AI&#10;platform: content marketing assistant&#10;..." 
-                              value={Object.entries(field.value || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}
-                              onChange={(e) => {
-                                const lines = e.target.value.split('\n');
-                                const terminology: Record<string, string> = {};
-                                
-                                lines.forEach(line => {
-                                  const parts = line.split(':');
-                                  if (parts.length >= 2) {
-                                    const key = parts[0].trim();
-                                    const value = parts.slice(1).join(':').trim();
-                                    if (key && value) {
-                                      terminology[key] = value;
-                                    }
-                                  }
-                                });
-                                
-                                field.onChange(terminology);
-                              }}
-                              className="min-h-32 font-mono"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter key terms and their preferred descriptions in format "term: description" (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={saving}>
-                    {saving ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Saving...
-                      </div>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Settings
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+            <BrandVoiceForm
+              form={form}
+              onSubmit={onSubmit}
+              saving={saving}
+            />
           </>
         )}
       </main>

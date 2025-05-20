@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SavedProject } from "@/services/ContentService";
-import { ChatService, ChatConversation } from "@/services/ChatService";
+import { ChatService } from "@/services/ChatService";
 import { Globe, MessageSquare, Plus, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -21,7 +22,7 @@ export function Sidebar({
     selectedConversationId,
     onSelectConversation
 }: SidebarProps) {
-    const [conversations, setConversations] = useState<ChatConversation[]>([]);
+    const [conversations, setConversations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     
     // Load conversations when a project is selected

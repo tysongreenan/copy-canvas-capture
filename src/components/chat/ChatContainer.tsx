@@ -152,7 +152,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
     setSelectedConversationId(id);
   };
 
-  // Status alert component
+  // Status Alert component
   const StatusAlert = () => {
     if (hasEmbeddings) return null;
     

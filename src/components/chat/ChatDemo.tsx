@@ -80,36 +80,24 @@ const ChatDemo = () => {
     const handleSend = async () => {
         if (!inputValue.trim() || isLoading || !selectedProject) return;
         
-        // Add user message to UI immediately
-        const userMessage: ChatMessageType = {
-            role: 'user',
-            content: inputValue
-        };
-        setMessages(prev => [...prev, userMessage]);
-        
         setIsLoading(true);
         
         try {
             // Send message to API
-            const { response, conversationId } = await ChatService.sendMessage(
+            const result = await ChatService.sendMessageToAPI(
                 inputValue,
                 selectedProject.id,
-                selectedConversationId,
-                messages
+                selectedConversationId
             );
             
             // If this created a new conversation, update the selected conversation ID
-            if (conversationId !== selectedConversationId) {
-                setSelectedConversationId(conversationId);
+            if (result.conversationId !== selectedConversationId) {
+                setSelectedConversationId(result.conversationId);
             }
             
-            // Add AI response to UI
-            const aiMessage: ChatMessageType = {
-                role: 'assistant',
-                content: response.response
-            };
-            
-            setMessages(prev => [...prev, aiMessage]);
+            // Fetch the latest messages after sending
+            const updatedMessages = await ChatService.getMessages(result.conversationId);
+            setMessages(updatedMessages);
             setInputValue("");
             
         } catch (error: any) {

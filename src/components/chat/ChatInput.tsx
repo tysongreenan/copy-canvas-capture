@@ -1,6 +1,6 @@
 
 import { useChat } from '@/context/ChatContext';
-import { ChatService, ChatMessage } from '@/services/ChatService';
+import { ChatService } from '@/services/ChatService';
 import { useToast } from '@/hooks/use-toast';
 import { AI_Prompt } from "@/components/ui/animated-ai-input";
 
@@ -15,7 +15,6 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     setInput, 
     loading, 
     setLoading, 
-    messages, 
     setMessages, 
     selectedConversationId, 
     setLastSources 
@@ -32,8 +31,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
       const result = await ChatService.sendMessageToAPI(
         input.trim(), 
         projectId,
-        selectedConversationId,
-        messages
+        selectedConversationId
       );
       
       // If this created a new conversation, update the selected conversation ID
@@ -65,13 +63,7 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         variant: "destructive"
       });
       
-      // Add error message to chat
-      const errorMessage: Partial<ChatMessage> = {
-        role: 'assistant',
-        content: "I'm sorry, I encountered an error while processing your request. Please try again."
-      };
-      
-      setMessages(prev => [...prev, errorMessage as ChatMessage]);
+      // Don't add partial messages to the UI, let the error toast handle it
     } finally {
       setLoading(false);
     }

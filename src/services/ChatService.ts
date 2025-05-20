@@ -19,6 +19,13 @@ export interface ChatConversation {
   updated_at: string;
 }
 
+// Define API response type
+interface ChatApiResponse {
+  response: string;
+  conversationId: string;
+  sources?: any[];
+}
+
 export class ChatService {
   // Get messages for a conversation with optional limit parameter
   static async getMessages(conversationId: string, limit: number = 20): Promise<ChatMessage[]> {
@@ -101,7 +108,7 @@ export class ChatService {
   }
   
   // This method handles API communication for sending a message to the chat API
-  static async sendMessageToAPI(content: string, projectId: string, conversationId?: string, previousMessages: ChatMessage[] = []): Promise<{response: string, conversationId: string, sources?: any[]}> {
+  static async sendMessageToAPI(content: string, projectId: string, conversationId?: string, previousMessages: ChatMessage[] = []): Promise<ChatApiResponse> {
     // If no conversation ID is provided, create a new conversation
     if (!conversationId) {
       conversationId = await this.createConversation(projectId);

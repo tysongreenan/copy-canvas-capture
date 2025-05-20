@@ -28,7 +28,8 @@ export class AssistantService {
           message,
           threadId,
           assistantId,
-          projectId
+          projectId,
+          useFineTunedModel: assistantId === "asst_hLaKt8VKignxoY0V0NyZxGWO" // Only use fine-tuned model for Marketing Research
         }
       });
       

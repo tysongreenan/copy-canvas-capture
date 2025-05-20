@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, assistantId, projectId } = await req.json();
+    const { message, threadId, assistantId, projectId, useFineTunedModel } = await req.json();
 
     if (!message || !assistantId) {
       return new Response(
@@ -33,6 +33,7 @@ serve(async (req) => {
     }
 
     console.log(`Processing message: "${message}" with assistant ${assistantId}`);
+    console.log(`Using fine-tuned model: ${useFineTunedModel ? 'Yes' : 'No'}`);
 
     let activeThreadId = threadId;
     
@@ -184,7 +185,16 @@ IMPORTANT INSTRUCTIONS:
       throw new Error(error.error?.message || 'Failed to add message to thread');
     }
 
-    // Run the assistant on the thread
+    // Run the assistant on the thread with the specified model override for Marketing Research assistant
+    const runPayload: any = {
+      assistant_id: assistantId
+    };
+    
+    // Override the model with the fine-tuned model if it's the Marketing Research assistant
+    if (useFineTunedModel) {
+      runPayload.model = "ft:gpt-4o-mini-2024-07-18:personal::AzyZoigT";
+    }
+    
     const runResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/runs`, {
       method: 'POST',
       headers: {
@@ -192,9 +202,7 @@ IMPORTANT INSTRUCTIONS:
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v1'
       },
-      body: JSON.stringify({
-        assistant_id: assistantId
-      })
+      body: JSON.stringify(runPayload)
     });
 
     if (!runResponse.ok) {

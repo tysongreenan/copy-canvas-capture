@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { ChatProvider } from "@/context/ChatContext";
 import { ContentService, SavedProject } from "@/services/ContentService";
@@ -24,7 +25,7 @@ const ChatDemo = () => {
     const [lastSources, setLastSources] = useState<any[]>([]);
     const { toast } = useToast();
     
-    // Redirect if not logged in
+    // IMPORTANT: Move the redirect AFTER all hooks are initialized
     if (!user) {
         return <Navigate to="/auth" replace />;
     }

@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EmbeddingService } from "@/services/EmbeddingService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface FileUploadProps {
   projectId: string;
@@ -12,6 +13,8 @@ interface FileUploadProps {
 
 export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [showKnowledgeConfirmation, setShowKnowledgeConfirmation] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,16 +41,27 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
       return;
     }
     
+    // Store the file and show confirmation
+    setSelectedFile(file);
+    setShowKnowledgeConfirmation(true);
+  };
+  
+  const processFile = async (addToKnowledgeBase: boolean) => {
+    if (!selectedFile) return;
+    
     setIsUploading(true);
+    setShowKnowledgeConfirmation(false);
     
     try {
       // Process the file with the EmbeddingService
-      const success = await EmbeddingService.processFile(file, projectId);
+      const success = await EmbeddingService.processFile(selectedFile, projectId);
       
       if (success) {
         toast({
           title: "Success",
-          description: "File uploaded and processed successfully",
+          description: addToKnowledgeBase 
+            ? "File uploaded, processed, and added to knowledge base" 
+            : "File uploaded and processed successfully",
         });
         if (onSuccess) onSuccess();
       } else {
@@ -66,9 +80,19 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
       });
     } finally {
       setIsUploading(false);
+      setSelectedFile(null);
       // Reset the file input
-      e.target.value = '';
+      const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
     }
+  };
+  
+  const cancelFileUpload = () => {
+    setShowKnowledgeConfirmation(false);
+    setSelectedFile(null);
+    // Reset the file input
+    const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
   
   return (
@@ -104,6 +128,32 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
           </span>
         </Button>
       </label>
+      
+      {showKnowledgeConfirmation && selectedFile && (
+        <div className="mt-4 mb-2">
+          <Alert 
+            className="mb-4" 
+            variant="info"
+            icon={<AlertCircle className="h-4 w-4" />}
+          >
+            <AlertTitle>Add to Knowledge Base?</AlertTitle>
+            <AlertDescription className="mt-1">
+              Would you like to add "{selectedFile.name}" to the knowledge base and vectorize it for AI to search?
+            </AlertDescription>
+            <div className="flex gap-2 mt-3">
+              <Button size="sm" onClick={() => processFile(true)}>
+                Yes, add to knowledge base
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => processFile(false)}>
+                No, just upload
+              </Button>
+              <Button size="sm" variant="ghost" onClick={cancelFileUpload}>
+                Cancel
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      )}
     </div>
   );
 }

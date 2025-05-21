@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandVoice {
@@ -22,9 +23,9 @@ export class BrandingService {
       .from('brand_voices' as any)
       .select('*')
       .eq('project_id', projectId)
-      .single();
+      .maybeSingle();
     
-    if (error && error.code !== 'PGSQL_ERROR_22P02') {
+    if (error) {
       throw new Error(`Error fetching brand voice: ${error.message}`);
     }
     

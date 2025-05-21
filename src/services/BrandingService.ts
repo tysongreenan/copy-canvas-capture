@@ -29,7 +29,7 @@ export class BrandingService {
         throw new Error(`Error fetching brand voice: ${error.message}`);
       }
       
-      return data as BrandVoice | null;
+      return data as unknown as BrandVoice | null;
     } catch (error: any) {
       console.error("Error in getBrandVoice:", error);
       return null;

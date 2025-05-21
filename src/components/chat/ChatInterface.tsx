@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -17,10 +17,23 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ projectId, conversationId, onConversationCreated }: ChatInterfaceProps) {
-  const { messages, addMessage, setMessages } = useChat();
+  const { messages, addMessage, setLastSources } = useChat();
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollArea) {
+        setTimeout(() => {
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        }, 100);
+      }
+    }
+  }, [messages]);
   
   // Send message function
   const handleSendMessage = useCallback(
@@ -52,6 +65,13 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           setThreadId(response.threadId);
         }
         
+        // Store any sources if available
+        if (response.sources && response.sources.length > 0) {
+          setLastSources(response.sources);
+        } else {
+          setLastSources([]);
+        }
+        
         // Add assistant's response to the chat context
         addMessage({
           id: crypto.randomUUID(),
@@ -78,12 +98,12 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources]
   );
   
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((message, index) => (
             <ChatMessage 

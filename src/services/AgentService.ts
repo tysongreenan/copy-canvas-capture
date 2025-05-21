@@ -16,11 +16,12 @@ export interface AgentResponse {
   threadId: string;
   reasoning?: AgentStep[];
   contentTypeFilter?: string | null;
+  sources?: any[];
 }
 
 export class AgentService {
   /**
-   * Send a message to the OpenAI agent and get a response with reasoning steps
+   * Send a message to the AI agent and get a response with reasoning steps
    */
   public static async sendMessage(
     message: string, 

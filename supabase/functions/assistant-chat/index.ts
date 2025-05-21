@@ -54,7 +54,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v1'
+          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
         },
         body: JSON.stringify({})
       });
@@ -154,7 +154,7 @@ IMPORTANT INSTRUCTIONS:
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v1'
+          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
         },
         body: JSON.stringify({
           role: 'user',
@@ -175,7 +175,7 @@ IMPORTANT INSTRUCTIONS:
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
       },
       body: JSON.stringify(messagePayload)
     });
@@ -200,7 +200,7 @@ IMPORTANT INSTRUCTIONS:
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
       },
       body: JSON.stringify(runPayload)
     });
@@ -225,7 +225,7 @@ IMPORTANT INSTRUCTIONS:
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v1'
+          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
         }
       });
 
@@ -250,7 +250,7 @@ IMPORTANT INSTRUCTIONS:
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v1'
+        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
       }
     });
 

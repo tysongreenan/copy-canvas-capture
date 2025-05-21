@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BrandVoice {
@@ -52,6 +51,10 @@ export class BrandingService {
         throw new Error(`Error updating brand voice: ${error.message}`);
       }
       
+      if (!data) {
+        throw new Error('Failed to update brand voice: No data returned');
+      }
+      
       return data as BrandVoice;
     } else {
       // Create new record
@@ -70,6 +73,10 @@ export class BrandingService {
       
       if (error) {
         throw new Error(`Error creating brand voice: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('Failed to create brand voice: No data returned');
       }
       
       return data as BrandVoice;

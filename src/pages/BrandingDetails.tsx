@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save, Wand2 } from "lucide-react";
+import { Brush, Globe, Edit, Save, Wand2, Search } from "lucide-react";
+import { SEOContentSummary } from "@/components/project/SEOContentSummary";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -251,6 +252,10 @@ const BrandingDetails = () => {
                     <TabsTrigger value="tone">Tone & Style</TabsTrigger>
                     <TabsTrigger value="content">Content Guidelines</TabsTrigger>
                     <TabsTrigger value="language">Language Preferences</TabsTrigger>
+                    <TabsTrigger value="seo">
+                      <Search className="h-4 w-4 mr-2" />
+                      SEO Content
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="tone" className="space-y-6">
@@ -425,6 +430,22 @@ const BrandingDetails = () => {
                         </FormItem>
                       )}
                     />
+                  </TabsContent>
+                  
+                  <TabsContent value="seo">
+                    <div className="mb-4">
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg">
+                            Scraped SEO Content
+                          </CardTitle>
+                          <CardDescription>
+                            Analysis of your website's SEO content and structure from the scraped data. Use this information to improve your brand voice settings.
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    </div>
+                    {id && <SEOContentSummary projectId={id} />}
                   </TabsContent>
                 </Tabs>
                 

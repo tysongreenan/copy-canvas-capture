@@ -24,8 +24,6 @@ export function ChatInterface({
   useEffect(() => {
     if (conversationId) {
       setSelectedConversationId(conversationId);
-    } else {
-      setSelectedConversationId(undefined);
     }
   }, [conversationId, setSelectedConversationId]);
   

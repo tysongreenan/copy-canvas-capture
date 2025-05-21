@@ -138,35 +138,27 @@ export class ChatService {
     // Add the user message to the database
     await this.sendMessage(conversationId, 'user', content);
     
-    // Get existing messages to build conversation history (limit to recent messages)
-    const messages = await this.getMessages(conversationId, 10);
-    const history = messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
+    // Call your API to get a response (this is a placeholder - implement your actual API call)
+    // In a real implementation, you would call your backend API here
+    const assistantResponse = "This is a placeholder response. Implement your actual API call here.";
+    const sources = [];
     
-    // Call the chat-completion edge function
-    const { data, error } = await supabase.functions.invoke("chat-completion", {
-      body: {
-        query: content,
-        projectId: projectId,
-        conversationId: conversationId,
-        history: history
-      }
-    });
-    
-    if (error) {
-      console.error("Error from chat API:", error);
-      throw new Error(`Failed to get response from AI: ${error.message}`);
+    // If we have brand voice settings, use them to generate a system message
+    if (brandVoice) {
+      // In a real implementation, you would use the brand voice settings to influence the AI response
+      console.log("Using brand voice settings:", brandVoice);
+      
+      // Here you could modify the assistantResponse based on the brand voice
+      // or include the brand voice as part of your API call
     }
     
     // Add the assistant response to the database
-    await this.sendMessage(conversationId, 'assistant', data.response);
+    await this.sendMessage(conversationId, 'assistant', assistantResponse);
     
     return {
-      response: data.response,
+      response: assistantResponse,
       conversationId: conversationId,
-      sources: data.sources || []
+      sources: sources
     };
   }
 }

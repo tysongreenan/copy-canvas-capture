@@ -10,17 +10,19 @@ import { Navigate, useParams } from "react-router-dom";
 import { ChatService } from "@/services/ChatService"; 
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
+import { ChatInput } from "./ChatInput";
 import { AccountMenu } from "@/components/AccountMenu";
-import { ChatInterface } from "./ChatInterface";
 
 const ChatDemo = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
+    const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [projects, setProjects] = useState<SavedProject[]>([]);
     const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
     const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
+    const [lastSources, setLastSources] = useState<any[]>([]);
     const { toast } = useToast();
     
     // Move the authentication check after all hooks are initialized
@@ -71,6 +73,45 @@ const ChatDemo = () => {
         }
     }, [selectedConversationId]);
     
+    const handleInputChange = (value: string) => {
+        setInputValue(value);
+    };
+    
+    const handleSend = async () => {
+        if (!inputValue.trim() || isLoading || !selectedProject) return;
+        
+        setIsLoading(true);
+        
+        try {
+            // Send message to API
+            const result = await ChatService.sendMessageToAPI(
+                inputValue,
+                selectedProject.id,
+                selectedConversationId
+            );
+            
+            // If this created a new conversation, update the selected conversation ID
+            if (result.conversationId !== selectedConversationId) {
+                setSelectedConversationId(result.conversationId);
+            }
+            
+            // Fetch the latest messages after sending
+            const updatedMessages = await ChatService.getMessages(result.conversationId);
+            setMessages(updatedMessages);
+            setInputValue("");
+            
+        } catch (error: any) {
+            console.error("Error sending message:", error);
+            toast({
+                title: "Error",
+                description: error.message || "Failed to get a response",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
     const handleProjectSelect = (project: SavedProject) => {
         setSelectedProject(project);
         setSelectedConversationId(undefined); // Reset conversation when switching projects
@@ -105,6 +146,7 @@ const ChatDemo = () => {
                             <h1 className="text-lg font-medium text-black">Chat with {selectedProject.title}</h1>
                             
                             <div className="flex items-center gap-4">
+                                {/* File upload */}
                                 <FileUpload 
                                     projectId={selectedProject.id} 
                                     onSuccess={() => {
@@ -115,20 +157,33 @@ const ChatDemo = () => {
                                     }}
                                 />
                                 
+                                {/* Account Menu */}
                                 <AccountMenu />
                             </div>
                         </div>
                         
-                        {/* Use ChatInterface with ChatProvider */}
-                        <div className="flex-1">
-                            <ChatProvider>
-                                <ChatInterface 
+                        {/* Messages display */}
+                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                            {messages.map((message, index) => (
+                                <ChatMessage key={index} message={message} />
+                            ))}
+                            
+                            {messages.length === 0 && !isLoading && (
+                                <div className="h-full flex items-center justify-center text-gray-500">
+                                    <p>Start a conversation with your project data</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Chat input */}
+                        <ChatProvider>
+                            {selectedProject && (
+                                <ChatInput 
                                     projectId={selectedProject.id}
-                                    conversationId={selectedConversationId}
                                     onConversationCreated={handleConversationCreated}
                                 />
-                            </ChatProvider>
-                        </div>
+                            )}
+                        </ChatProvider>
                     </>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 p-4">

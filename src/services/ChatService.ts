@@ -138,27 +138,44 @@ export class ChatService {
     // Add the user message to the database
     await this.sendMessage(conversationId, 'user', content);
     
-    // Call your API to get a response (this is a placeholder - implement your actual API call)
-    // In a real implementation, you would call your backend API here
-    const assistantResponse = "This is a placeholder response. Implement your actual API call here.";
-    const sources = [];
+    // Get previous conversation history if available
+    const history = await this.getMessages(conversationId);
     
-    // If we have brand voice settings, use them to generate a system message
-    if (brandVoice) {
-      // In a real implementation, you would use the brand voice settings to influence the AI response
-      console.log("Using brand voice settings:", brandVoice);
+    // Call the Supabase edge function for chat completion
+    try {
+      const { data, error } = await supabase.functions.invoke("chat-completion", {
+        body: {
+          query: content,
+          projectId: projectId,
+          conversationId: conversationId,
+          history: history.map(msg => ({ 
+            role: msg.role, 
+            content: msg.content 
+          })),
+          brandVoice: brandVoice
+        }
+      });
       
-      // Here you could modify the assistantResponse based on the brand voice
-      // or include the brand voice as part of your API call
+      if (error) {
+        console.error("Error invoking chat completion function:", error);
+        throw new Error(`Failed to get chat response: ${error.message}`);
+      }
+      
+      // Response already stored in database via edge function
+      // But we return it here as well for immediate display
+      return {
+        response: data.response,
+        conversationId: conversationId,
+        sources: data.sources || []
+      };
+    } catch (error: any) {
+      console.error("Error in chat API call:", error);
+      
+      // In case of error, add a system message to the conversation
+      const errorMessage = "Sorry, I encountered an error processing your request. Please try again later.";
+      await this.sendMessage(conversationId, 'assistant', errorMessage);
+      
+      throw error;
     }
-    
-    // Add the assistant response to the database
-    await this.sendMessage(conversationId, 'assistant', assistantResponse);
-    
-    return {
-      response: assistantResponse,
-      conversationId: conversationId,
-      sources: sources
-    };
   }
 }

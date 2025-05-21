@@ -105,12 +105,19 @@ const Dashboard = () => {
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold">Dashboard</h1>
-              <Link to="/scrapcopy">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Search className="h-4 w-4" />
-                  Copy Scraper Tool
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Link to="/scrapcopy">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Search className="h-4 w-4" />
+                    Copy Scraper Tool
+                  </Button>
+                </Link>
+                <Link to="/project/new">
+                  <Button size="sm" className="gap-2">
+                    Setup New Project
+                  </Button>
+                </Link>
+              </div>
             </div>
             
             <Tabs defaultValue="projects" className="mb-8" value={activeTab} onValueChange={setActiveTab}>
@@ -178,9 +185,11 @@ const Dashboard = () => {
                     </div>
                     <p className="text-gray-500 text-lg">You don't have any projects yet</p>
                     <div className="mt-4">
-                      <Button onClick={() => setActiveTab("create")}>
-                        Create Your First Project
-                      </Button>
+                      <Link to="/project/new">
+                        <Button>
+                          Create Your First Project
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -191,9 +200,23 @@ const Dashboard = () => {
                 <div className="max-w-3xl mx-auto">
                   <Card className="border-0 shadow-md overflow-hidden">
                     <CardContent className="p-6">
-                      <h2 className="text-xl font-bold mb-4">Create a New Project</h2>
+                      <div className="mb-4 flex justify-between items-center">
+                        <div>
+                          <h2 className="text-xl font-bold mb-1">Create a New Project</h2>
+                          <p className="text-gray-500">
+                            Get started by creating a project with our quick setup or use our advanced wizard.
+                          </p>
+                        </div>
+                        
+                        <Link to="/project/new">
+                          <Button>
+                            Use Project Wizard
+                          </Button>
+                        </Link>
+                      </div>
+                      
                       <p className="text-gray-500 mb-6">
-                        Create a new project by scraping a website. You can scrape a single page or crawl an entire site.
+                        Or use our basic setup below to quickly scrape a website:
                       </p>
                       
                       <ScrapeForm 

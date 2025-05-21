@@ -13,6 +13,7 @@ import Sitemap from "./pages/Sitemap";
 import ScrapCopy from "./pages/ScrapCopy";
 import BrandingDetails from "./pages/BrandingDetails";
 import { ChatDemo } from "./components/chat/ChatDemo";
+import ProjectWizard from "./pages/ProjectWizard";
 
 // Update document title
 document.title = "Lumen - Chat with your website content";
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/project/:id" element={<Project />} />
+              <Route path="/project/new" element={<ProjectWizard />} />
               <Route path="/branding/:id" element={<BrandingDetails />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/scrapcopy" element={<ScrapCopy />} />

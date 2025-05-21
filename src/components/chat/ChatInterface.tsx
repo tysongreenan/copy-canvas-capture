@@ -6,7 +6,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { useChat } from "@/context/ChatContext";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AgentService, AgentStep, AgentSource } from "@/services/AgentService";
+import { AgentService, AgentStep, AgentSource, AgentTaskType } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Info, Sparkles, FileSearch, Brain } from "lucide-react";
 import { 
@@ -28,6 +28,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   const [reasoning, setReasoning] = useState<AgentStep[]>([]);
   const [showReasoning, setShowReasoning] = useState(false);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
+  const [taskType, setTaskType] = useState<AgentTaskType>('general');
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -43,6 +44,31 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
     }
   }, [messages]);
   
+  // Detect task type from message
+  const detectTaskType = (message: string): AgentTaskType => {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('email') || 
+        lowerMessage.includes('subject line') || 
+        lowerMessage.includes('newsletter')) {
+      return 'email';
+    }
+    
+    if (lowerMessage.includes('summarize') || 
+        lowerMessage.includes('summary') || 
+        lowerMessage.startsWith('tldr')) {
+      return 'summary';
+    }
+    
+    if (lowerMessage.includes('research') || 
+        lowerMessage.includes('find information') ||
+        lowerMessage.includes('tell me about')) {
+      return 'research';
+    }
+    
+    return 'general';
+  };
+  
   // Send message function
   const handleSendMessage = useCallback(
     async (message: string, contentTypeFilter?: string | null) => {
@@ -53,6 +79,10 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       // Reset reasoning state for new message
       setReasoning([]);
       setShowReasoning(false);
+      
+      // Detect task type
+      const detectedTaskType = detectTaskType(message);
+      setTaskType(detectedTaskType);
       
       // Add user message to the chat context
       addMessage({ 
@@ -69,7 +99,12 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           message,
           threadId,
           projectId,
-          contentTypeFilter
+          {
+            taskType: detectedTaskType,
+            contentTypeFilter: contentTypeFilter,
+            temperature: detectedTaskType === 'email' ? 0.5 : 0.7,
+            maxTokens: detectedTaskType === 'email' ? 2000 : 1500
+          }
         );
         
         // Save the thread ID for future messages
@@ -188,7 +223,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           {isLoading && (
             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <p>Thinking...</p>
+              <p>{taskType === 'email' ? 'Crafting email content...' : 'Thinking...'}</p>
             </div>
           )}
           
@@ -226,7 +261,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         <ChatInput 
           onSendMessage={handleSendMessage} 
           disabled={isLoading}
-          placeholder="Type your message here..."
+          placeholder={taskType === 'email' ? "Describe the email you want to create..." : "Type your message here..."}
         />
       </div>
     </div>

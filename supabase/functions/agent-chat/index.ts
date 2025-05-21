@@ -24,7 +24,7 @@ const contentSearchTool = {
         contentTypeFilter: {
           type: "string",
           description: "Optional filter for specific content types",
-          enum: ["webpage", "article", "product", "blog", "faq"]
+          enum: ["webpage", "article", "product", "blog", "faq", "title", "meta_description", "headings", "paragraphs", "list_items"]
         }
       },
       required: ["query"]
@@ -51,6 +51,38 @@ const projectInfoTool = {
   }
 };
 
+const emailGenerationTool = {
+  type: "function",
+  function: {
+    name: "generateEmailTemplate",
+    description: "Generate a structured email template based on purpose and tone",
+    parameters: {
+      type: "object",
+      properties: {
+        purpose: {
+          type: "string",
+          description: "The purpose of the email (marketing, newsletter, sales, support, etc.)",
+        },
+        tone: {
+          type: "string",
+          description: "The tone of the email (formal, casual, friendly, professional)",
+          enum: ["formal", "casual", "friendly", "professional", "urgent", "persuasive"]
+        },
+        audience: {
+          type: "string",
+          description: "The target audience for the email"
+        },
+        length: {
+          type: "string",
+          description: "The approximate length of the email",
+          enum: ["short", "medium", "long"]
+        }
+      },
+      required: ["purpose"]
+    }
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -70,10 +102,13 @@ serve(async (req) => {
       message, 
       threadId, 
       projectId, 
+      taskType = 'general',
       contentTypeFilter, 
       enableTools = true, 
       enableMultiStepReasoning = true,
-      modelName = "gpt-4o-mini"
+      modelName = "gpt-4o-mini",
+      temperature = 0.7,
+      maxTokens = 1500
     } = await req.json();
 
     if (!message) {
@@ -85,10 +120,13 @@ serve(async (req) => {
 
     console.log(`Processing message: "${message}"`);
     console.log(`Project ID: ${projectId || 'Not provided'}`);
+    console.log(`Task type: ${taskType}`);
     console.log(`Content type filter: ${contentTypeFilter || 'None'}`);
     console.log(`Tools enabled: ${enableTools}`);
     console.log(`Multi-step reasoning: ${enableMultiStepReasoning}`);
     console.log(`Using model: ${modelName}`);
+    console.log(`Temperature: ${temperature}`);
+    console.log(`Max tokens: ${maxTokens}`);
 
     // Initialize Supabase client for RAG search if needed
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -240,6 +278,53 @@ serve(async (req) => {
       }
     };
 
+    // Tool implementation: Email Generation
+    const generateEmailTemplate = async (params: any) => {
+      const { purpose, tone = "professional", audience = "general", length = "medium" } = params;
+      
+      reasoningSteps.push({
+        type: "tool_start",
+        toolName: "generateEmailTemplate",
+        content: `Creating email template for purpose: ${purpose}, tone: ${tone}, audience: ${audience}, length: ${length}`
+      });
+
+      try {
+        // This would typically be a more elaborate template generation system
+        // For now we'll just return basic structure that the main AI can expand upon
+        const template = {
+          purpose,
+          tone,
+          audience,
+          length,
+          structure: {
+            subject: `Subject line for ${purpose} email`,
+            greeting: `Appropriate greeting for ${tone} email`,
+            introduction: `Brief introduction paragraph explaining the purpose`,
+            body: `Main content sections for a ${length} email about ${purpose}`,
+            call_to_action: `Suggested call to action for ${purpose} email`,
+            closing: `Appropriate closing for ${tone} email`,
+            signature: `Email signature suggestion`
+          }
+        };
+        
+        reasoningSteps.push({
+          type: "tool_result",
+          toolName: "generateEmailTemplate",
+          content: `Generated email template structure for ${purpose} email`,
+          toolOutput: template
+        });
+        
+        return template;
+      } catch (error) {
+        reasoningSteps.push({
+          type: "tool_error",
+          toolName: "generateEmailTemplate",
+          content: `Error generating email template: ${error.message}`
+        });
+        return { error: error.message };
+      }
+    };
+
     // First phase: Perform RAG search using the content search tool
     if (projectId) {
       const searchResult = await searchContent(message, contentTypeFilter);
@@ -260,9 +345,17 @@ serve(async (req) => {
     }
 
     // Second phase: Enable multi-step reasoning and function calling
-    const tools = enableTools ? [contentSearchTool, projectInfoTool] : [];
+    let tools = [];
+    if (enableTools) {
+      tools = [contentSearchTool, projectInfoTool];
+      
+      // Add email-specific tools for email-related tasks
+      if (taskType === 'email' || message.toLowerCase().includes('email')) {
+        tools.push(emailGenerationTool);
+      }
+    }
     
-    // Structure the system message based on enabled features
+    // Structure the system message based on enabled features and task type
     let systemMessage = `You are an intelligent assistant for the Lumen platform, specialized in marketing research and content analysis.
     You provide thoughtful, well-reasoned responses based on the user's query and any relevant information from their content.
     
@@ -272,6 +365,16 @@ serve(async (req) => {
     3. Be honest when you don't know something
     4. Organize your responses clearly
     5. Provide actionable insights when possible`;
+
+    // Add task-specific instructions
+    if (taskType === 'email') {
+      systemMessage += `\n\nYou are currently focusing on email creation. When generating email content:
+      1. Create clear, concise, and engaging email copy
+      2. Structure emails with appropriate sections (subject line, greeting, body, call to action, closing)
+      3. Adjust tone and style based on the purpose (marketing, outreach, newsletter, etc.)
+      4. Use language that resonates with the target audience
+      5. Suggest effective subject lines that will improve open rates`;
+    }
 
     if (enableMultiStepReasoning) {
       systemMessage += `\n\nImportant: Think step-by-step to solve complex questions. Before providing a final answer:
@@ -283,7 +386,6 @@ serve(async (req) => {
     }
 
     // Send the request to OpenAI with system instructions, function calling, and relevant context
-    const modelResponseFormat = enableTools ? { type: "json_object" } : undefined;
     const openaiRequestBody: any = {
       model: modelName,
       messages: [
@@ -296,17 +398,13 @@ serve(async (req) => {
           content: relevantContext ? `${relevantContext}\n\nUser question: ${message}` : message
         }
       ],
-      temperature: 0.7,
-      max_tokens: 1500,
+      temperature: temperature,
+      max_tokens: maxTokens,
     };
 
     if (tools.length > 0) {
       openaiRequestBody.tools = tools;
       openaiRequestBody.tool_choice = "auto";
-    }
-
-    if (modelResponseFormat) {
-      openaiRequestBody.response_format = modelResponseFormat;
     }
 
     // Log the complete request for debugging purposes
@@ -352,6 +450,9 @@ serve(async (req) => {
         else if (name === "getProjectInfo") {
           await getProjectInfo(parsedArgs.infoType);
         }
+        else if (name === "generateEmailTemplate") {
+          await generateEmailTemplate(parsedArgs);
+        }
       }
       
       // Make a follow-up call to OpenAI with the tool results
@@ -380,8 +481,8 @@ serve(async (req) => {
         body: JSON.stringify({
           model: modelName,
           messages: messagesWithToolResults,
-          temperature: 0.5,
-          max_tokens: 1500,
+          temperature: temperature,
+          max_tokens: maxTokens,
         }),
       });
       

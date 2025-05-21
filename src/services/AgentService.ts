@@ -36,6 +36,18 @@ export interface AgentResponse {
   confidence?: number;
 }
 
+export type AgentTaskType = 'general' | 'email' | 'summary' | 'research';
+
+export interface AgentRequestOptions {
+  taskType?: AgentTaskType;
+  contentTypeFilter?: string | null;
+  enableTools?: boolean;
+  enableMultiStepReasoning?: boolean;
+  modelName?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
 export class AgentService {
   /**
    * Send a message to the AI agent and get a response with reasoning steps
@@ -44,19 +56,44 @@ export class AgentService {
     message: string, 
     threadId?: string,
     projectId?: string,
-    contentTypeFilter?: string | null
+    options: AgentRequestOptions = {}
   ): Promise<AgentResponse> {
     try {
+      // Merge default options with provided options
+      const defaultOptions: AgentRequestOptions = {
+        taskType: 'general',
+        contentTypeFilter: null,
+        enableTools: true,
+        enableMultiStepReasoning: true,
+        modelName: "gpt-4o",
+        temperature: 0.7,
+        maxTokens: 1500,
+      };
+
+      // Special cases for different task types
+      if (options.taskType === 'email') {
+        defaultOptions.temperature = 0.5; // Lower temperature for more consistent email generation
+        defaultOptions.maxTokens = 2000; // More tokens for emails
+      } else if (options.taskType === 'summary') {
+        defaultOptions.temperature = 0.3; // Even lower temperature for summaries
+      }
+      
+      // Merge with user options, with user options taking precedence
+      const finalOptions = { ...defaultOptions, ...options };
+
       // Call the Supabase edge function that handles agent communication
       const { data, error } = await supabase.functions.invoke("agent-chat", {
         body: {
           message,
           threadId,
           projectId,
-          contentTypeFilter,
-          enableTools: true, // Enable the use of tools for enhanced reasoning
-          enableMultiStepReasoning: true, // Allow multi-step reasoning process
-          modelName: "gpt-4o" // Use a more powerful model for complex reasoning
+          taskType: finalOptions.taskType,
+          contentTypeFilter: finalOptions.contentTypeFilter,
+          enableTools: finalOptions.enableTools,
+          enableMultiStepReasoning: finalOptions.enableMultiStepReasoning,
+          modelName: finalOptions.modelName,
+          temperature: finalOptions.temperature,
+          maxTokens: finalOptions.maxTokens
         }
       });
       

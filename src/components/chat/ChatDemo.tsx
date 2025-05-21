@@ -11,9 +11,7 @@ import { ChatService } from "@/services/ChatService";
 import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
 import { AccountMenu } from "@/components/AccountMenu";
-
-// Import the ChatInput component but we'll use it inside ChatProvider
-import { ChatInput } from "./ChatInput"; 
+import { ChatInterface } from "./ChatInterface";
 
 const ChatDemo = () => {
     const { id } = useParams<{ id: string }>();
@@ -121,26 +119,16 @@ const ChatDemo = () => {
                             </div>
                         </div>
                         
-                        {/* Messages display */}
-                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                            {messages.map((message, index) => (
-                                <ChatMessage key={index} message={message} />
-                            ))}
-                            
-                            {messages.length === 0 && !isLoading && (
-                                <div className="h-full flex items-center justify-center text-gray-500">
-                                    <p>Start a conversation with your project data</p>
-                                </div>
-                            )}
+                        {/* Use ChatInterface with ChatProvider */}
+                        <div className="flex-1">
+                            <ChatProvider>
+                                <ChatInterface 
+                                    projectId={selectedProject.id}
+                                    conversationId={selectedConversationId}
+                                    onConversationCreated={handleConversationCreated}
+                                />
+                            </ChatProvider>
                         </div>
-                        
-                        {/* Wrap ChatInput with ChatProvider */}
-                        <ChatProvider>
-                            <ChatInput 
-                                projectId={selectedProject.id}
-                                onConversationCreated={handleConversationCreated}
-                            />
-                        </ChatProvider>
                     </>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 p-4">

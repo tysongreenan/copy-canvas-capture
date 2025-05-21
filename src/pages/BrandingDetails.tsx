@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { Header } from "@/components/Header";
@@ -21,13 +21,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save, Wand2, Search, SlidersHorizontal } from "lucide-react";
+import { Brush, Globe, Edit, Save, Wand2, Search, SlidersHorizontal, RotateCcw } from "lucide-react";
 import { SEOContentSummary } from "@/components/project/SEOContentSummary";
 import { BrandVoiceDashboard } from "@/components/branding/BrandVoiceDashboard";
 import { BrandVoiceProfiler } from "@/components/branding/BrandVoiceProfiler";
 import { GuidedSetupWizard } from "@/components/branding/GuidedSetupWizard";
 import { VisualTerminologyManager } from "@/components/branding/VisualTerminologyManager";
 import { ContentPreview } from "@/components/branding/ContentPreview";
+import { RescanTab } from "@/components/project/RescanTab";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -223,6 +224,9 @@ const BrandingDetails = () => {
                   <div className="flex items-center text-sm text-gray-500 mt-1">
                     <Globe className="h-4 w-4 mr-1" />
                     {project.title || "Untitled Project"}
+                    <Link to={`/project/${id}`} className="ml-3 text-indigo-600 hover:text-indigo-800">
+                      Back to Project
+                    </Link>
                   </div>
                 )}
               </div>
@@ -305,6 +309,10 @@ const BrandingDetails = () => {
                         <TabsTrigger value="seo">
                           <Search className="h-4 w-4 mr-2" />
                           SEO Content
+                        </TabsTrigger>
+                        <TabsTrigger value="rescan">
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Content Update
                         </TabsTrigger>
                       </TabsList>
                       
@@ -527,6 +535,22 @@ const BrandingDetails = () => {
                           </Card>
                         </div>
                         {id && <SEOContentSummary projectId={id} />}
+                      </TabsContent>
+                      
+                      <TabsContent value="rescan">
+                        <div className="mb-4">
+                          <Card>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">
+                                Content Update
+                              </CardTitle>
+                              <CardDescription>
+                                Rescan your website to check for new or updated content and keep your AI embeddings up to date.
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                        {id && <RescanTab />}
                       </TabsContent>
                     </Tabs>
                     

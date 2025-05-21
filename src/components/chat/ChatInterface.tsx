@@ -22,9 +22,7 @@ export function ChatInterface({
   
   // Set conversation ID in context when it changes
   useEffect(() => {
-    if (conversationId) {
-      setSelectedConversationId(conversationId);
-    }
+    setSelectedConversationId(conversationId);
   }, [conversationId, setSelectedConversationId]);
   
   // Load existing messages if conversation ID is provided

@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { ChatProvider } from "@/context/ChatContext";
+import { ChatProvider, useChat } from "@/context/ChatContext";
 import { ContentService, SavedProject } from "@/services/ContentService";
 import { Sidebar } from "./Sidebar";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
@@ -12,17 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { FileUpload } from "./FileUpload";
 import { ChatInput } from "./ChatInput";
 import { AccountMenu } from "@/components/AccountMenu";
+import { ChatInterface } from "./ChatInterface";
 
 const ChatDemo = () => {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
-    const [inputValue, setInputValue] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
     const [projects, setProjects] = useState<SavedProject[]>([]);
     const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
-    const [messages, setMessages] = useState<ChatMessageType[]>([]);
     const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
-    const [lastSources, setLastSources] = useState<any[]>([]);
     const { toast } = useToast();
     
     // Move the authentication check after all hooks are initialized
@@ -51,71 +48,9 @@ const ChatDemo = () => {
         fetchProjects();
     }, [id]);
     
-    useEffect(() => {
-        // If we have a selected conversation ID, load its messages
-        if (selectedConversationId) {
-            const loadMessages = async () => {
-                try {
-                    setIsLoading(true);
-                    const fetchedMessages = await ChatService.getMessages(selectedConversationId);
-                    setMessages(fetchedMessages);
-                } catch (error) {
-                    console.error("Error loading messages:", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            
-            loadMessages();
-        } else {
-            // Reset messages if no conversation is selected
-            setMessages([]);
-        }
-    }, [selectedConversationId]);
-    
-    const handleInputChange = (value: string) => {
-        setInputValue(value);
-    };
-    
-    const handleSend = async () => {
-        if (!inputValue.trim() || isLoading || !selectedProject) return;
-        
-        setIsLoading(true);
-        
-        try {
-            // Send message to API
-            const result = await ChatService.sendMessageToAPI(
-                inputValue,
-                selectedProject.id,
-                selectedConversationId
-            );
-            
-            // If this created a new conversation, update the selected conversation ID
-            if (result.conversationId !== selectedConversationId) {
-                setSelectedConversationId(result.conversationId);
-            }
-            
-            // Fetch the latest messages after sending
-            const updatedMessages = await ChatService.getMessages(result.conversationId);
-            setMessages(updatedMessages);
-            setInputValue("");
-            
-        } catch (error: any) {
-            console.error("Error sending message:", error);
-            toast({
-                title: "Error",
-                description: error.message || "Failed to get a response",
-                variant: "destructive"
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
     const handleProjectSelect = (project: SavedProject) => {
         setSelectedProject(project);
         setSelectedConversationId(undefined); // Reset conversation when switching projects
-        setMessages([]);
     };
     
     const handleConversationSelect = (conversationId: string) => {
@@ -162,27 +97,13 @@ const ChatDemo = () => {
                             </div>
                         </div>
                         
-                        {/* Messages display */}
-                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                            {messages.map((message, index) => (
-                                <ChatMessage key={index} message={message} />
-                            ))}
-                            
-                            {messages.length === 0 && !isLoading && (
-                                <div className="h-full flex items-center justify-center text-gray-500">
-                                    <p>Start a conversation with your project data</p>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Chat input */}
+                        {/* Use ChatInterface which handles messages and input */}
                         <ChatProvider>
-                            {selectedProject && (
-                                <ChatInput 
-                                    projectId={selectedProject.id}
-                                    onConversationCreated={handleConversationCreated}
-                                />
-                            )}
+                            <ChatInterface 
+                                projectId={selectedProject.id}
+                                conversationId={selectedConversationId}
+                                onConversationCreated={handleConversationCreated}
+                            />
                         </ChatProvider>
                     </>
                 ) : (

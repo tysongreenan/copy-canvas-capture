@@ -59,13 +59,15 @@ export class AgentService {
     options: AgentRequestOptions = {}
   ): Promise<AgentResponse> {
     try {
+      console.log(`Sending agent message. Thread ID: ${threadId}, Project ID: ${projectId}`);
+      
       // Merge default options with provided options
       const defaultOptions: AgentRequestOptions = {
         taskType: 'general',
         contentTypeFilter: null,
         enableTools: true,
         enableMultiStepReasoning: true,
-        modelName: "gpt-4o",
+        modelName: "gpt-4o-mini",
         temperature: 0.7,
         maxTokens: 1500,
       };
@@ -90,6 +92,8 @@ export class AgentService {
       
       // Merge with user options, with user options taking precedence
       const finalOptions = { ...defaultOptions, ...options };
+      
+      console.log(`Agent options: Task Type: ${finalOptions.taskType}, Model: ${finalOptions.modelName}`);
 
       // Call the Supabase edge function that handles agent communication
       const { data, error } = await supabase.functions.invoke("agent-chat", {
@@ -112,6 +116,7 @@ export class AgentService {
         throw new Error(`Failed to get response from agent: ${error.message}`);
       }
       
+      console.log("Agent response received:", data);
       return data as AgentResponse;
     } catch (error: any) {
       console.error("Error in agent service:", error);

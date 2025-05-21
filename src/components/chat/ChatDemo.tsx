@@ -7,6 +7,7 @@ import { ChatInterface } from "./ChatInterface";
 import { ChatHeader } from "./ChatHeader";
 import { EmptyProjectState } from "./EmptyProjectState";
 import { useProjectSelection } from "@/hooks/use-project-selection";
+import { useEffect } from "react";
 
 const ChatDemo = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,37 +27,37 @@ const ChatDemo = () => {
   }
   
   return (
-    <div className="flex h-screen w-full bg-white">
-      {/* Sidebar */}
-      <Sidebar 
-        projects={projects}
-        selectedProject={selectedProject}
-        onSelectProject={handleProjectSelect}
-        selectedConversationId={selectedConversationId}
-        onSelectConversation={handleConversationSelect}
-      />
-      
-      {/* Main chat area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {selectedProject ? (
-          <>
-            {/* Chat header */}
-            <ChatHeader selectedProject={selectedProject} />
-            
-            {/* Use ChatInterface which handles messages and input */}
-            <ChatProvider>
+    <ChatProvider>
+      <div className="flex h-screen w-full bg-white">
+        {/* Sidebar */}
+        <Sidebar 
+          projects={projects}
+          selectedProject={selectedProject}
+          onSelectProject={handleProjectSelect}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={handleConversationSelect}
+        />
+        
+        {/* Main chat area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedProject ? (
+            <>
+              {/* Chat header */}
+              <ChatHeader selectedProject={selectedProject} />
+              
+              {/* Use ChatInterface which handles messages and input */}
               <ChatInterface 
                 projectId={selectedProject.id}
                 conversationId={selectedConversationId}
                 onConversationCreated={handleConversationCreated}
               />
-            </ChatProvider>
-          </>
-        ) : (
-          <EmptyProjectState />
-        )}
+            </>
+          ) : (
+            <EmptyProjectState />
+          )}
+        </div>
       </div>
-    </div>
+    </ChatProvider>
   );
 };
 

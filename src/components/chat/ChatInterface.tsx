@@ -22,7 +22,14 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ projectId, conversationId, onConversationCreated }: ChatInterfaceProps) {
-  const { messages, addMessage, setLastSources } = useChat();
+  const { 
+    messages, 
+    addMessage, 
+    setLastSources, 
+    setCurrentProjectId, 
+    setSelectedConversationId, 
+    saveMessageToDatabase 
+  } = useChat();
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const [reasoning, setReasoning] = useState<AgentStep[]>([]);
@@ -31,6 +38,12 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Update current project ID and conversation ID in context
+  useEffect(() => {
+    setCurrentProjectId(projectId);
+    setSelectedConversationId(conversationId);
+  }, [projectId, conversationId, setCurrentProjectId, setSelectedConversationId]);
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -98,14 +111,22 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       const detectedTaskType = detectTaskType(message);
       setTaskType(detectedTaskType);
       
-      // Add user message to the chat context
-      addMessage({ 
+      // Create user message
+      const userMessage: ChatMessageType = { 
         id: crypto.randomUUID(),
         conversation_id: conversationId || "",
         role: 'user', 
         content: message,
         created_at: new Date().toISOString()
-      });
+      };
+      
+      // Add user message to the chat context
+      addMessage(userMessage);
+      
+      // Save the message to the database if we have a conversation ID
+      if (conversationId) {
+        await saveMessageToDatabase(userMessage);
+      }
       
       try {
         // Determine appropriate settings based on task type
@@ -165,19 +186,26 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           setConfidence(response.confidence);
         }
         
-        // Add assistant's response to the chat context
-        addMessage({
+        // Create assistant message
+        const assistantMessage: ChatMessageType = {
           id: crypto.randomUUID(),
           conversation_id: conversationId || "",
           role: 'assistant',
           content: response.message,
           created_at: new Date().toISOString()
-        });
+        };
+        
+        // Add assistant's response to the chat context
+        addMessage(assistantMessage);
+        
+        // Save the assistant message to the database if we have a conversation ID
+        if (conversationId) {
+          await saveMessageToDatabase(assistantMessage);
+        }
         
         // If this is a new conversation, call the callback with a new conversation ID
         if (!conversationId) {
-          // TODO: In a real implementation, we would save the conversation to the database
-          // and get back a real conversation ID. For now, we're just using the threadId.
+          // Call the callback to create a new conversation with the thread ID
           onConversationCreated(response.threadId);
         }
       } catch (error) {
@@ -191,7 +219,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase]
   );
 
   // Helper function to render reasoning steps

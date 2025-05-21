@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ScrapedContent } from "@/services/ScraperTypes";
 import { ContentService } from "@/services/ContentService";
@@ -17,9 +16,15 @@ import {
   ChevronDown, 
   ChevronUp,
   Search,
-  FileBarChart
+  FileBarChart,
+  Edit,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ContentDisplay } from "@/components/ContentDisplay";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 interface SEOContentSummaryProps {
   projectId: string;
@@ -49,6 +54,8 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
   const [keywordInfo, setKeywordInfo] = useState<{keyword: string, count: number}[]>([]);
   const [expandedPage, setExpandedPage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedPageForContent, setSelectedPageForContent] = useState<string | null>(null);
+  const [copied, setCopied] = useState<boolean>(false);
   
   useEffect(() => {
     const fetchPages = async () => {
@@ -60,6 +67,10 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
         // Map the database format to ScrapedContent format
         const mappedPages = projectPages.map(mapDatabaseToScrapedContent);
         setPages(mappedPages);
+        
+        if (mappedPages.length > 0) {
+          setSelectedPageForContent(mappedPages[0].url);
+        }
         
         // Calculate total word count
         let wordCount = 0;
@@ -110,6 +121,30 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
     }
   };
   
+  const handleCopyFullContent = () => {
+    const selectedPage = pages.find(page => page.url === selectedPageForContent);
+    if (!selectedPage) return;
+    
+    const content = selectedPage.paragraphs.join('\n\n');
+    navigator.clipboard.writeText(content)
+      .then(() => {
+        setCopied(true);
+        toast({
+          title: "Copied to clipboard",
+          description: "All content copied successfully",
+        });
+        
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy content to clipboard",
+          variant: "destructive",
+        });
+      });
+  };
+  
   if (loading) {
     return (
       <div className="py-10 flex justify-center items-center">
@@ -143,6 +178,8 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
     }
   };
   
+  const selectedPageContent = pages.find(page => page.url === selectedPageForContent);
+  
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -158,6 +195,10 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
           <TabsTrigger value="keywords" className="flex items-center gap-1">
             <Search className="h-4 w-4" />
             Keyword Analysis
+          </TabsTrigger>
+          <TabsTrigger value="fullcontent" className="flex items-center gap-1">
+            <Edit className="h-4 w-4" />
+            Full Content
           </TabsTrigger>
         </TabsList>
         
@@ -470,6 +511,123 @@ export function SEOContentSummary({ projectId }: SEOContentSummaryProps) {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+        
+        <TabsContent value="fullcontent">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-medium">Full Website Content</CardTitle>
+              <CardDescription>
+                View and edit the complete content from each page of your website. Use this to improve your copy and SEO.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                <div className="w-full md:w-3/4">
+                  <label className="text-sm font-medium mb-2 block">Select Page to View</label>
+                  <Select
+                    value={selectedPageForContent || ''}
+                    onValueChange={(value) => setSelectedPageForContent(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a page" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pages.map((page, index) => (
+                        <SelectItem key={index} value={page.url}>
+                          {page.title || page.url}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={handleCopyFullContent}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    Copy All Content
+                  </Button>
+                </div>
+              </div>
+              
+              {selectedPageContent && (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-slate-50 p-4 border-b">
+                    <h3 className="font-medium">{selectedPageContent.title}</h3>
+                    <a 
+                      href={selectedPageContent.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 flex items-center text-sm mt-1"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      {selectedPageContent.url}
+                    </a>
+                  </div>
+                  
+                  <div className="p-4">
+                    <ContentDisplay data={selectedPageContent} />
+                  </div>
+                </div>
+              )}
+              
+              <Card className="mt-6 bg-slate-50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">SEO Improvement Suggestions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedPageContent && (
+                    <div className="space-y-4">
+                      {!selectedPageContent.metaDescription && (
+                        <div className="p-3 border border-yellow-200 bg-yellow-50 rounded-md">
+                          <h4 className="font-medium text-yellow-800">Missing Meta Description</h4>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            Add a meta description to improve search engine visibility. Keep it between 120-155 characters.
+                          </p>
+                        </div>
+                      )}
+                      
+                      {selectedPageContent.headings.filter(h => h.tag === 'h1').length === 0 && (
+                        <div className="p-3 border border-yellow-200 bg-yellow-50 rounded-md">
+                          <h4 className="font-medium text-yellow-800">Missing H1 Heading</h4>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            Add an H1 heading that includes your primary keyword to improve page structure.
+                          </p>
+                        </div>
+                      )}
+                      
+                      {selectedPageContent.paragraphs.length > 0 && 
+                        selectedPageContent.paragraphs.join(' ').split(' ').length < 300 && (
+                        <div className="p-3 border border-yellow-200 bg-yellow-50 rounded-md">
+                          <h4 className="font-medium text-yellow-800">Thin Content</h4>
+                          <p className="text-sm text-yellow-700 mt-1">
+                            This page has less than 300 words. Consider adding more meaningful content for better SEO.
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="p-3 border border-green-200 bg-green-50 rounded-md">
+                        <h4 className="font-medium text-green-800">Keyword Optimization</h4>
+                        <p className="text-sm text-green-700 mt-1">
+                          Ensure your target keywords appear in headers, the first paragraph, and throughout the content.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 border border-green-200 bg-green-50 rounded-md">
+                        <h4 className="font-medium text-green-800">Internal Linking</h4>
+                        <p className="text-sm text-green-700 mt-1">
+                          Add relevant internal links to other pages on your website to improve navigation and SEO.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -17,7 +17,9 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<SavedProject | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
+  
+  // Remove the local chatMessages state since it's now handled by the ChatContext
+  // const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
 
   // Redirect if not logged in
   if (!user) {
@@ -47,13 +49,8 @@ const Chat = () => {
     fetchProject();
   }, [id]);
   
-  const handleSendMessage = (message: string, response: string) => {
-    setChatMessages(prev => [
-      ...prev, 
-      { role: 'user', content: message },
-      { role: 'assistant', content: response }
-    ]);
-  };
+  // Remove the handleSendMessage function since it's handled by the ChatContext
+  // and ChatContainer components now
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
@@ -92,35 +89,8 @@ const Chat = () => {
           <div className="space-y-6">
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">Chat with {project.title}</h1>
             
-            <div className="backdrop-blur-lg bg-black/30 rounded-xl border border-white/10 p-6">
-              {chatMessages.length > 0 ? (
-                <div className="mb-6 space-y-6">
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div 
-                        className={`max-w-[80%] rounded-lg p-4 ${
-                          msg.role === 'user' 
-                            ? 'bg-blue-600/50 text-white' 
-                            : 'bg-white/10 text-white/90'
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-white/60">
-                  <p className="text-lg">Ask anything about your project!</p>
-                </div>
-              )}
-              
-              <AIPromptContainer 
-                onSendMessage={handleSendMessage} 
-                projectId={project.id} 
-              />
-            </div>
-            
+            {/* Remove the duplicate prompt container and messages display here */}
+            {/* Use only ChatContainer which handles all chat functionality */}
             <ChatContainer project={project} />
           </div>
         ) : (

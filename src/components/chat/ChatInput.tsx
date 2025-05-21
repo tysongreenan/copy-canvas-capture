@@ -27,6 +27,8 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     setLoading(true);
     
     try {
+      console.log("Sending message:", input.trim());
+      
       // Send message to API
       const result = await ChatService.sendMessageToAPI(
         input.trim(), 
@@ -34,8 +36,11 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         selectedConversationId
       );
       
+      console.log("Message sent, conversation ID:", result.conversationId);
+      
       // If this created a new conversation, update the selected conversation ID
       if (!selectedConversationId && result.conversationId && onConversationCreated) {
+        console.log("New conversation created:", result.conversationId);
         onConversationCreated(result.conversationId);
       }
       
@@ -46,9 +51,9 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         setLastSources([]);
       }
       
-      // Messages will be fetched from the database, so we don't need to add them here
-      // Just fetch the latest messages after sending
+      // Fetch the latest messages after sending
       if (result.conversationId) {
+        console.log("Fetching updated messages");
         const updatedMessages = await ChatService.getMessages(result.conversationId);
         setMessages(updatedMessages);
       }
@@ -62,8 +67,6 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
         description: error.message || "Failed to get a response",
         variant: "destructive"
       });
-      
-      // Don't add partial messages to the UI, let the error toast handle it
     } finally {
       setLoading(false);
     }

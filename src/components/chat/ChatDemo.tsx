@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { ChatProvider } from "@/context/ChatContext";
 import { ContentService, SavedProject } from "@/services/ContentService";
@@ -146,7 +145,6 @@ const ChatDemo = () => {
                             <h1 className="text-lg font-medium text-black">Chat with {selectedProject.title}</h1>
                             
                             <div className="flex items-center gap-4">
-                                {/* File upload */}
                                 <FileUpload 
                                     projectId={selectedProject.id} 
                                     onSuccess={() => {
@@ -157,7 +155,6 @@ const ChatDemo = () => {
                                     }}
                                 />
                                 
-                                {/* Account Menu */}
                                 <AccountMenu />
                             </div>
                         </div>
@@ -175,15 +172,12 @@ const ChatDemo = () => {
                             )}
                         </div>
                         
-                        {/* Chat input */}
-                        <ChatProvider>
-                            {selectedProject && (
-                                <ChatInput 
-                                    projectId={selectedProject.id}
-                                    onConversationCreated={handleConversationCreated}
-                                />
-                            )}
-                        </ChatProvider>
+                        {/* Important: Avoid nested ChatProviders */}
+                        {/* Only create a single ChatProvider wrapper */}
+                        <ChatInput 
+                            projectId={selectedProject.id}
+                            onConversationCreated={handleConversationCreated}
+                        />
                     </>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 p-4">

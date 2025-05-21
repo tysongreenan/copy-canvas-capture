@@ -24,7 +24,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
   const [input, setInput] = useState('');
   const [lastSources, setLastSources] = useState<any[]>([]);
-  // Increased message limit to show more context
   const messageLimit = 100; // We can show up to 100 messages in the chat window
 
   return (

@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { ChatProvider } from '@/context/ChatContext';
 import { ChatInterface } from "./ChatInterface";
 import { ConversationsList } from "./ConversationsList";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle, Loader2, Menu, MessageSquare, X, Info } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { EmbeddingService } from "@/services/EmbeddingService";
@@ -30,7 +28,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
-  // Check if the project already has embeddings
   useEffect(() => {
     const checkEmbeddings = async () => {
       try {
@@ -47,7 +44,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
     
     checkEmbeddings();
     
-    // Fetch project pages
     const fetchPages = async () => {
       try {
         const pages = await ContentService.getProjectPages(project.id);
@@ -65,7 +61,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
     setEmbeddingStatus('processing');
     
     try {
-      // Get all pages for this project
       if (!projectPages || projectPages.length === 0) {
         toast({
           title: "No content",
@@ -77,9 +72,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
         return;
       }
       
-      // Convert database records to ScrapedContent format
       const scrapedPages = projectPages.map(page => {
-        // Safely type the content object
         const contentObj = page.content as {
           headings: Array<{tag: string; text: string}>;
           paragraphs: string[];
@@ -89,7 +82,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
           metaKeywords: string;
         };
         
-        // Convert the database record to ScrapedContent format
         return {
           url: page.url,
           title: page.title || "",
@@ -107,7 +99,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
         description: `Processing ${scrapedPages.length} pages for AI chat...`
       });
       
-      // Process embeddings
       const success = await EmbeddingService.processProject(project.id, scrapedPages);
       
       if (success) {
@@ -152,7 +143,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
     setSelectedConversationId(id);
   };
 
-  // Status Alert component
   const StatusAlert = () => {
     if (hasEmbeddings) return null;
     
@@ -209,11 +199,9 @@ export function ChatContainer({ project }: ChatContainerProps) {
   
   return (
     <div className="flex flex-col h-[calc(100vh-13rem)]">
-      {/* Status Alert */}
       <StatusAlert />
       
       <div className="flex border rounded-lg overflow-hidden flex-1">
-        {/* Desktop: Regular sidebar, Mobile: Sheet sidebar */}
         {isMobile ? (
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
@@ -249,9 +237,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
           </div>
         )}
         
-        {/* Main chat area */}
         <div className="flex-1 flex flex-col">
-          {/* Header */}
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-primary" />
@@ -273,7 +259,6 @@ export function ChatContainer({ project }: ChatContainerProps) {
             )}
           </div>
           
-          {/* Chat interface wrapped in provider */}
           <div className="flex-1">
             <ChatProvider>
               <ChatInterface 

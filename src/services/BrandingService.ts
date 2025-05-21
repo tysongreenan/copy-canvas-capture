@@ -57,6 +57,10 @@ export class BrandingService {
           throw new Error(`Error updating brand voice: ${error.message}`);
         }
         
+        if (!data) {
+          throw new Error("No data returned from update operation");
+        }
+        
         return data as BrandVoice;
       } else {
         // Create new record
@@ -75,6 +79,10 @@ export class BrandingService {
         
         if (error) {
           throw new Error(`Error creating brand voice: ${error.message}`);
+        }
+        
+        if (!data) {
+          throw new Error("No data returned from insert operation");
         }
         
         return data as BrandVoice;

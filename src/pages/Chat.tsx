@@ -9,7 +9,6 @@ import { ContentService, SavedProject } from "@/services/ContentService";
 import { ChevronLeft } from "lucide-react";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { AccountMenu } from "@/components/AccountMenu";
-import { AIPromptContainer } from "@/components/chat/AIPromptContainer";
 
 const Chat = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,9 +17,6 @@ const Chat = () => {
   const [project, setProject] = useState<SavedProject | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // Remove the local chatMessages state since it's now handled by the ChatContext
-  // const [chatMessages, setChatMessages] = useState<Array<{role: string, content: string}>>([]);
-
   // Redirect if not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -48,9 +44,6 @@ const Chat = () => {
 
     fetchProject();
   }, [id]);
-  
-  // Remove the handleSendMessage function since it's handled by the ChatContext
-  // and ChatContainer components now
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
@@ -89,7 +82,6 @@ const Chat = () => {
           <div className="space-y-6">
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">Chat with {project.title}</h1>
             
-            {/* Remove the duplicate prompt container and messages display here */}
             {/* Use only ChatContainer which handles all chat functionality */}
             <ChatContainer project={project} />
           </div>

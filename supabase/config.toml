@@ -74,3 +74,4 @@ url = ""
 [functions]
 [functions.process-embeddings]
 [functions.chat-completion]
+[functions.agent-chat]

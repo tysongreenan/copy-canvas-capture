@@ -128,4 +128,42 @@ export class BrandingService {
       return null;
     }
   }
+
+  // Generate brand voice from scraped pages using AI
+  static async generateBrandVoiceFromAI(projectId: string, pages: any[]): Promise<BrandVoice | null> {
+    try {
+      // Extract text content from pages to analyze
+      const pageTexts = pages.map(page => {
+        return {
+          url: page.url,
+          title: page.title,
+          content: typeof page.content === 'string' 
+            ? page.content 
+            : JSON.stringify(page.content)
+        };
+      });
+      
+      // Send the content to the analyze-brand-voice function
+      const { data, error } = await supabase.functions.invoke('analyze-brand-voice', {
+        body: { 
+          projectId, 
+          pages: pageTexts
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Error generating brand voice from AI: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from brand voice AI analysis");
+      }
+      
+      // Save the generated brand voice
+      return await this.saveBrandVoice(data as unknown as BrandVoice);
+    } catch (error: any) {
+      console.error("Error generating brand voice from AI:", error);
+      return null;
+    }
+  }
 }

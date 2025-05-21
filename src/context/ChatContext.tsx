@@ -5,6 +5,7 @@ import { ChatMessage } from '@/services/ChatService';
 interface ChatContextType {
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  addMessage: (message: ChatMessage) => void;
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   selectedConversationId: string | undefined;
@@ -26,11 +27,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [lastSources, setLastSources] = useState<any[]>([]);
   const messageLimit = 100; // We can show up to 100 messages in the chat window
 
+  // Add the addMessage function
+  const addMessage = (message: ChatMessage) => {
+    setMessages(prev => {
+      // If we're at the message limit, remove the oldest message
+      if (prev.length >= messageLimit) {
+        return [...prev.slice(1), message];
+      }
+      return [...prev, message];
+    });
+  };
+
   return (
     <ChatContext.Provider
       value={{
         messages,
         setMessages,
+        addMessage,
         loading,
         setLoading,
         selectedConversationId,

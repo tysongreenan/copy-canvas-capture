@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect, useCallback } from "react";
+import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { useChat } from "@/context/ChatContext";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatService } from "@/services/ChatService";
+import { AgentService } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -17,31 +19,8 @@ interface ChatInterfaceProps {
 export function ChatInterface({ projectId, conversationId, onConversationCreated }: ChatInterfaceProps) {
   const { messages, addMessage, setMessages } = useChat();
   const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
-  
-  // Load existing messages when conversationId changes
-  useEffect(() => {
-    const loadMessages = async () => {
-      if (!conversationId) return;
-      
-      setIsLoading(true);
-      try {
-        const loadedMessages = await ChatService.getMessages(conversationId);
-        setMessages(loadedMessages);
-      } catch (error) {
-        console.error("Error loading messages:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load messages. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadMessages();
-  }, [conversationId, setMessages, toast]);
   
   // Send message function
   const handleSendMessage = useCallback(
@@ -49,21 +28,45 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       if (!message.trim()) return;
       
       setIsLoading(true);
+      
+      // Add user message to the chat context
+      addMessage({ 
+        id: crypto.randomUUID(),
+        conversation_id: conversationId || "",
+        role: 'user', 
+        content: message,
+        created_at: new Date().toISOString()
+      });
+      
       try {
-        // Send the message and get the response
-        const response = await ChatService.sendMessage(projectId, message, conversationId, contentTypeFilter);
+        // Send the message to the agent and get the response
+        const response = await AgentService.sendMessage(
+          message,
+          threadId,
+          projectId,
+          contentTypeFilter
+        );
         
-        // If there's a new conversation ID, call the callback
-        if (!conversationId && response.conversationId) {
-          onConversationCreated(response.conversationId);
+        // Save the thread ID for future messages
+        if (response.threadId) {
+          setThreadId(response.threadId);
         }
         
-        // Add user message to the chat context
-        addMessage({ role: 'user', content: message });
-        
         // Add assistant's response to the chat context
-        addMessage({ role: 'assistant', content: response.response });
+        addMessage({
+          id: crypto.randomUUID(),
+          conversation_id: conversationId || "",
+          role: 'assistant',
+          content: response.message,
+          created_at: new Date().toISOString()
+        });
         
+        // If this is a new conversation, call the callback with a new conversation ID
+        if (!conversationId) {
+          // TODO: In a real implementation, we would save the conversation to the database
+          // and get back a real conversation ID. For now, we're just using the threadId.
+          onConversationCreated(response.threadId);
+        }
       } catch (error) {
         console.error("Error sending message:", error);
         toast({
@@ -75,7 +78,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         setIsLoading(false);
       }
     },
-    [projectId, conversationId, addMessage, onConversationCreated, toast]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast]
   );
   
   return (
@@ -83,7 +86,10 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.map((message, index) => (
-            <ChatMessage key={index} role={message.role} content={message.content} />
+            <ChatMessage 
+              key={index}
+              message={message}
+            />
           ))}
           
           {isLoading && (

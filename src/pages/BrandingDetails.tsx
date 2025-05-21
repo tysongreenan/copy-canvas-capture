@@ -21,8 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save, Wand2, Search } from "lucide-react";
+import { Brush, Globe, Edit, Save, Wand2, Search, SlidersHorizontal } from "lucide-react";
 import { SEOContentSummary } from "@/components/project/SEOContentSummary";
+import { BrandVoiceDashboard } from "@/components/branding/BrandVoiceDashboard";
+import { BrandVoiceProfiler } from "@/components/branding/BrandVoiceProfiler";
+import { GuidedSetupWizard } from "@/components/branding/GuidedSetupWizard";
+import { VisualTerminologyManager } from "@/components/branding/VisualTerminologyManager";
+import { ContentPreview } from "@/components/branding/ContentPreview";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +37,8 @@ const BrandingDetails = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState("tone");
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [wizardMode, setWizardMode] = useState(false);
   
   const form = useForm<Partial<BrandVoice>>({
     defaultValues: {
@@ -112,6 +118,12 @@ const BrandingDetails = () => {
         title: "Success",
         description: "Brand voice settings saved successfully"
       });
+      
+      // Exit wizard mode after saving
+      if (wizardMode) {
+        setWizardMode(false);
+        setActiveTab("dashboard");
+      }
     } catch (error: any) {
       console.error("Error saving brand voice:", error);
       toast({
@@ -166,6 +178,25 @@ const BrandingDetails = () => {
     }
   };
   
+  const handleSectionEdit = (section: string) => {
+    setActiveTab(section);
+  };
+  
+  const handleStartWizard = () => {
+    setWizardMode(true);
+  };
+  
+  const handleCompleteWizard = (data: Partial<BrandVoice>) => {
+    form.reset({
+      ...form.getValues(),
+      ...data
+    });
+    onSubmit({
+      ...form.getValues(),
+      ...data
+    });
+  };
+  
   // Redirect if not logged in
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -175,7 +206,7 @@ const BrandingDetails = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1 container max-w-4xl px-6 py-8">
+      <main className="flex-1 container max-w-5xl px-6 py-8">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -197,275 +228,336 @@ const BrandingDetails = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button 
-                  onClick={generateFromContent} 
-                  variant="outline" 
-                  className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
-                  disabled={generating || saving}
-                >
-                  {generating ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                      Generating...
-                    </div>
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4 mr-2" />
-                      Auto-Generate
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  onClick={form.handleSubmit(onSubmit)} 
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Saving...
-                    </div>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Settings
-                    </>
-                  )}
-                </Button>
+                {!wizardMode && (
+                  <>
+                    <Button 
+                      onClick={handleStartWizard} 
+                      variant="outline"
+                      className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
+                    >
+                      <SlidersHorizontal className="h-4 w-4 mr-2" />
+                      Setup Wizard
+                    </Button>
+                    
+                    <Button 
+                      onClick={generateFromContent} 
+                      variant="outline" 
+                      className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
+                      disabled={generating || saving}
+                    >
+                      {generating ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                          Generating...
+                        </div>
+                      ) : (
+                        <>
+                          <Wand2 className="h-4 w-4 mr-2" />
+                          Auto-Generate
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button 
+                      onClick={form.handleSubmit(onSubmit)} 
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </div>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Settings
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
             
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Brand Voice Configuration</CardTitle>
-                <CardDescription>
-                  Define how the AI should communicate on behalf of this brand. These settings will be used to customize AI outputs.
-                  Click "Auto-Generate" to extract brand voice settings from your website content.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="mb-6">
-                    <TabsTrigger value="tone">Tone & Style</TabsTrigger>
-                    <TabsTrigger value="content">Content Guidelines</TabsTrigger>
-                    <TabsTrigger value="language">Language Preferences</TabsTrigger>
-                    <TabsTrigger value="seo">
-                      <Search className="h-4 w-4 mr-2" />
-                      SEO Content
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="tone" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="tone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Brand Tone</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Professional, friendly, conversational, authoritative..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe the overall tone the AI should adopt when writing as this brand.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="style"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Writing Style</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Concise with short paragraphs, data-driven, storytelling approach..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe the writing style in terms of structure, sentence length, and stylistic choices.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="audience"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Target Audience</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., Technical professionals, small business owners, parents of young children..." 
-                              {...field} 
-                              className="min-h-20"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Describe who the content is primarily created for to help the AI adjust accordingly.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="content" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="key_messages"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Key Messages</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter key messages or brand points (one per line)" 
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              className="min-h-32"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List important messages or value propositions the brand wants to emphasize (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="avoid_phrases"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phrases to Avoid</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter phrases to avoid (one per line)" 
-                              {...field}
-                              value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                              onChange={(e) => field.onChange(e.target.value)}
-                              className="min-h-24"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List words, phrases or topics to avoid in brand communications (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="language" className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="language"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Language Preferences</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="e.g., American English, British English, simple language avoiding jargon..." 
-                              {...field} 
-                              className="min-h-24"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Specify language preferences including regional variations and complexity level.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="terminology"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Brand Terminology</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="product: Lumen AI&#10;platform: content marketing assistant&#10;..." 
-                              value={Object.entries(field.value || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}
-                              onChange={(e) => {
-                                const lines = e.target.value.split('\n');
-                                const terminology: Record<string, string> = {};
-                                
-                                lines.forEach(line => {
-                                  const parts = line.split(':');
-                                  if (parts.length >= 2) {
-                                    const key = parts[0].trim();
-                                    const value = parts.slice(1).join(':').trim();
-                                    if (key && value) {
-                                      terminology[key] = value;
-                                    }
-                                  }
-                                });
-                                
-                                field.onChange(terminology);
-                              }}
-                              className="min-h-32 font-mono"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter key terms and their preferred descriptions in format "term: description" (one per line).
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="seo">
-                    <div className="mb-4">
-                      <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-lg">
-                            Scraped SEO Content
-                          </CardTitle>
-                          <CardDescription>
-                            Analysis of your website's SEO content and structure from the scraped data. Use this information to improve your brand voice settings.
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    </div>
-                    {id && <SEOContentSummary projectId={id} />}
-                  </TabsContent>
-                </Tabs>
+            {!wizardMode ? (
+              <>
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Brand Voice Configuration</CardTitle>
+                    <CardDescription>
+                      Define how the AI should communicate on behalf of this brand. These settings will be used to customize AI outputs.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
                 
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={saving}>
-                    {saving ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Saving...
-                      </div>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Settings
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                      <TabsList className="mb-6">
+                        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                        <TabsTrigger value="tone">Tone & Style</TabsTrigger>
+                        <TabsTrigger value="audience">Audience</TabsTrigger>
+                        <TabsTrigger value="content">Content Guidelines</TabsTrigger>
+                        <TabsTrigger value="language">Language</TabsTrigger>
+                        <TabsTrigger value="preview">
+                          Preview
+                        </TabsTrigger>
+                        <TabsTrigger value="seo">
+                          <Search className="h-4 w-4 mr-2" />
+                          SEO Content
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="dashboard" className="space-y-6">
+                        <BrandVoiceDashboard 
+                          brandVoice={form.getValues()} 
+                          onEditSection={handleSectionEdit} 
+                        />
+                      </TabsContent>
+                      
+                      <TabsContent value="tone" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">Brand Tone & Style</CardTitle>
+                            <CardDescription>
+                              Define how your brand should sound to your audience
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <FormField
+                              control={form.control}
+                              name="tone"
+                              render={({ field }) => (
+                                <FormItem className="mb-6">
+                                  <FormLabel>Brand Tone</FormLabel>
+                                  <FormControl>
+                                    <BrandVoiceProfiler 
+                                      initialTone={field.value} 
+                                      onToneChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="style"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Writing Style</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="e.g., Concise with short paragraphs, data-driven, storytelling approach..." 
+                                      {...field} 
+                                      className="min-h-20"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Describe the writing style in terms of structure, sentence length, and stylistic choices.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                      
+                      <TabsContent value="audience" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">Target Audience</CardTitle>
+                            <CardDescription>
+                              Define who your content is being created for
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <FormField
+                              control={form.control}
+                              name="audience"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Target Audience</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="e.g., Technical professionals, small business owners, parents of young children..." 
+                                      {...field} 
+                                      className="min-h-20"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Describe who the content is primarily created for to help the AI adjust accordingly.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                      
+                      <TabsContent value="content" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">Content Guidelines</CardTitle>
+                            <CardDescription>
+                              Define key messages and content to avoid
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <FormField
+                              control={form.control}
+                              name="key_messages"
+                              render={({ field }) => (
+                                <FormItem className="mb-6">
+                                  <FormLabel>Key Messages</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="Enter key messages or brand points (one per line)" 
+                                      {...field}
+                                      value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                                      onChange={(e) => field.onChange(e.target.value)}
+                                      className="min-h-32"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    List important messages or value propositions the brand wants to emphasize (one per line).
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="avoid_phrases"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Phrases to Avoid</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="Enter phrases to avoid (one per line)" 
+                                      {...field}
+                                      value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
+                                      onChange={(e) => field.onChange(e.target.value)}
+                                      className="min-h-24"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    List words, phrases or topics to avoid in brand communications (one per line).
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                      
+                      <TabsContent value="language" className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">Language Preferences</CardTitle>
+                            <CardDescription>
+                              Define language preferences and terminology
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <FormField
+                              control={form.control}
+                              name="language"
+                              render={({ field }) => (
+                                <FormItem className="mb-6">
+                                  <FormLabel>Language Preferences</FormLabel>
+                                  <FormControl>
+                                    <Textarea 
+                                      placeholder="e.g., American English, British English, simple language avoiding jargon..." 
+                                      {...field} 
+                                      className="min-h-24"
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Specify language preferences including regional variations and complexity level.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="terminology"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Brand Terminology</FormLabel>
+                                  <FormControl>
+                                    <VisualTerminologyManager
+                                      initialTerminology={field.value as Record<string, string>}
+                                      onTerminologyChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="mt-4">
+                                    Define key terms and their preferred descriptions to maintain consistent brand language.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+                      
+                      <TabsContent value="preview">
+                        <ContentPreview brandVoice={form.getValues()} />
+                      </TabsContent>
+                      
+                      <TabsContent value="seo">
+                        <div className="mb-4">
+                          <Card>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">
+                                Scraped SEO Content
+                              </CardTitle>
+                              <CardDescription>
+                                Analysis of your website's SEO content and structure from the scraped data. Use this information to improve your brand voice settings.
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </div>
+                        {id && <SEOContentSummary projectId={id} />}
+                      </TabsContent>
+                    </Tabs>
+                    
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={saving}>
+                        {saving ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Saving...
+                          </div>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Settings
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </>
+            ) : (
+              <div className="mt-4">
+                <GuidedSetupWizard
+                  initialData={form.getValues()}
+                  onComplete={handleCompleteWizard}
+                  onGenerate={generateFromContent}
+                  isGenerating={generating}
+                />
+              </div>
+            )}
           </>
         )}
       </main>

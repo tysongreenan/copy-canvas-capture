@@ -6,9 +6,14 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { useChat } from "@/context/ChatContext";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AgentService } from "@/services/AgentService";
+import { AgentService, AgentStep, AgentSource } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info, Sparkles, FileSearch, Brain } from "lucide-react";
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 
 interface ChatInterfaceProps {
   projectId: string;
@@ -20,6 +25,9 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   const { messages, addMessage, setLastSources } = useChat();
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | undefined>(undefined);
+  const [reasoning, setReasoning] = useState<AgentStep[]>([]);
+  const [showReasoning, setShowReasoning] = useState(false);
+  const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -41,6 +49,10 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       if (!message.trim()) return;
       
       setIsLoading(true);
+      
+      // Reset reasoning state for new message
+      setReasoning([]);
+      setShowReasoning(false);
       
       // Add user message to the chat context
       addMessage({ 
@@ -72,6 +84,16 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           setLastSources([]);
         }
         
+        // Store reasoning steps if available
+        if (response.reasoning && response.reasoning.length > 0) {
+          setReasoning(response.reasoning);
+        }
+        
+        // Store confidence score if available
+        if (response.confidence !== undefined) {
+          setConfidence(response.confidence);
+        }
+        
         // Add assistant's response to the chat context
         addMessage({
           id: crypto.randomUUID(),
@@ -100,6 +122,57 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
     },
     [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources]
   );
+
+  // Helper function to render reasoning steps
+  const renderReasoningStep = (step: AgentStep, index: number) => {
+    const getStepIcon = () => {
+      switch (step.type) {
+        case 'tool_start':
+          return <FileSearch className="h-4 w-4 text-blue-500" />;
+        case 'tool_result':
+        case 'tool_error':
+          return <Info className="h-4 w-4 text-yellow-500" />;
+        case 'reasoning':
+        case 'planning':
+        case 'synthesis':
+          return <Brain className="h-4 w-4 text-purple-500" />;
+        case 'evaluation':
+          return <Sparkles className="h-4 w-4 text-green-500" />;
+        default:
+          return <Info className="h-4 w-4 text-gray-500" />;
+      }
+    };
+
+    return (
+      <div key={index} className="flex items-start space-x-2 text-sm p-2 rounded-md bg-gray-50 dark:bg-gray-900">
+        <div className="mt-0.5">{getStepIcon()}</div>
+        <div className="flex-1">
+          <div className="font-medium">
+            {step.toolName ? `${step.type} (${step.toolName})` : step.type}
+          </div>
+          <div className="text-gray-600 dark:text-gray-400">{step.content}</div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Helper to render confidence indicator
+  const renderConfidenceIndicator = () => {
+    if (confidence === undefined) return null;
+    
+    let color = "bg-yellow-500";
+    if (confidence > 0.7) color = "bg-green-500";
+    else if (confidence < 0.4) color = "bg-red-500";
+    
+    return (
+      <div className="flex items-center space-x-2 text-xs">
+        <div className="flex items-center space-x-1">
+          <div className={`h-2 w-2 rounded-full ${color}`}></div>
+          <span>Confidence: {Math.round(confidence * 100)}%</span>
+        </div>
+      </div>
+    );
+  };
   
   return (
     <div className="flex flex-col h-full">
@@ -117,6 +190,32 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
               <Loader2 className="h-4 w-4 animate-spin" />
               <p>Thinking...</p>
             </div>
+          )}
+          
+          {reasoning.length > 0 && messages.length > 0 && !isLoading && (
+            <Collapsible
+              open={showReasoning}
+              onOpenChange={setShowReasoning}
+              className="mt-2 border rounded-md p-2 bg-slate-50 dark:bg-slate-900"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Brain className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-medium">AI Reasoning Process</span>
+                  {renderConfidenceIndicator()}
+                </div>
+                
+                <CollapsibleTrigger asChild>
+                  <button className="text-xs text-blue-500 hover:text-blue-700">
+                    {showReasoning ? "Hide Details" : "Show Details"}
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+              
+              <CollapsibleContent className="mt-2 space-y-2">
+                {reasoning.map(renderReasoningStep)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
       </ScrollArea>

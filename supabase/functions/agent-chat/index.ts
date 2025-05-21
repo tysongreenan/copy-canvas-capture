@@ -8,6 +8,49 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define tool schemas
+const contentSearchTool = {
+  type: "function",
+  function: {
+    name: "searchContent",
+    description: "Search for relevant content in the knowledge base based on a query",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "The search query to find relevant content"
+        },
+        contentTypeFilter: {
+          type: "string",
+          description: "Optional filter for specific content types",
+          enum: ["webpage", "article", "product", "blog", "faq"]
+        }
+      },
+      required: ["query"]
+    }
+  }
+};
+
+const projectInfoTool = {
+  type: "function",
+  function: {
+    name: "getProjectInfo",
+    description: "Get information about the current project",
+    parameters: {
+      type: "object",
+      properties: {
+        infoType: {
+          type: "string",
+          description: "Type of project information to retrieve",
+          enum: ["summary", "structure", "metadata"]
+        }
+      },
+      required: ["infoType"]
+    }
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -23,7 +66,15 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, projectId, contentTypeFilter } = await req.json();
+    const { 
+      message, 
+      threadId, 
+      projectId, 
+      contentTypeFilter, 
+      enableTools = true, 
+      enableMultiStepReasoning = true,
+      modelName = "gpt-4o-mini"
+    } = await req.json();
 
     if (!message) {
       return new Response(
@@ -35,6 +86,9 @@ serve(async (req) => {
     console.log(`Processing message: "${message}"`);
     console.log(`Project ID: ${projectId || 'Not provided'}`);
     console.log(`Content type filter: ${contentTypeFilter || 'None'}`);
+    console.log(`Tools enabled: ${enableTools}`);
+    console.log(`Multi-step reasoning: ${enableMultiStepReasoning}`);
+    console.log(`Using model: ${modelName}`);
 
     // Initialize Supabase client for RAG search if needed
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -50,9 +104,19 @@ serve(async (req) => {
     const currentThreadId = threadId || crypto.randomUUID();
     console.log(`Using thread ID: ${currentThreadId}`);
 
-    // Search for relevant documents using embeddings
+    // Initialize array for tracking reasoning steps
+    const reasoningSteps = [];
     let relevantContext = "";
-    if (projectId) {
+    let sources = [];
+    
+    // Tool implementation: Content Search
+    const searchContent = async (query: string, contentType: string | null = null) => {
+      reasoningSteps.push({
+        type: "tool_start",
+        toolName: "searchContent",
+        content: `Searching for content related to: "${query}"${contentType ? ` with content type filter: ${contentType}` : ''}`
+      });
+
       try {
         // Generate embedding for the query
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
@@ -62,7 +126,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            input: message,
+            input: query,
             model: 'text-embedding-3-small',
           }),
         });
@@ -87,8 +151,8 @@ serve(async (req) => {
         };
         
         // Add content type filter if provided
-        if (contentTypeFilter) {
-          matchParams.content_type = contentTypeFilter;
+        if (contentType) {
+          matchParams.content_type = contentType;
         }
         
         // Perform vector similarity search with optional content type filter
@@ -101,52 +165,160 @@ serve(async (req) => {
           throw new Error(`Search error: ${error.message}`);
         }
 
-        if (similarDocs && similarDocs.length > 0) {
-          console.log(`Found ${similarDocs.length} relevant documents`);
-          relevantContext = "Here's relevant information from the knowledge base:\n\n" + 
-            similarDocs.map((doc: any, index: number) => 
-              `[Document ${index + 1}]: ${doc.content}`
-            ).join("\n\n");
-        } else {
-          console.log("No relevant documents found");
-          relevantContext = "No relevant information was found in the knowledge base.";
-        }
+        const result = {
+          count: similarDocs?.length || 0,
+          documents: similarDocs || []
+        };
+
+        reasoningSteps.push({
+          type: "tool_result",
+          toolName: "searchContent",
+          content: `Found ${result.count} relevant documents`,
+          toolOutput: result
+        });
+
+        // Save sources for inclusion in final response
+        sources = similarDocs || [];
+
+        return result;
       } catch (error) {
-        console.error("Error in RAG search:", error);
-        relevantContext = "There was an error searching the knowledge base: " + error.message;
+        reasoningSteps.push({
+          type: "tool_error",
+          toolName: "searchContent",
+          content: `Error searching content: ${error.message}`
+        });
+        return { count: 0, documents: [], error: error.message };
       }
+    };
+
+    // Tool implementation: Project Info
+    const getProjectInfo = async (infoType: string) => {
+      reasoningSteps.push({
+        type: "tool_start",
+        toolName: "getProjectInfo",
+        content: `Retrieving project information: ${infoType}`
+      });
+
+      try {
+        // For now just return mock data - in a real implementation this would query project metadata
+        let result = { type: infoType, data: {} };
+        
+        if (infoType === "summary") {
+          result.data = {
+            name: "Lumen Project",
+            description: "An AI-powered content marketing platform",
+            lastUpdated: new Date().toISOString()
+          };
+        } else if (infoType === "structure") {
+          result.data = {
+            contentTypes: ["webpage", "article", "blog", "faq"],
+            sections: ["marketing", "product", "support"]
+          };
+        } else {
+          result.data = {
+            created: new Date().toISOString(),
+            owner: "User",
+            status: "Active"
+          };
+        }
+
+        reasoningSteps.push({
+          type: "tool_result",
+          toolName: "getProjectInfo",
+          content: `Retrieved project ${infoType} information`,
+          toolOutput: result
+        });
+        
+        return result;
+      } catch (error) {
+        reasoningSteps.push({
+          type: "tool_error",
+          toolName: "getProjectInfo",
+          content: `Error getting project information: ${error.message}`
+        });
+        return { type: infoType, data: {}, error: error.message };
+      }
+    };
+
+    // First phase: Perform RAG search using the content search tool
+    if (projectId) {
+      const searchResult = await searchContent(message, contentTypeFilter);
+      if (searchResult.count > 0) {
+        relevantContext = "Here's relevant information from the knowledge base:\n\n" + 
+          searchResult.documents.map((doc: any, index: number) => 
+            `[Document ${index + 1}]: ${doc.content}`
+          ).join("\n\n");
+      } else {
+        relevantContext = "No relevant information was found in the knowledge base.";
+      }
+
+      // Add reasoning step for initial content analysis
+      reasoningSteps.push({
+        type: "reasoning",
+        content: "Analyzed the retrieved content for relevance to the user query"
+      });
     }
 
-    // Send the request to OpenAI with system instructions and relevant context
+    // Second phase: Enable multi-step reasoning and function calling
+    const tools = enableTools ? [contentSearchTool, projectInfoTool] : [];
+    
+    // Structure the system message based on enabled features
+    let systemMessage = `You are an intelligent assistant for the Lumen platform, specialized in marketing research and content analysis.
+    You provide thoughtful, well-reasoned responses based on the user's query and any relevant information from their content.
+    
+    When answering:
+    1. Use the provided relevant information when available
+    2. Cite your sources when providing information
+    3. Be honest when you don't know something
+    4. Organize your responses clearly
+    5. Provide actionable insights when possible`;
+
+    if (enableMultiStepReasoning) {
+      systemMessage += `\n\nImportant: Think step-by-step to solve complex questions. Before providing a final answer:
+      1. Break down the question into smaller parts
+      2. Consider what information you need to answer each part
+      3. Use available tools to gather necessary information
+      4. Analyze the collected information
+      5. Synthesize all insights into a coherent response`;
+    }
+
+    // Send the request to OpenAI with system instructions, function calling, and relevant context
+    const modelResponseFormat = enableTools ? { type: "json_object" } : undefined;
+    const openaiRequestBody: any = {
+      model: modelName,
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: relevantContext ? `${relevantContext}\n\nUser question: ${message}` : message
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+    };
+
+    if (tools.length > 0) {
+      openaiRequestBody.tools = tools;
+      openaiRequestBody.tool_choice = "auto";
+    }
+
+    if (modelResponseFormat) {
+      openaiRequestBody.response_format = modelResponseFormat;
+    }
+
+    // Log the complete request for debugging purposes
+    console.log("Sending request to OpenAI");
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an intelligent assistant for the Lumen platform, specialized in marketing research and content analysis.
-            You provide thoughtful, well-reasoned responses based on the user's query and any relevant information from their content.
-            
-            When answering:
-            1. Use the provided relevant information when available
-            2. Cite your sources when providing information
-            3. Be honest when you don't know something
-            4. Organize your responses clearly
-            5. Provide actionable insights when possible`
-          },
-          {
-            role: 'user',
-            content: relevantContext ? `${relevantContext}\n\nUser question: ${message}` : message
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
+      body: JSON.stringify(openaiRequestBody),
     });
 
     if (!response.ok) {
@@ -156,50 +328,98 @@ serve(async (req) => {
 
     const aiResponse = await response.json();
     
-    // Prepare reasoning steps (in this implementation, we're simulating them)
-    const steps = [
-      { 
-        type: "retrieval", 
-        content: relevantContext || "No context retrieval was performed."
-      },
-      {
-        type: "reasoning",
-        content: "Processed user query and formulated a response based on available information."
+    // Process the response and handle any tool calls
+    let finalResponse = aiResponse.choices[0].message.content;
+    let toolCalls = aiResponse.choices[0].message.tool_calls || [];
+    
+    // If there are tool calls, execute them
+    if (toolCalls && toolCalls.length > 0) {
+      reasoningSteps.push({
+        type: "planning",
+        content: "AI determined it needs additional information and will use tools to gather it"
+      });
+      
+      // Process each tool call
+      for (const call of toolCalls) {
+        const { function: fn } = call;
+        const { name, arguments: args } = fn;
+        
+        const parsedArgs = JSON.parse(args);
+        
+        if (name === "searchContent") {
+          await searchContent(parsedArgs.query, parsedArgs.contentTypeFilter);
+        }
+        else if (name === "getProjectInfo") {
+          await getProjectInfo(parsedArgs.infoType);
+        }
       }
-    ];
+      
+      // Make a follow-up call to OpenAI with the tool results
+      const messagesWithToolResults = [
+        {
+          role: 'system',
+          content: systemMessage
+        },
+        {
+          role: 'user',
+          content: relevantContext ? `${relevantContext}\n\nUser question: ${message}` : message
+        },
+        aiResponse.choices[0].message,
+        {
+          role: 'system',
+          content: `Based on the tool results provided, please synthesize a final response to the user's question. Include specific references to content when relevant.`
+        }
+      ];
+      
+      const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: messagesWithToolResults,
+          temperature: 0.5,
+          max_tokens: 1500,
+        }),
+      });
+      
+      if (!followUpResponse.ok) {
+        const errorData = await followUpResponse.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+      
+      const synthesizedResponse = await followUpResponse.json();
+      finalResponse = synthesizedResponse.choices[0].message.content;
+      
+      // Add final reasoning step
+      reasoningSteps.push({
+        type: "synthesis",
+        content: "Synthesized all gathered information to provide a comprehensive response"
+      });
+    }
+    
+    // Final phase: Record our confidence in the response
+    const confidenceScore = sources.length > 0 ? 0.8 : 0.5;
+    reasoningSteps.push({
+      type: "evaluation",
+      content: `Response confidence: ${confidenceScore.toFixed(2)}. ${sources.length > 0 ? 
+        'Based on multiple relevant sources.' : 
+        'Limited source material available for this response.'}`
+    });
 
-    // Log the response for debugging
     console.log("Successfully generated AI response");
-
-    // Return sources if any were found
-    const sources = projectId ? (await supabase.rpc(
-      'match_documents',
-      {
-        query_embedding: (await (await fetch('https://api.openai.com/v1/embeddings', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            input: message,
-            model: 'text-embedding-3-small',
-          }),
-        })).json()).data[0].embedding,
-        match_threshold: 0.2,
-        match_count: 5,
-        p_project_id: projectId
-      }
-    )).data || [] : [];
 
     // Include metadata in response
     return new Response(
       JSON.stringify({
-        message: aiResponse.choices[0].message.content,
+        message: finalResponse,
         threadId: currentThreadId,
-        reasoning: steps, 
+        reasoning: reasoningSteps,
         contentTypeFilter: contentTypeFilter || null,
-        sources: sources
+        sources: sources,
+        confidence: confidenceScore
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

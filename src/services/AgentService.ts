@@ -6,9 +6,25 @@ export interface AgentMessage {
   content: string;
 }
 
+export interface AgentTool {
+  type: string;
+  name: string;
+  description: string;
+  parameters?: any;
+}
+
 export interface AgentStep {
   type: string;
   content: string;
+  toolName?: string;
+  toolOutput?: any;
+}
+
+export interface AgentSource {
+  id: string;
+  content: string;
+  metadata: any;
+  similarity: number;
 }
 
 export interface AgentResponse {
@@ -16,7 +32,8 @@ export interface AgentResponse {
   threadId: string;
   reasoning?: AgentStep[];
   contentTypeFilter?: string | null;
-  sources?: any[];
+  sources?: AgentSource[];
+  confidence?: number;
 }
 
 export class AgentService {
@@ -36,7 +53,10 @@ export class AgentService {
           message,
           threadId,
           projectId,
-          contentTypeFilter
+          contentTypeFilter,
+          enableTools: true, // Enable the use of tools for enhanced reasoning
+          enableMultiStepReasoning: true, // Allow multi-step reasoning process
+          modelName: "gpt-4o" // Use a more powerful model for complex reasoning
         }
       });
       

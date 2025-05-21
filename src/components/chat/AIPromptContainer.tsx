@@ -1,111 +1,111 @@
 
-import { useState, useRef } from "react";
-import { AI_Prompt } from "../ui/animated-ai-input";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { AssistantService } from "@/services/AssistantService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AIPromptContainerProps {
-  onSendMessage?: (message: string, response: string) => void;
-  projectId?: string;
+  onSendMessage: (message: string, response: string) => void;
+  projectId: string;
+  assistantId?: string;
 }
 
-export function AIPromptContainer({ onSendMessage, projectId }: AIPromptContainerProps) {
-  const [inputValue, setValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+export function AIPromptContainer({
+  onSendMessage,
+  projectId,
+  assistantId = 'asst_hLaKt8VKignxoY0V0NyZxGWO' // Default to marketing research assistant
+}: AIPromptContainerProps) {
+  const [message, setMessage] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [contentTypeFilter, setContentTypeFilter] = useState<string | null>(null);
   const { toast } = useToast();
-  const threadIdRef = useRef<string | undefined>(undefined);
-  const [selectedAssistant, setSelectedAssistant] = useState("Marketing Research");
   
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    setIsLoading(true);
+    if (!message.trim() || isLoading) return;
     
     try {
-      // Get the appropriate assistant ID
-      const assistantId = AssistantService.getAssistantId(selectedAssistant);
+      setIsLoading(true);
       
-      // Send the message to the OpenAI assistant
-      const { message: aiResponse, threadId } = await AssistantService.sendMessage(
-        inputValue,
-        threadIdRef.current,
-        assistantId,
-        projectId
-      );
+      // Call the assistant-chat endpoint
+      const response = await supabase.functions.invoke('assistant-chat', {
+        body: { 
+          message, 
+          projectId,
+          assistantId,
+          useFineTunedModel: true,
+          contentTypeFilter 
+        }
+      });
       
-      // Save the thread ID for future messages in this conversation
-      threadIdRef.current = threadId;
-      
-      if (onSendMessage) {
-        onSendMessage(inputValue, aiResponse);
+      if (response.error) {
+        throw new Error(response.error.message || 'Error calling assistant');
       }
       
-      setValue("");
+      if (!response.data?.message) {
+        throw new Error('No response received from assistant');
+      }
+      
+      // Call the callback with the message and response
+      onSendMessage(message, response.data.message);
+      
+      // Reset the message
+      setMessage("");
+      
     } catch (error) {
       console.error("Error sending message:", error);
       toast({
         title: "Error",
-        description: "Failed to get a response from the assistant. Please try again.",
+        description: "Failed to get response from assistant. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const assistantOptions = [
-    "Marketing Research",
-    "Content Writer",
-    "SEO Specialist",
-    "Brand Strategist",
-    "General Assistant"
-  ];
-
+  
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      {!projectId && (
-        <Card className="p-4 bg-amber-50 border-amber-200">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-amber-600 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <p className="font-medium">No project connected</p>
-              <p className="text-amber-700">The assistant will use only its general knowledge as it's not connected to any project's data.</p>
-            </div>
-          </div>
-        </Card>
-      )}
-      
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-        <div className="w-full md:w-64">
-          <Select 
-            value={selectedAssistant} 
-            onValueChange={setSelectedAssistant}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Assistant" />
-            </SelectTrigger>
-            <SelectContent>
-              {assistantOptions.map(option => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <form onSubmit={handleSend} className="space-y-3">
+      <div className="flex justify-between items-center">
+        <h4 className="text-sm font-medium text-white/70">Content Type Filter</h4>
         
-        <div className="flex-1 w-full">
-          <AI_Prompt
-            value={inputValue}
-            onChange={setValue}
-            onSend={handleSend}
-            isLoading={isLoading}
-          />
-        </div>
+        <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
+          <SelectTrigger className="w-40 bg-white/5 text-white border-white/10">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-900 text-white border border-white/10">
+            <SelectItem value="none">No Filter</SelectItem>
+            <SelectItem value="title">Page Titles</SelectItem>
+            <SelectItem value="meta_description">Meta Descriptions</SelectItem>
+            <SelectItem value="headings">Headings</SelectItem>
+            <SelectItem value="paragraphs">Paragraphs</SelectItem>
+            <SelectItem value="list_items">List Items</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-    </div>
+      
+      <div className="relative">
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Ask anything about your project..."
+          disabled={isLoading}
+          className="min-h-24 pr-14 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none"
+        />
+        <Button
+          type="submit"
+          size="icon"
+          disabled={!message.trim() || isLoading}
+          className="absolute bottom-3 right-3 h-9 w-9 bg-blue-600 hover:bg-blue-700"
+        >
+          <Send className="h-4 w-4" />
+          <span className="sr-only">Send</span>
+        </Button>
+      </div>
+    </form>
   );
 }

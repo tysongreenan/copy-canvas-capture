@@ -32,7 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, projectId, conversationId, history } = await req.json();
+    const { query, projectId, conversationId, history, contentTypeFilter } = await req.json();
 
     if (!query || !projectId) {
       return new Response(
@@ -42,6 +42,7 @@ serve(async (req) => {
     }
 
     console.log(`Processing query: "${query}" for project ${projectId}`);
+    console.log(`Content type filter applied: ${contentTypeFilter || 'none'}`);
     const normalizedQuery = normalizeText(query);
     console.log(`Normalized query: "${normalizedQuery}"`);
 
@@ -114,15 +115,24 @@ serve(async (req) => {
     // Use a lower similarity threshold for better fuzzy matching
     const similarityThreshold = 0.3; // Lower threshold to catch more potential matches despite typos
     
-    // Perform vector similarity search
+    // Prepare parameters for the match_documents function
+    const matchDocumentsParams = {
+      query_embedding: embedding,
+      match_threshold: similarityThreshold,
+      match_count: 8, // Increase number of results to have more context
+      p_project_id: projectId
+    };
+    
+    // Add content type filter if provided
+    if (contentTypeFilter) {
+      // @ts-ignore - This parameter is added dynamically
+      matchDocumentsParams.content_type = contentTypeFilter;
+    }
+    
+    // Perform vector similarity search with optional content type filter
     const { data: similarDocs, error } = await supabase.rpc(
       'match_documents',
-      {
-        query_embedding: embedding,
-        match_threshold: similarityThreshold,
-        match_count: 8, // Increase number of results to have more context
-        p_project_id: projectId
-      }
+      matchDocumentsParams
     );
 
     if (error) {
@@ -133,11 +143,13 @@ serve(async (req) => {
     let context = '';
     if (similarDocs && similarDocs.length > 0) {
       context = similarDocs.map((doc: any) => doc.content).join('\n\n');
-      console.log(`Found ${similarDocs.length} similar documents`);
+      console.log(`Found ${similarDocs.length} similar documents${contentTypeFilter ? ` with type '${contentTypeFilter}'` : ''}`);
     } else {
       // No similar documents found
       const noSimilarDocsResponse = {
-        response: "I couldn't find any relevant information about your query in the processed content. Please try asking about something else related to this website or check if there might be a typo in your question.",
+        response: contentTypeFilter 
+          ? `I couldn't find any relevant information about your query in the '${contentTypeFilter}' content type. Try broadening your search by removing the content type filter.`
+          : "I couldn't find any relevant information about your query in the processed content. Please try asking about something else related to this website or check if there might be a typo in your question.",
         sources: []
       };
       
@@ -201,13 +213,15 @@ serve(async (req) => {
       await saveMessages(supabase, conversationId, query, aiResponse);
     }
 
+    // Include metadata info in the sources
     return new Response(
       JSON.stringify({ 
         response: aiResponse, 
         sources: similarDocs.map((doc: any) => ({
           content: doc.content.substring(0, 200) + '...',
           similarity: doc.similarity,
-          metadata: doc.metadata
+          metadata: doc.metadata,
+          contentType: doc.metadata?.type || 'Unknown'
         }))
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

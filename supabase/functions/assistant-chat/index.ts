@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, assistantId, projectId, useFineTunedModel } = await req.json();
+    const { message, threadId, assistantId, projectId, useFineTunedModel, contentTypeFilter } = await req.json();
 
     if (!message || !assistantId) {
       return new Response(
@@ -34,6 +34,7 @@ serve(async (req) => {
 
     console.log(`Processing message: "${message}" with assistant ${assistantId}`);
     console.log(`Using fine-tuned model: ${useFineTunedModel ? 'Yes' : 'No'}`);
+    console.log(`Content type filter: ${contentTypeFilter || 'None'}`);
 
     let activeThreadId = threadId;
     
@@ -94,28 +95,36 @@ serve(async (req) => {
         // Use a lower similarity threshold for better fuzzy matching - reduced further to catch more potential matches
         const similarityThreshold = 0.2; // Lowered from 0.3 to catch more potential matches
         
-        // Perform vector similarity search
+        // Prepare parameters for the match_documents function
+        const matchParams: any = {
+          query_embedding: embedding,
+          match_threshold: similarityThreshold,
+          match_count: 10, // Retrieve more documents (increased from 5)
+          p_project_id: projectId
+        };
+        
+        // Add content type filter if provided
+        if (contentTypeFilter) {
+          matchParams.content_type = contentTypeFilter;
+        }
+        
+        // Perform vector similarity search with optional content type filter
         const { data: similarDocs, error } = await supabase.rpc(
           'match_documents',
-          {
-            query_embedding: embedding,
-            match_threshold: similarityThreshold,
-            match_count: 10, // Retrieve more documents (increased from 5)
-            p_project_id: projectId
-          }
+          matchParams
         );
 
         if (!error && similarDocs && similarDocs.length > 0) {
           // Format documents for assistant input
           relevantContexts = "Relevant context from the knowledge base:\n\n" + 
             similarDocs.map((doc: any, index: number) => 
-              `Document ${index + 1}:\n${doc.content}\nSource: ${doc.metadata?.source || 'Unknown'}`
+              `Document ${index + 1}:\n${doc.content}\nSource: ${doc.metadata?.source || 'Unknown'}\nType: ${doc.metadata?.type || 'Unknown'}`
             ).join("\n\n");
           
-          console.log(`Found ${similarDocs.length} relevant documents from knowledge base`);
+          console.log(`Found ${similarDocs.length} relevant documents from knowledge base${contentTypeFilter ? ` with type '${contentTypeFilter}'` : ''}`);
           hasRAGResults = true;
         } else {
-          console.log(`No relevant documents found with threshold ${similarityThreshold}`);
+          console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
         }
       }
     }
@@ -124,7 +133,17 @@ serve(async (req) => {
     let systemPrompt = "";
     
     if (projectId && !hasRAGResults) {
-      systemPrompt = `
+      systemPrompt = contentTypeFilter 
+        ? `
+You are an AI assistant specializing in marketing research and strategy. 
+
+IMPORTANT INSTRUCTIONS:
+1. I couldn't find any relevant information in the '${contentTypeFilter}' content type for your query.
+2. If you'd like, I can search across all content types instead, or you can try a different question.
+3. When using general knowledge, make it clear to the user that you're not drawing from their specific documents.
+4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
+`
+        : `
 You are an AI assistant specializing in marketing research and strategy. 
 When answering, consider both general marketing knowledge and any specific context provided.
 
@@ -276,8 +295,13 @@ IMPORTANT INSTRUCTIONS:
       });
     }
 
+    // Return the response with metadata
     return new Response(
-      JSON.stringify({ message: responseContent, threadId: activeThreadId }),
+      JSON.stringify({ 
+        message: responseContent, 
+        threadId: activeThreadId,
+        contentTypeFilter: contentTypeFilter || null 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

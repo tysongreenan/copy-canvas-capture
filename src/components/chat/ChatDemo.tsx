@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { ChatProvider } from "@/context/ChatContext";
 import { ContentService, SavedProject } from "@/services/ContentService";
@@ -172,12 +173,13 @@ const ChatDemo = () => {
                             )}
                         </div>
                         
-                        {/* Important: Avoid nested ChatProviders */}
-                        {/* Only create a single ChatProvider wrapper */}
-                        <ChatInput 
-                            projectId={selectedProject.id}
-                            onConversationCreated={handleConversationCreated}
-                        />
+                        {/* Wrap ChatInput with ChatProvider */}
+                        <ChatProvider>
+                            <ChatInput 
+                                projectId={selectedProject.id}
+                                onConversationCreated={handleConversationCreated}
+                            />
+                        </ChatProvider>
                     </>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 p-4">

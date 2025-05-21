@@ -9,11 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { RescanService, RescanResults } from "@/services/RescanService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, RefreshCcw, CheckCircle, AlertCircle, PlusCircle } from "lucide-react";
-import { useProject } from "@/context/ProjectContext";
 
-export function RescanTab() {
+interface RescanTabProps {
+  project: any;
+}
+
+export function RescanTab({ project }: RescanTabProps) {
   const { toast } = useToast();
-  const { project } = useProject();
   
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<RescanResults | null>(null);

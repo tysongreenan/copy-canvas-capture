@@ -550,7 +550,7 @@ const BrandingDetails = () => {
                             </CardHeader>
                           </Card>
                         </div>
-                        {id && <RescanTab />}
+                        {project && <RescanTab project={project} />}
                       </TabsContent>
                     </Tabs>
                     

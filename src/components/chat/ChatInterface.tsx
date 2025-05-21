@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgentService, AgentStep, AgentSource, AgentTaskType } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Info, Sparkles, FileSearch, Brain } from "lucide-react";
+import { Loader2, Info, Sparkles, FileSearch, Brain, BarChart2 } from "lucide-react";
 import { 
   Collapsible, 
   CollapsibleContent, 
@@ -48,18 +48,32 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   const detectTaskType = (message: string): AgentTaskType => {
     const lowerMessage = message.toLowerCase();
     
+    // Marketing and content task detection
+    if (lowerMessage.includes('seo') || 
+        lowerMessage.includes('eeat') || 
+        lowerMessage.includes('e-e-a-t') ||
+        lowerMessage.includes('marketing strategy') ||
+        lowerMessage.includes('content calendar') ||
+        lowerMessage.includes('blog post') ||
+        lowerMessage.includes('content strategy')) {
+      return 'marketing';
+    }
+    
+    // Email task detection
     if (lowerMessage.includes('email') || 
         lowerMessage.includes('subject line') || 
         lowerMessage.includes('newsletter')) {
       return 'email';
     }
     
+    // Summary task detection
     if (lowerMessage.includes('summarize') || 
         lowerMessage.includes('summary') || 
         lowerMessage.startsWith('tldr')) {
       return 'summary';
     }
     
+    // Research task detection
     if (lowerMessage.includes('research') || 
         lowerMessage.includes('find information') ||
         lowerMessage.includes('tell me about')) {
@@ -94,6 +108,27 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       });
       
       try {
+        // Determine appropriate settings based on task type
+        let temperature = 0.7;
+        let maxTokens = 1500;
+        let modelName = "gpt-4o-mini";
+        
+        if (detectedTaskType === 'email') {
+          temperature = 0.5;
+          maxTokens = 2000;
+        } else if (detectedTaskType === 'marketing') {
+          temperature = 0.6;
+          maxTokens = 2000;
+          modelName = "gpt-4o";
+        } else if (detectedTaskType === 'summary') {
+          temperature = 0.3;
+          maxTokens = 1800;
+        } else if (detectedTaskType === 'research') {
+          temperature = 0.4;
+          maxTokens = 1800;
+          modelName = "gpt-4o";
+        }
+        
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
           message,
@@ -102,8 +137,9 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           {
             taskType: detectedTaskType,
             contentTypeFilter: contentTypeFilter,
-            temperature: detectedTaskType === 'email' ? 0.5 : 0.7,
-            maxTokens: detectedTaskType === 'email' ? 2000 : 1500
+            temperature: temperature,
+            maxTokens: maxTokens,
+            modelName: modelName
           }
         );
         
@@ -209,6 +245,54 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
     );
   };
   
+  // Determine appropriate placeholder text based on task type
+  const getPlaceholderText = () => {
+    switch(taskType) {
+      case 'email':
+        return "Describe the email you want to create...";
+      case 'marketing':
+        return "Ask about marketing strategies, content ideas, or SEO best practices...";
+      case 'research':
+        return "What would you like me to research for you?";
+      case 'summary':
+        return "What would you like me to summarize?";
+      default:
+        return "Type your message here...";
+    }
+  };
+  
+  // Helper to get task type icon
+  const getTaskTypeIcon = () => {
+    switch(taskType) {
+      case 'email':
+        return <div className="text-blue-600">📧</div>;
+      case 'marketing':
+        return <BarChart2 className="h-4 w-4 text-green-600" />;
+      case 'research':
+        return <FileSearch className="h-4 w-4 text-purple-600" />;
+      case 'summary':
+        return <div className="text-amber-600">📝</div>;
+      default:
+        return <Brain className="h-4 w-4 text-gray-600" />;
+    }
+  };
+  
+  // Helper to get loading message based on task type
+  const getLoadingMessage = () => {
+    switch(taskType) {
+      case 'email':
+        return "Crafting email content...";
+      case 'marketing':
+        return "Analyzing marketing strategies...";
+      case 'research':
+        return "Researching information...";
+      case 'summary':
+        return "Creating summary...";
+      default:
+        return "Thinking...";
+    }
+  };
+  
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
@@ -223,7 +307,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           {isLoading && (
             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <p>{taskType === 'email' ? 'Crafting email content...' : 'Thinking...'}</p>
+              <p>{getLoadingMessage()}</p>
             </div>
           )}
           
@@ -261,7 +345,7 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         <ChatInput 
           onSendMessage={handleSendMessage} 
           disabled={isLoading}
-          placeholder={taskType === 'email' ? "Describe the email you want to create..." : "Type your message here..."}
+          placeholder={getPlaceholderText()}
         />
       </div>
     </div>

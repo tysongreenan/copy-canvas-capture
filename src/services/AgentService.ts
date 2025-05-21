@@ -36,7 +36,7 @@ export interface AgentResponse {
   confidence?: number;
 }
 
-export type AgentTaskType = 'general' | 'email' | 'summary' | 'research';
+export type AgentTaskType = 'general' | 'email' | 'summary' | 'research' | 'marketing' | 'content';
 
 export interface AgentRequestOptions {
   taskType?: AgentTaskType;
@@ -81,6 +81,11 @@ export class AgentService {
         defaultOptions.modelName = "gpt-4o"; // Use more powerful model for research
         defaultOptions.enableTools = true; // Ensure tools are enabled for research
         defaultOptions.temperature = 0.4; // Lower temperature for more factual responses
+      } else if (options.taskType === 'marketing' || options.taskType === 'content') {
+        defaultOptions.modelName = "gpt-4o"; // Use more powerful model for marketing
+        defaultOptions.enableTools = true; // Ensure tools are enabled for marketing
+        defaultOptions.temperature = 0.6; // Balanced temperature for creative yet factual content
+        defaultOptions.maxTokens = 2000; // More tokens for comprehensive marketing guidance
       }
       
       // Merge with user options, with user options taking precedence

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +11,8 @@ import { ProjectWizardSeoSettings } from "@/components/wizard/ProjectWizardSeoSe
 import { ProjectWizardIntegrations } from "@/components/wizard/ProjectWizardIntegrations";
 import { ProjectWizardReview } from "@/components/wizard/ProjectWizardReview";
 import { toast } from "@/hooks/use-toast";
+import { ContentService } from "@/services/ContentService";
+import { ProjectSettingsService } from "@/services/ProjectSettingsService";
 
 // Wizard step type definition
 type WizardStep = "basic-info" | "scraping-config" | "seo-settings" | "integrations" | "review";
@@ -57,6 +58,7 @@ const ProjectWizard = () => {
   
   // State for the active wizard step
   const [activeStep, setActiveStep] = useState<WizardStep>("basic-info");
+  const [isCreating, setIsCreating] = useState(false);
   
   // State for project settings
   const [projectSettings, setProjectSettings] = useState<ProjectSettings>({
@@ -160,26 +162,51 @@ const ProjectWizard = () => {
   // Create project
   const handleCreateProject = async () => {
     try {
+      setIsCreating(true);
       toast({
         title: "Creating Project",
         description: "Setting up your new project...",
       });
       
-      // Here we would typically call a service to create the project
-      // For now, let's simulate a successful creation
-      setTimeout(() => {
+      // Create an empty initial content array (will be populated later when scraping)
+      const emptyContent = [];
+      
+      // Save the project using ContentService
+      const savedProject = await ContentService.saveProject(
+        projectSettings.basicInfo.name,
+        projectSettings.basicInfo.url,
+        emptyContent
+      );
+      
+      if (!savedProject) {
         toast({
-          title: "Project Created",
-          description: "Your new project has been created successfully.",
+          title: "Error",
+          description: "Failed to create project. Please try again.",
+          variant: "destructive",
         });
-        navigate("/");
-      }, 1500);
+        setIsCreating(false);
+        return;
+      }
+      
+      // Save the additional project settings
+      await ProjectSettingsService.saveProjectSettings(savedProject.id, projectSettings);
+      
+      toast({
+        title: "Project Created",
+        description: "Your new project has been created successfully.",
+      });
+      
+      // Navigate to the project page or dashboard
+      navigate(`/project/${savedProject.id}`);
     } catch (error) {
+      console.error("Error creating project:", error);
       toast({
         title: "Error",
         description: "Failed to create project. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreating(false);
     }
   };
   
@@ -276,6 +303,7 @@ const ProjectWizard = () => {
                   <Button 
                     variant="outline" 
                     onClick={goToPreviousStep}
+                    disabled={isCreating}
                   >
                     Back
                   </Button>
@@ -285,6 +313,7 @@ const ProjectWizard = () => {
                   <Button 
                     onClick={goToNextStep}
                     className="ml-auto"
+                    disabled={isCreating}
                   >
                     Next
                   </Button>
@@ -292,8 +321,9 @@ const ProjectWizard = () => {
                   <Button 
                     onClick={handleCreateProject}
                     className="ml-auto"
+                    disabled={isCreating}
                   >
-                    Create Project
+                    {isCreating ? "Creating..." : "Create Project"}
                   </Button>
                 )}
               </div>

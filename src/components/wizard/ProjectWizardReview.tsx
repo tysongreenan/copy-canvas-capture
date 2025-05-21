@@ -6,9 +6,10 @@ import type { ProjectSettings } from "@/pages/ProjectWizard";
 interface ProjectWizardReviewProps {
   settings: ProjectSettings;
   onCreateProject: () => void;
+  isCreating?: boolean;
 }
 
-export function ProjectWizardReview({ settings, onCreateProject }: ProjectWizardReviewProps) {
+export function ProjectWizardReview({ settings, onCreateProject, isCreating = false }: ProjectWizardReviewProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -166,8 +167,9 @@ export function ProjectWizardReview({ settings, onCreateProject }: ProjectWizard
             size="lg"
             onClick={onCreateProject}
             className="px-8"
+            disabled={isCreating}
           >
-            Create Project
+            {isCreating ? "Creating Project..." : "Create Project"}
           </Button>
         </div>
       </div>

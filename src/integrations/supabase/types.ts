@@ -179,6 +179,41 @@ export type Database = {
         }
         Relationships: []
       }
+      project_settings: {
+        Row: {
+          created_at: string
+          id: string
+          integrations: Json
+          scraping_config: Json
+          seo_settings: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          integrations?: Json
+          scraping_config?: Json
+          seo_settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integrations?: Json
+          scraping_config?: Json
+          seo_settings?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_settings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scraped_content: {
         Row: {
           content: Json

@@ -1,122 +1,63 @@
 
-import { useEffect, useState } from "react";
-import { ChatProvider, useChat } from "@/context/ChatContext";
-import { ContentService, SavedProject } from "@/services/ContentService";
+import { ChatProvider } from "@/context/ChatContext";
 import { Sidebar } from "./Sidebar";
-import { ChatMessage as ChatMessageType } from "@/services/ChatService";
-import { ChatMessage } from "./ChatMessage";
+import { useParams, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate, useParams } from "react-router-dom";
-import { ChatService } from "@/services/ChatService"; 
-import { useToast } from "@/hooks/use-toast";
-import { FileUpload } from "./FileUpload";
-import { ChatInput } from "./ChatInput";
-import { AccountMenu } from "@/components/AccountMenu";
 import { ChatInterface } from "./ChatInterface";
+import { ChatHeader } from "./ChatHeader";
+import { EmptyProjectState } from "./EmptyProjectState";
+import { useProjectSelection } from "@/hooks/use-project-selection";
 
 const ChatDemo = () => {
-    const { id } = useParams<{ id: string }>();
-    const { user } = useAuth();
-    const [projects, setProjects] = useState<SavedProject[]>([]);
-    const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
-    const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
-    const { toast } = useToast();
-    
-    // Move the authentication check after all hooks are initialized
-    if (!user) {
-        return <Navigate to="/auth" replace />;
-    }
-    
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const userProjects = await ContentService.getUserProjects();
-                setProjects(userProjects);
-                
-                // If we have a project ID in the URL, select that project
-                if (id) {
-                    const project = userProjects.find(p => p.id === id);
-                    if (project) {
-                        setSelectedProject(project);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching projects:", error);
-            }
-        };
-        
-        fetchProjects();
-    }, [id]);
-    
-    const handleProjectSelect = (project: SavedProject) => {
-        setSelectedProject(project);
-        setSelectedConversationId(undefined); // Reset conversation when switching projects
-    };
-    
-    const handleConversationSelect = (conversationId: string) => {
-        setSelectedConversationId(conversationId);
-    };
-    
-    const handleConversationCreated = (conversationId: string) => {
-        setSelectedConversationId(conversationId);
-    };
-    
-    return (
-        <div className="flex h-screen w-full bg-white">
-            {/* Sidebar */}
-            <Sidebar 
-                projects={projects}
-                selectedProject={selectedProject}
-                onSelectProject={handleProjectSelect}
-                selectedConversationId={selectedConversationId}
-                onSelectConversation={handleConversationSelect}
-            />
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { 
+    projects, 
+    selectedProject, 
+    selectedConversationId,
+    handleProjectSelect,
+    handleConversationSelect,
+    handleConversationCreated
+  } = useProjectSelection(id);
+  
+  // Move the authentication check after all hooks are initialized
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  return (
+    <div className="flex h-screen w-full bg-white">
+      {/* Sidebar */}
+      <Sidebar 
+        projects={projects}
+        selectedProject={selectedProject}
+        onSelectProject={handleProjectSelect}
+        selectedConversationId={selectedConversationId}
+        onSelectConversation={handleConversationSelect}
+      />
+      
+      {/* Main chat area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {selectedProject ? (
+          <>
+            {/* Chat header */}
+            <ChatHeader selectedProject={selectedProject} />
             
-            {/* Main chat area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {selectedProject ? (
-                    <>
-                        {/* Chat header */}
-                        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                            <h1 className="text-lg font-medium text-black">Chat with {selectedProject.title}</h1>
-                            
-                            <div className="flex items-center gap-4">
-                                {/* File upload */}
-                                <FileUpload 
-                                    projectId={selectedProject.id} 
-                                    onSuccess={() => {
-                                        toast({
-                                            title: "File uploaded",
-                                            description: "Your file has been processed and added to the project.",
-                                        });
-                                    }}
-                                />
-                                
-                                {/* Account Menu */}
-                                <AccountMenu />
-                            </div>
-                        </div>
-                        
-                        {/* Use ChatInterface which handles messages and input */}
-                        <ChatProvider>
-                            <ChatInterface 
-                                projectId={selectedProject.id}
-                                conversationId={selectedConversationId}
-                                onConversationCreated={handleConversationCreated}
-                            />
-                        </ChatProvider>
-                    </>
-                ) : (
-                    <div className="h-full flex items-center justify-center text-gray-500 p-4">
-                        <div className="text-center">
-                            <p className="text-lg mb-2">Select a project to start chatting</p>
-                            <p>Or create a new project from the dashboard</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+            {/* Use ChatInterface which handles messages and input */}
+            <ChatProvider>
+              <ChatInterface 
+                projectId={selectedProject.id}
+                conversationId={selectedConversationId}
+                onConversationCreated={handleConversationCreated}
+              />
+            </ChatProvider>
+          </>
+        ) : (
+          <EmptyProjectState />
+        )}
+      </div>
+    </div>
+  );
 };
 
 export { ChatDemo };

@@ -51,6 +51,14 @@ export function RescanTab({ project }: RescanTabProps) {
           title: "Rescan complete",
           description: `Found ${newContent.length} new pages and ${changedContent.length} changed pages`,
         });
+        
+        // If we found new or changed content, notify that the content is saved
+        if (newContent.length > 0 || (changedContent.length > 0 && !onlyProcessNew)) {
+          toast({
+            title: "Content saved",
+            description: `Content has been saved to the database and is now visible in the Content tab`,
+          });
+        }
       }
     } catch (error) {
       console.error("Error rescanning:", error);

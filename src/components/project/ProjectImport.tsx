@@ -11,9 +11,11 @@ import { FileUpload } from "@/components/chat/FileUpload";
 import { Globe, Upload, FileText, RefreshCw } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
 import { RescanTab } from "@/components/project/RescanTab";
+import { ContentService } from "@/services/ContentService";
 
 export function ProjectImport() {
   const [activeTab, setActiveTab] = useState<string>("url");
+  const [textContent, setTextContent] = useState<string>("");
   const { toast } = useToast();
   const { project } = useProject();
   
@@ -22,6 +24,50 @@ export function ProjectImport() {
       title: "Import successful",
       description: "Your content has been imported and processed",
     });
+  };
+
+  const handleImportText = async () => {
+    if (!textContent.trim() || !project?.id) {
+      toast({
+        title: "Error",
+        description: "Please enter some text content and ensure you're in a project",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Create a content object for the pasted text
+      const textContentObj = {
+        url: `text://${new Date().getTime()}`,
+        title: `Pasted Text ${new Date().toLocaleDateString()}`,
+        headings: [],
+        paragraphs: textContent.split(/\n+/).filter(p => p.trim().length > 0),
+        links: [],
+        listItems: [],
+        metaDescription: null,
+        metaKeywords: null,
+        projectId: project.id
+      };
+
+      // Save to database
+      await ContentService.saveContent(textContentObj);
+
+      toast({
+        title: "Text imported",
+        description: "Your text has been added to the project content",
+      });
+
+      // Clear the textarea
+      setTextContent("");
+    } catch (error) {
+      console.error("Error importing text:", error);
+      toast({
+        title: "Import failed",
+        description: "There was a problem importing your text",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -109,10 +155,15 @@ export function ProjectImport() {
                       id="text-content"
                       className="min-h-[200px] p-3 rounded-md border"
                       placeholder="Paste your text content here..."
+                      value={textContent}
+                      onChange={(e) => setTextContent(e.target.value)}
                     />
                   </div>
                   
-                  <Button className="w-full md:w-auto">
+                  <Button 
+                    className="w-full md:w-auto"
+                    onClick={handleImportText}
+                  >
                     Import Text
                   </Button>
                 </div>

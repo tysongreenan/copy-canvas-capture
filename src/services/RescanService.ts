@@ -1,126 +1,131 @@
 
 import { ScraperService } from './ScraperService';
-import { ContentComparisonService, ContentComparison } from './ContentComparisonService';
 import { ContentService } from './ContentService';
-import { EmbeddingService } from './EmbeddingService';
-import { ScrapedContent } from './ScraperTypes';
-import { toast } from '@/hooks/use-toast';
+import type { ScrapedContent } from './ScraperTypes';
 
-export interface RescanResults {
-  comparison: ContentComparison;
-  projectId: string;
-  projectTitle: string;
-  baseUrl: string;
-}
-
+// Types for rescan options
 export interface RescanOptions {
-  onlyProcessNewContent?: boolean;
-  forceReprocessAll?: boolean;
   projectId: string;
   generateEmbeddings: boolean;
-  maxPages?: number;
+  onlyProcessNewContent: boolean;
+  maxPages: number;
+}
+
+// Types for rescan results
+export interface RescanResults {
+  projectId: string;
+  startUrl: string;
+  comparison: {
+    newContent: ScrapedContent[];
+    changedContent: ScrapedContent[];
+    unchangedContent: ScrapedContent[];
+    removedUrls: string[];
+  }
 }
 
 export class RescanService {
   /**
-   * Rescan an existing project to check for content changes
+   * Rescan a project to check for new or updated content
    */
-  public static async rescanProject(
-    projectId: string, 
-    options: RescanOptions
-  ): Promise<RescanResults | null> {
+  public static async rescanProject(projectId: string, options: RescanOptions): Promise<RescanResults | null> {
     try {
-      // Get the project and its content
+      // First, get the project information
       const project = await ContentService.getProjectById(projectId);
       if (!project) {
-        toast({
-          title: "Project not found",
-          description: "Could not find the project to rescan",
-          variant: "destructive"
-        });
+        console.error("Project not found for rescan:", projectId);
         return null;
       }
       
-      // Get existing pages
+      // Then get all existing project pages
       const existingPages = await ContentService.getProjectPages(projectId);
-      if (!existingPages || existingPages.length === 0) {
-        toast({
-          title: "No content to compare",
-          description: "This project has no pages to compare against",
-          variant: "destructive"
-        });
-        return null;
-      }
       
-      // Convert database pages to ScrapedContent format
-      const existingContent: ScrapedContent[] = existingPages.map(page => {
-        const contentObj = page.content as any;
-        return {
-          url: page.url,
-          title: page.title || "",
-          headings: contentObj.headings || [],
-          paragraphs: contentObj.paragraphs || [],
-          links: contentObj.links || [],
-          listItems: contentObj.listItems || [],
-          metaDescription: contentObj.metaDescription || null,
-          metaKeywords: contentObj.metaKeywords || null,
-          projectId
-        };
+      // Create a map of existing URLs to compare later
+      const existingUrlMap = new Map();
+      existingPages.forEach(page => {
+        existingUrlMap.set(page.url, {
+          id: page.id,
+          title: page.title,
+          content: page.content
+        });
       });
       
-      // Rescrap the website
-      const scrapOptions = {
+      // Rescan the site
+      await ScraperService.scrapeWebsite(project.url, {
         crawlEntireSite: true,
-        maxPages: options.maxPages || existingContent.length + 10,
-        generateEmbeddings: false, // We'll handle embeddings manually later
+        maxPages: options.maxPages,
+        generateEmbeddings: options.generateEmbeddings,
         useExistingProjectId: projectId
-      };
+      });
       
-      await ScraperService.scrapeWebsite(project.url, scrapOptions);
-      const newlyScrapedContent = ScraperService.getAllResults();
+      // Get all the new scanned results
+      const newScannedResults = ScraperService.getAllResults();
       
-      // Compare the content
-      const comparison = ContentComparisonService.compareContent(
-        existingContent,
-        newlyScrapedContent
-      );
+      // Categorize results
+      const newContent: ScrapedContent[] = [];
+      const changedContent: ScrapedContent[] = [];
+      const unchangedContent: ScrapedContent[] = [];
+      const removedUrls: string[] = [];
       
-      // Process embeddings based on options
-      if (options.generateEmbeddings) {
-        let contentToProcess: ScrapedContent[] = [];
-        
-        if (options.forceReprocessAll) {
-          // Process all content
-          contentToProcess = newlyScrapedContent;
-          console.log(`Processing embeddings for all ${contentToProcess.length} pages`);
+      // First, identify new and changed content
+      newScannedResults.forEach(result => {
+        const existingPage = existingUrlMap.get(result.url);
+        if (!existingPage) {
+          newContent.push(result);
         } else {
-          // Only process new and changed content
-          contentToProcess = [
-            ...comparison.newContent,
-            ...comparison.changedContent
-          ];
-          console.log(`Processing embeddings for ${contentToProcess.length} new/changed pages`);
+          // This is a rough comparison - would need better comparison logic
+          // for a real production implementation
+          const oldContentJson = JSON.stringify(existingPage.content);
+          const newContentJson = JSON.stringify({
+            headings: result.headings,
+            paragraphs: result.paragraphs,
+            links: result.links,
+            listItems: result.listItems,
+            metaDescription: result.metaDescription,
+            metaKeywords: result.metaKeywords
+          });
+          
+          if (oldContentJson !== newContentJson) {
+            changedContent.push(result);
+          } else {
+            unchangedContent.push(result);
+          }
+          
+          // Remove from map to track removed URLs later
+          existingUrlMap.delete(result.url);
+        }
+      });
+      
+      // Any URLs left in the map are no longer found in the site
+      existingUrlMap.forEach((value, key) => {
+        removedUrls.push(key);
+      });
+      
+      // Save to database - for new and changed content
+      if (newContent.length > 0 || changedContent.length > 0) {
+        // Filter which content to process based on options
+        const contentToUpdate = [...newContent];
+        if (!options.onlyProcessNewContent) {
+          contentToUpdate.push(...changedContent);
         }
         
-        if (contentToProcess.length > 0) {
-          await EmbeddingService.processProject(projectId, contentToProcess);
+        if (contentToUpdate.length > 0) {
+          // Save to database
+          await ContentService.saveProject(project.title, project.url, contentToUpdate);
         }
       }
       
       return {
-        comparison,
         projectId,
-        projectTitle: project.title,
-        baseUrl: project.url
+        startUrl: project.url,
+        comparison: {
+          newContent,
+          changedContent,
+          unchangedContent,
+          removedUrls
+        }
       };
-      
     } catch (error) {
-      console.error("Error during rescan:", error);
-      toast({
-        title: "Rescan failed",
-        description: error instanceof Error ? error.message : "An error occurred during rescan",
-        variant: "destructive"
-      });
+      console.error("Error during project rescan:", error);
       return null;
     }
   }

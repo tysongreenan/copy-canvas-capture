@@ -9,6 +9,7 @@ import { Search, Upload, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ProjectService } from "@/services/ProjectService";
+import { ContentService } from "@/services/ContentService";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
@@ -63,6 +64,34 @@ export function ScrapeForm({ onResult, onCrawlComplete, projectId, inProjectView
         if (crawlEntireSite) {
           const allResults = ScraperService.getAllResults();
           
+          // Save the project content to the database when in project view
+          if (inProjectView && projectId) {
+            try {
+              // Get the existing project details to use as title
+              const projectDetails = await ContentService.getProjectById(projectId);
+              if (projectDetails) {
+                // Save all the crawled content to the database
+                await ContentService.saveProject(
+                  projectDetails.title, 
+                  processedUrl, 
+                  allResults
+                );
+                
+                toast({
+                  title: "Content Saved",
+                  description: `${allResults.length} pages saved to project database.`,
+                });
+              }
+            } catch (error) {
+              console.error("Error saving project content:", error);
+              toast({
+                title: "Error Saving Content",
+                description: "Content was scraped but could not be saved to database.",
+                variant: "destructive"
+              });
+            }
+          }
+          
           if (onCrawlComplete) {
             onCrawlComplete(
               allResults,
@@ -81,6 +110,21 @@ export function ScrapeForm({ onResult, onCrawlComplete, projectId, inProjectView
             description: `${allResults.length} pages crawled successfully.${embeddingsMessage}`,
           });
         } else {
+          // For single page scrape, save to database if in project view
+          if (inProjectView && projectId) {
+            try {
+              // Save the single page content
+              await ContentService.saveContent(result);
+              
+              toast({
+                title: "Content Saved",
+                description: "Page content saved to project database.",
+              });
+            } catch (error) {
+              console.error("Error saving content:", error);
+            }
+          }
+          
           const embeddingsMessage = generateEmbeddings ? 
             " AI embeddings were generated for this content." : 
             "";

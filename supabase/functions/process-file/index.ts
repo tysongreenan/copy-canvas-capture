@@ -34,12 +34,35 @@ serve(async (req) => {
       throw new Error("Missing file or project ID");
     }
     
-    // Extract text from the PDF file (simplified example)
-    // In a real implementation, you'd use a PDF parser library or another service
-    const fileContent = await file.text();
+    // Extract text based on file type
+    let fileContent = "";
+    
+    const fileType = file.type;
+    const fileName = file.name;
+    
+    console.log(`Processing file: ${fileName}, type: ${fileType}`);
+    
+    // Handle different file types
+    if (fileType === "application/pdf") {
+      // For PDFs, use existing processing logic
+      fileContent = await file.text();
+    } 
+    else if (fileType === "text/plain" || fileType === "text/markdown") {
+      // For text and markdown files, just get the text
+      fileContent = await file.text();
+    }
+    else if (fileType.includes("wordprocessingml.document")) {
+      // For DOCX files, extract text (simplified in this example)
+      fileContent = await file.text(); // In a real implementation, you'd use a library to parse DOCX
+    }
+    else {
+      throw new Error(`Unsupported file type: ${fileType}`);
+    }
     
     // Split content into chunks for embedding
     const chunks = splitIntoChunks(fileContent, 1000);
+    
+    console.log(`Generated ${chunks.length} text chunks from file`);
     
     // Process each chunk and add to the document_chunks table
     for (const chunk of chunks) {
@@ -62,8 +85,10 @@ serve(async (req) => {
           project_id: projectId,
           embedding: embedding,
           metadata: {
-            source: file.name,
-            type: "file",
+            source: fileName,
+            type: "uploaded_file",
+            file_type: fileType,
+            upload_date: new Date().toISOString()
           },
         });
       
@@ -72,7 +97,7 @@ serve(async (req) => {
       }
     }
     
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, chunks_processed: chunks.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
@@ -89,25 +114,71 @@ serve(async (req) => {
 // Helper function to split text into chunks
 function splitIntoChunks(text: string, chunkSize: number): string[] {
   const chunks: string[] = [];
-  const sentences = text.split(/[.!?]+/).filter(Boolean);
+  
+  // First, try to split by paragraphs
+  const paragraphs = text.split(/\n\s*\n/);
   
   let currentChunk = "";
   
-  for (const sentence of sentences) {
-    const trimmedSentence = sentence.trim() + ".";
+  for (const paragraph of paragraphs) {
+    if (!paragraph.trim()) continue; // Skip empty paragraphs
     
-    if (currentChunk.length + trimmedSentence.length <= chunkSize) {
-      currentChunk += " " + trimmedSentence;
+    if (currentChunk.length + paragraph.length <= chunkSize) {
+      // If paragraph fits in the current chunk, add it
+      currentChunk += (currentChunk ? "\n\n" : "") + paragraph.trim();
     } else {
+      // If paragraph doesn't fit, start spliting by sentences
       if (currentChunk) {
         chunks.push(currentChunk.trim());
+        currentChunk = "";
       }
-      currentChunk = trimmedSentence;
+      
+      // If a single paragraph is longer than chunk size, split by sentences
+      if (paragraph.length > chunkSize) {
+        const sentences = paragraph.split(/(?<=[.!?])\s+/);
+        
+        for (const sentence of sentences) {
+          if (!sentence.trim()) continue;
+          
+          if (currentChunk.length + sentence.length <= chunkSize) {
+            currentChunk += (currentChunk ? " " : "") + sentence.trim();
+          } else {
+            if (currentChunk) {
+              chunks.push(currentChunk.trim());
+              currentChunk = "";
+            }
+            
+            // If a single sentence is longer than chunk size, just add it
+            if (sentence.length > chunkSize) {
+              const words = sentence.split(/\s+/);
+              let wordChunk = "";
+              
+              for (const word of words) {
+                if (wordChunk.length + word.length + 1 <= chunkSize) {
+                  wordChunk += (wordChunk ? " " : "") + word;
+                } else {
+                  chunks.push(wordChunk.trim());
+                  wordChunk = word;
+                }
+              }
+              
+              if (wordChunk) {
+                chunks.push(wordChunk.trim());
+              }
+            } else {
+              currentChunk = sentence.trim();
+            }
+          }
+        }
+      } else {
+        currentChunk = paragraph.trim();
+      }
     }
-  }
-  
-  if (currentChunk) {
-    chunks.push(currentChunk.trim());
+    
+    // Add the last chunk if not empty
+    if (currentChunk && !chunks.includes(currentChunk.trim())) {
+      chunks.push(currentChunk.trim());
+    }
   }
   
   return chunks;

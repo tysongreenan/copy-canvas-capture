@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -232,6 +231,32 @@ const marketingResearchTool = {
         }
       },
       required: ["researchTopic"]
+    }
+  }
+};
+
+const suggestFileUploadTool = {
+  type: "function",
+  function: {
+    name: "suggestFileUpload",
+    description: "Suggest that the user upload files to provide more context on their project",
+    parameters: {
+      type: "object",
+      properties: {
+        reason: {
+          type: "string",
+          description: "The reason why uploading a file would be helpful"
+        },
+        fileTypes: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["pdf", "txt", "docx", "md"]
+          },
+          description: "The types of files that would be most helpful"
+        }
+      },
+      required: ["reason"]
     }
   }
 };
@@ -961,7 +986,7 @@ serve(async (req) => {
     let tools = [];
     if (enableTools) {
       // Base tools
-      tools = [contentSearchTool, projectInfoTool];
+      tools = [contentSearchTool, projectInfoTool, suggestFileUploadTool]; // Add suggestFileUploadTool here
       
       // Add email-specific tools for email-related tasks
       if (taskType === 'email' || message.toLowerCase().includes('email')) {
@@ -1099,7 +1124,6 @@ serve(async (req) => {
         else if (name === "generateEmailTemplate") {
           toolResult = await generateEmailTemplate(parsedArgs);
         }
-        // Handle new marketing tools
         else if (name === "getMarketingBestPractices") {
           toolResult = await getMarketingBestPractices(parsedArgs);
         }
@@ -1114,6 +1138,9 @@ serve(async (req) => {
         }
         else if (name === "getMarketingResearch") {
           toolResult = await getMarketingResearch(parsedArgs);
+        }
+        else if (name === "suggestFileUpload") {
+          toolResult = await suggestFileUpload(parsedArgs);
         }
         
         // Store the result with its associated tool call ID

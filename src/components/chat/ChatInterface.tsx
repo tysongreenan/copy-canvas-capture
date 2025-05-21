@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -8,7 +7,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgentService, AgentStep, AgentSource, AgentTaskType } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Info, Sparkles, FileSearch, Brain, BarChart2 } from "lucide-react";
+import { Loader2, Info, Sparkles, FileSearch, Brain, BarChart2, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileUpload } from "@/components/chat/FileUpload";
 import { 
   Collapsible, 
   CollapsibleContent, 
@@ -36,6 +37,8 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   const [showReasoning, setShowReasoning] = useState(false);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [fileUploaded, setFileUploaded] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -56,6 +59,22 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       }
     }
   }, [messages]);
+  
+  // Handle file upload success
+  const handleFileUploadSuccess = useCallback(() => {
+    setFileUploaded(true);
+    setShowFileUpload(false);
+    
+    toast({
+      title: "File uploaded successfully",
+      description: "The file has been processed and is now searchable by the AI",
+    });
+    
+    // Notify the AI that a file was uploaded
+    if (fileUploaded) {
+      handleSendMessage("I've uploaded a file with additional context. Please use this new information to help answer my questions.");
+    }
+  }, [toast, fileUploaded]);
   
   // Detect task type from message
   const detectTaskType = (message: string): AgentTaskType => {
@@ -150,6 +169,11 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           modelName = "gpt-4o";
         }
         
+        // Reset file uploaded flag if this is a new user query
+        if (!message.includes("I've uploaded a file with additional context")) {
+          setFileUploaded(false);
+        }
+        
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
           message,
@@ -184,6 +208,12 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         // Store confidence score if available
         if (response.confidence !== undefined) {
           setConfidence(response.confidence);
+        }
+        
+        // Check if response suggests file upload
+        if (response.message.toLowerCase().includes("upload") && 
+            response.message.toLowerCase().includes("file")) {
+          setShowFileUpload(true);
         }
         
         // Create assistant message
@@ -339,6 +369,32 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
             </div>
           )}
           
+          {showFileUpload && !isLoading && (
+            <div className="flex flex-col p-4 rounded-lg border bg-muted/50 space-y-3">
+              <div className="flex items-start gap-2">
+                <Upload className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-sm">Upload Project Documents</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Upload additional context to help the AI better understand your project.
+                  </p>
+                </div>
+              </div>
+              <FileUpload projectId={projectId} onSuccess={handleFileUploadSuccess} />
+              <div className="text-xs text-muted-foreground">
+                <p>Supported formats: PDF, TXT, MD, DOCX</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowFileUpload(false)}
+                className="self-start"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+          
           {reasoning.length > 0 && messages.length > 0 && !isLoading && (
             <Collapsible
               open={showReasoning}
@@ -370,6 +426,19 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
       <Separator />
       
       <div className="p-4">
+        {!showFileUpload && (
+          <div className="flex items-center gap-2 mb-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowFileUpload(true)}
+              className="flex gap-1"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Files
+            </Button>
+          </div>
+        )}
         <ChatInput 
           onSendMessage={handleSendMessage} 
           disabled={isLoading}

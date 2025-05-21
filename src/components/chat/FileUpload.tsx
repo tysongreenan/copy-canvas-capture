@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, AlertCircle } from "lucide-react";
+import { Upload, Loader2, AlertCircle, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EmbeddingService } from "@/services/EmbeddingService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,11 +21,18 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file type (only allow PDFs for now)
-    if (file.type !== 'application/pdf') {
+    // Check file type (expanded supported file types)
+    const supportedTypes = [
+      'application/pdf', // PDF
+      'text/plain', // TXT
+      'text/markdown', // MD
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+    ];
+    
+    if (!supportedTypes.includes(file.type)) {
       toast({
         title: "Invalid file type",
-        description: "Only PDF files are supported",
+        description: "Supported file types: PDF, TXT, MD, DOCX",
         variant: "destructive",
       });
       return;
@@ -95,12 +102,29 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
     if (fileInput) fileInput.value = '';
   };
   
+  const getFileIcon = () => {
+    if (!selectedFile) return <Upload className="h-4 w-4 mr-2" />;
+    
+    return <File className="h-4 w-4 mr-2" />;
+  };
+  
+  const getFileTypeLabel = (file: File | null) => {
+    if (!file) return "";
+    
+    if (file.type === 'application/pdf') return "PDF";
+    if (file.type === 'text/plain') return "TXT";
+    if (file.type === 'text/markdown') return "MD";
+    if (file.type.includes('wordprocessingml')) return "DOCX";
+    
+    return file.type.split('/')[1]?.toUpperCase() || "File";
+  };
+  
   return (
     <div>
       <input
         type="file"
         id="file-upload"
-        accept=".pdf"
+        accept=".pdf,.txt,.md,.docx"
         onChange={handleFileChange}
         className="hidden"
         disabled={isUploading}
@@ -121,8 +145,8 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload File
+                {getFileIcon()}
+                {selectedFile ? `${getFileTypeLabel(selectedFile)}: ${selectedFile.name}` : "Upload File"}
               </>
             )}
           </span>

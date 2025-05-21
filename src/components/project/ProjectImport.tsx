@@ -120,7 +120,7 @@ export function ProjectImport() {
             </TabsContent>
             
             <TabsContent value="rescan" className="mt-4">
-              <RescanTab />
+              <RescanTab project={project || {}} />
             </TabsContent>
           </Tabs>
         </CardContent>

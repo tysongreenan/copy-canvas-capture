@@ -1,6 +1,6 @@
 
 import { useChat } from '@/context/ChatContext';
-import { ChatService } from '@/services/ChatService';
+import { AssistantService } from '@/services/AssistantService';
 import { useToast } from '@/hooks/use-toast';
 import { AI_Prompt } from "@/components/ui/animated-ai-input";
 
@@ -27,29 +27,45 @@ export function ChatInput({ projectId, onConversationCreated }: ChatInputProps) 
     setLoading(true);
     
     try {
-      // Send message to API
-      const result = await ChatService.sendMessageToAPI(
+      // Get the assistant ID for the Marketing Research assistant
+      const assistantId = AssistantService.getAssistantId("Marketing Research");
+      
+      // Use the AssistantService to send the message
+      const result = await AssistantService.sendMessage(
         input.trim(), 
-        projectId,
-        selectedConversationId
+        selectedConversationId, 
+        assistantId,
+        projectId
       );
       
-      // If this created a new conversation, update the selected conversation ID
-      if (!selectedConversationId && result.conversationId && onConversationCreated) {
-        onConversationCreated(result.conversationId);
+      // If a new conversation was created, notify the parent component
+      if (!selectedConversationId && result.threadId && onConversationCreated) {
+        onConversationCreated(result.threadId);
       }
       
-      // Store sources if available
-      if (result.sources && result.sources.length > 0) {
-        setLastSources(result.sources);
-      } else {
-        setLastSources([]);
-      }
+      // Clear any sources since the Assistant API doesn't return sources
+      setLastSources([]);
       
-      // Fetch the latest messages after sending
-      if (result.conversationId) {
-        const updatedMessages = await ChatService.getMessages(result.conversationId);
-        setMessages(updatedMessages);
+      // Update the UI with the new message
+      if (selectedConversationId || result.threadId) {
+        // Add the user message and assistant response to the UI immediately
+        setMessages(prevMessages => [
+          ...prevMessages,
+          {
+            id: `temp-user-${Date.now()}`,
+            conversation_id: selectedConversationId || result.threadId,
+            role: 'user',
+            content: input.trim(),
+            created_at: new Date().toISOString()
+          },
+          {
+            id: `temp-assistant-${Date.now()}`,
+            conversation_id: selectedConversationId || result.threadId,
+            role: 'assistant',
+            content: result.message,
+            created_at: new Date().toISOString()
+          }
+        ]);
       }
       
       setInput("");

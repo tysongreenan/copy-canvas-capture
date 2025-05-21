@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ScrapeForm } from "@/components/ScrapeForm";
@@ -120,7 +119,11 @@ const Dashboard = () => {
               </div>
             </div>
             
+            
+            
             <Tabs defaultValue="projects" className="mb-8" value={activeTab} onValueChange={setActiveTab}>
+              
+              
               <TabsList>
                 <TabsTrigger value="projects">Your Projects</TabsTrigger>
                 <TabsTrigger value="create">Create New Project</TabsTrigger>

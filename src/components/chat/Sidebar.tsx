@@ -107,7 +107,7 @@ export function Sidebar({
                     className="w-full mt-2"
                     asChild
                 >
-                    <Link to="/dashboard">
+                    <Link to="/project/new">
                         <Plus className="h-4 w-4 mr-2" />
                         New Project
                     </Link>

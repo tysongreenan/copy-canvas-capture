@@ -61,7 +61,8 @@ export class BrandingService {
           throw new Error("No data returned from update operation");
         }
         
-        return data as BrandVoice;
+        // Explicitly handle the type conversion
+        return data as unknown as BrandVoice;
       } else {
         // Create new record
         const { data, error } = await supabase
@@ -85,7 +86,8 @@ export class BrandingService {
           throw new Error("No data returned from insert operation");
         }
         
-        return data as BrandVoice;
+        // Explicitly handle the type conversion
+        return data as unknown as BrandVoice;
       }
     } catch (error: any) {
       console.error("Error in saveBrandVoice:", error);

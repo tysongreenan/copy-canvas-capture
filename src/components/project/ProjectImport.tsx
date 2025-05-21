@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { ScrapeForm } from "@/components/ScrapeForm";
 import { FileUpload } from "@/components/chat/FileUpload";
-import { Globe, Upload, FileText } from "lucide-react";
+import { Globe, Upload, FileText, RefreshCw } from "lucide-react";
 import { useProject } from "@/context/ProjectContext";
+import { RescanTab } from "@/components/project/RescanTab";
 
 export function ProjectImport() {
   const [activeTab, setActiveTab] = useState<string>("url");
@@ -38,7 +39,7 @@ export function ProjectImport() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="url" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="url" className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 <span>Website URL</span>
@@ -50,6 +51,10 @@ export function ProjectImport() {
               <TabsTrigger value="text" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 <span>Paste Text</span>
+              </TabsTrigger>
+              <TabsTrigger value="rescan" className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                <span>Rescan</span>
               </TabsTrigger>
             </TabsList>
             
@@ -112,6 +117,10 @@ export function ProjectImport() {
                   </Button>
                 </div>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="rescan" className="mt-4">
+              <RescanTab />
             </TabsContent>
           </Tabs>
         </CardContent>

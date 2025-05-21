@@ -28,7 +28,8 @@ export class BrandingService {
       throw new Error(`Error fetching brand voice: ${error.message}`);
     }
     
-    return data as BrandVoice | null;
+    // Ensure data is of the expected type before returning
+    return data ? data as unknown as BrandVoice : null;
   }
 
   static async saveBrandVoice(brandVoice: Partial<BrandVoice>): Promise<BrandVoice> {
@@ -55,7 +56,8 @@ export class BrandingService {
         throw new Error('Failed to update brand voice: No data returned');
       }
       
-      return data as BrandVoice;
+      // Ensure data is of the expected type before returning
+      return data as unknown as BrandVoice;
     } else {
       // Create new record
       const { data, error } = await supabase
@@ -79,7 +81,8 @@ export class BrandingService {
         throw new Error('Failed to create brand voice: No data returned');
       }
       
-      return data as BrandVoice;
+      // Ensure data is of the expected type before returning
+      return data as unknown as BrandVoice;
     }
   }
 

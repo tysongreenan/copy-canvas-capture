@@ -27,14 +27,19 @@ export function useProject() {
   return context;
 }
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
+interface ProjectProviderProps {
+  children: ReactNode;
+  initialTab?: string | null;
+}
+
+export function ProjectProvider({ children, initialTab }: ProjectProviderProps) {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<any>(null);
   const [projectPages, setProjectPages] = useState<ScrapedContent[]>([]);
   const [selectedPage, setSelectedPage] = useState<ScrapedContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("content");
+  const [activeTab, setActiveTab] = useState<string>(initialTab && ['content', 'sitemap', 'import'].includes(initialTab) ? initialTab : "content");
   const { user } = useAuth();
 
   useEffect(() => {

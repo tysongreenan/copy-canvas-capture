@@ -158,7 +158,7 @@ export function ProjectWizardReview({ settings, onCreateProject, isCreating = fa
         
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-blue-700">
           <p className="text-sm">
-            You can modify any of these settings later in the project settings.
+            <strong>Next steps after creation:</strong> Once your project is created, you'll be directed to the Import tab where you can start scraping your website content. You can also set up Branding Details for your project.
           </p>
         </div>
         

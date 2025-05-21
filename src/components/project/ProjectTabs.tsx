@@ -1,18 +1,28 @@
 
+import { useEffect } from "react";
 import { useProject } from "@/context/ProjectContext";
 import { ProjectContentView } from "@/components/project/ProjectContentView";
 import { ProjectSitemap } from "@/components/project/ProjectSitemap";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectImport } from "@/components/project/ProjectImport";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { MessageSquare, Brush } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ProjectTabs() {
   const { activeTab, setActiveTab, project } = useProject();
+  const [searchParams] = useSearchParams();
   
   // Make sure we have project before accessing its ID
   const projectId = project?.id || '';
+
+  // Check URL parameters for tab selection
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['content', 'sitemap', 'import'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, setActiveTab]);
 
   return (
     <div className="mt-6">

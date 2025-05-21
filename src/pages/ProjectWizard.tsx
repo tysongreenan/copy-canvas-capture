@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -196,8 +197,8 @@ const ProjectWizard = () => {
         description: "Your new project has been created successfully.",
       });
       
-      // Navigate to the project page or dashboard
-      navigate(`/project/${savedProject.id}`);
+      // Navigate to the project page, specifically to the import tab for immediate content scraping
+      navigate(`/project/${savedProject.id}?tab=import`);
     } catch (error) {
       console.error("Error creating project:", error);
       toast({
@@ -295,6 +296,7 @@ const ProjectWizard = () => {
                 <ProjectWizardReview 
                   settings={projectSettings} 
                   onCreateProject={handleCreateProject}
+                  isCreating={isCreating}
                 />
               </TabsContent>
               

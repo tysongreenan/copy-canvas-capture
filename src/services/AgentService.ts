@@ -76,6 +76,11 @@ export class AgentService {
         defaultOptions.maxTokens = 2000; // More tokens for emails
       } else if (options.taskType === 'summary') {
         defaultOptions.temperature = 0.3; // Even lower temperature for summaries
+        defaultOptions.maxTokens = 1800; // More tokens for comprehensive summaries
+      } else if (options.taskType === 'research') {
+        defaultOptions.modelName = "gpt-4o"; // Use more powerful model for research
+        defaultOptions.enableTools = true; // Ensure tools are enabled for research
+        defaultOptions.temperature = 0.4; // Lower temperature for more factual responses
       }
       
       // Merge with user options, with user options taking precedence

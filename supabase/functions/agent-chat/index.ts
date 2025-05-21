@@ -437,23 +437,45 @@ serve(async (req) => {
         content: "AI determined it needs additional information and will use tools to gather it"
       });
       
+      console.log(`Processing ${toolCalls.length} tool calls`);
+      
+      // Track tool call results to include in the follow-up message
+      const toolResults = [];
+      
       // Process each tool call
       for (const call of toolCalls) {
-        const { function: fn } = call;
+        const { id, function: fn } = call;
         const { name, arguments: args } = fn;
         
+        console.log(`Executing tool call: ${name} with ID ${id}`);
         const parsedArgs = JSON.parse(args);
+        let toolResult;
         
         if (name === "searchContent") {
-          await searchContent(parsedArgs.query, parsedArgs.contentTypeFilter);
+          toolResult = await searchContent(parsedArgs.query, parsedArgs.contentTypeFilter);
         }
         else if (name === "getProjectInfo") {
-          await getProjectInfo(parsedArgs.infoType);
+          toolResult = await getProjectInfo(parsedArgs.infoType);
         }
         else if (name === "generateEmailTemplate") {
-          await generateEmailTemplate(parsedArgs);
+          toolResult = await generateEmailTemplate(parsedArgs);
         }
+        
+        // Store the result with its associated tool call ID
+        toolResults.push({
+          tool_call_id: id,
+          result: toolResult
+        });
       }
+      
+      // Create tool response messages for the follow-up request
+      const toolResponseMessages = toolResults.map(result => ({
+        role: 'tool',
+        tool_call_id: result.tool_call_id,
+        content: JSON.stringify(result.result)
+      }));
+      
+      console.log(`Created ${toolResponseMessages.length} tool response messages`);
       
       // Make a follow-up call to OpenAI with the tool results
       const messagesWithToolResults = [
@@ -466,11 +488,14 @@ serve(async (req) => {
           content: relevantContext ? `${relevantContext}\n\nUser question: ${message}` : message
         },
         aiResponse.choices[0].message,
+        ...toolResponseMessages,
         {
           role: 'system',
           content: `Based on the tool results provided, please synthesize a final response to the user's question. Include specific references to content when relevant.`
         }
       ];
+      
+      console.log(`Sending follow-up request to OpenAI with ${messagesWithToolResults.length} messages`);
       
       const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -488,6 +513,7 @@ serve(async (req) => {
       
       if (!followUpResponse.ok) {
         const errorData = await followUpResponse.json();
+        console.error("Error in follow-up request:", errorData);
         throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
       }
       

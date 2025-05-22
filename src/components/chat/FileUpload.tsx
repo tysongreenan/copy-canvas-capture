@@ -1,14 +1,10 @@
+
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { FileIcon, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { EmbeddingService } from "@/services/EmbeddingService";
-import { Document } from "langchain/document";
-import { TextLoader } from "langchain/document_loaders/fs/text";
-import { PDFLoader } from "langchain/document_loaders/fs/pdf";
-import { DocxLoader } from "langchain/document_loaders/fs/docx";
-import { MarkdownLoader } from "langchain/document_loaders/fs/markdown";
 import { ContentService } from "@/services/ContentService";
 
 interface FileUploadProps {
@@ -61,31 +57,9 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
     
     try {
       for (const file of files) {
-        let loader;
-        
-        if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-          loader = new MarkdownLoader(file);
-        } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-          loader = new PDFLoader(file);
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-          loader = new DocxLoader(file);
-        } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-          loader = new TextLoader(file);
-        } else {
-          toast({
-            title: "Unsupported file type",
-            description: "Please upload a PDF, DOCX, MD, or TXT file",
-            variant: "destructive",
-          });
-          setUploading(false);
-          return;
-        }
-        
-        const docs = await loader.load();
-        
         if (projectId) {
-          // Process embeddings for the document
-          const success = await EmbeddingService.processDocument(projectId, docs);
+          // Use our existing processFile method instead of processDocument
+          const success = await EmbeddingService.processFile(file, projectId);
           
           if (success) {
             toast({
@@ -93,55 +67,58 @@ export function FileUpload({ projectId, onSuccess }: FileUploadProps) {
               description: `${file.name} uploaded and processed successfully`,
             });
             onSuccess();
+            
+            try {
+              // Extract simple content from file for database
+              const fileText = await file.text();
+              
+              // Basic extraction of content
+              const extractedHeadings: { text: string; tag: string }[] = [];
+              const extractedParagraphs: string[] = [];
+              const extractedListItems: string[] = [];
+              
+              // Simple parsing of the content
+              const lines = fileText.split('\n');
+              lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#')) {
+                  // This is a heading
+                  const level = (line.match(/^#+/) || [''])[0].length;
+                  const tag = `h${level}`;
+                  extractedHeadings.push({ 
+                    text: line.replace(/^#+\s+/, ''), 
+                    tag: tag 
+                  });
+                } else if (line.startsWith('-') || line.startsWith('*')) {
+                  // This is a list item
+                  extractedListItems.push(line.substring(1).trim());
+                } else if (line.length > 0) {
+                  // This is a paragraph
+                  extractedParagraphs.push(line);
+                }
+              });
+              
+              // Save the processed content to the scraped_content table
+              await ContentService.saveContent({
+                url: `file://${file.name}`, 
+                title: file.name,
+                headings: extractedHeadings,
+                paragraphs: extractedParagraphs,
+                links: [],
+                listItems: extractedListItems,
+                metaDescription: null,
+                metaKeywords: null,
+                projectId
+              });
+            } catch (error) {
+              console.error("Error saving file content to database:", error);
+            }
           } else {
             toast({
-              title: "Embedding failed",
-              description: `Failed to process embeddings for ${file.name}`,
+              title: "Processing failed",
+              description: `Failed to process ${file.name}`,
               variant: "destructive",
             });
-          }
-          
-          // Extract content for saving to the database
-          const extractedHeadings: { text: string; tag: string }[] = [];
-          const extractedParagraphs: string[] = [];
-          const extractedListItems: string[] = [];
-          
-          docs.forEach((doc: Document) => {
-            const content = doc.pageContent;
-            
-            // Basic parsing - improve this as needed
-            const lines = content.split('\n');
-            lines.forEach(line => {
-              line = line.trim();
-              if (line.startsWith('#')) {
-                // This is a heading
-                const tag = 'h' + line.lastIndexOf('#')
-                extractedHeadings.push({ text: line.substring(line.lastIndexOf('#') + 1).trim(), tag: tag });
-              } else if (line.startsWith('-') || line.startsWith('*')) {
-                // This is a list item
-                extractedListItems.push(line.substring(1).trim());
-              } else if (line.length > 0) {
-                // This is a paragraph
-                extractedParagraphs.push(line);
-              }
-            });
-          });
-          
-          // Save the processed content to the scraped_content table
-          try {
-            await ContentService.saveContent({
-              url: `file://${file.name}`, 
-              title: file.name,
-              headings: extractedHeadings,
-              paragraphs: extractedParagraphs,
-              links: [],
-              listItems: extractedListItems,
-              metaDescription: null,
-              metaKeywords: null,
-              projectId
-            });
-          } catch (error) {
-            console.error("Error saving file content to database:", error);
           }
         } else {
           toast({

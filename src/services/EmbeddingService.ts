@@ -88,4 +88,44 @@ export class EmbeddingService {
       return false;
     }
   }
+
+  /**
+   * Process a document for embedding - compatibility method for the FileUpload component
+   */
+  public static async processDocument(projectId: string, documents: any[]): Promise<boolean> {
+    try {
+      let allSuccess = true;
+      
+      // For each document, extract text and create embeddings
+      for (const document of documents) {
+        // Extract text from the document
+        const text = document?.pageContent || '';
+        if (!text) {
+          console.error("Empty document content");
+          allSuccess = false;
+          continue;
+        }
+        
+        // Create a simple text chunk for processing
+        const chunks = [{
+          text: text,
+          metadata: {
+            source: document?.metadata?.source || 'unknown',
+            type: 'uploaded_document'
+          }
+        }];
+        
+        // Process the chunks
+        const success = await EmbeddingProcessor.processChunks(chunks as TextChunk[], projectId);
+        if (!success) {
+          allSuccess = false;
+        }
+      }
+      
+      return allSuccess;
+    } catch (error) {
+      console.error("Error processing document for embeddings:", error);
+      return false;
+    }
+  }
 }

@@ -63,9 +63,9 @@ export function ChatInterface({
   };
   
   return (
-    <div className="grid h-full grid-rows-[1fr_auto]">
-      {/* Messages area - will take all available space except for the input area */}
-      <div className="overflow-hidden w-full">
+    <div className="flex flex-col h-full">
+      {/* Messages area - scrollable container that takes available space */}
+      <div className="flex-grow overflow-hidden min-h-0">
         <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
           <div className="space-y-4 pb-4">
             {messages.map((message, index) => (
@@ -87,9 +87,9 @@ export function ChatInterface({
         </ScrollArea>
       </div>
       
-      {/* Input area at the bottom - will be a fixed height */}
-      <div className="w-full border-t border-white/10">
-        <div className="p-4 bg-black/20 backdrop-blur-sm">
+      {/* Input area at the bottom - with fixed minimum height to accommodate animations */}
+      <div className="w-full border-t border-white/10 mt-auto">
+        <div className="p-4 bg-black/20 backdrop-blur-sm min-h-[128px]">
           <AIChatInput 
             value={inputValue}
             onChange={setInputValue}

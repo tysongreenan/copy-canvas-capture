@@ -25,8 +25,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </Avatar>
         
         <div className={`${isUser ? 'bg-blue-50 border-blue-200 text-gray-800' : 'bg-indigo-50 border-indigo-200 text-gray-800'} 
-                        px-4 py-3 rounded-lg shadow-sm border`}>
-          <div className="whitespace-pre-wrap text-sm break-words overflow-hidden">
+                        px-4 py-3 rounded-lg shadow-sm border max-w-full`}>
+          <div className="whitespace-pre-wrap text-sm break-words overflow-hidden overflow-wrap-anywhere">
             {message.content}
           </div>
         </div>

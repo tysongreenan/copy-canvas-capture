@@ -18,7 +18,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       transition={{ duration: 0.3 }}
     >
       <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} max-w-[80%] gap-3`}>
-        <Avatar className={`h-8 w-8 ${isUser ? 'bg-blue-100' : 'bg-indigo-100'} flex items-center justify-center`}>
+        <Avatar className={`h-8 w-8 ${isUser ? 'bg-blue-100' : 'bg-indigo-100'} flex-shrink-0 flex items-center justify-center`}>
           <span className={`text-xs font-medium ${isUser ? 'text-blue-700' : 'text-indigo-700'}`}>
             {isUser ? 'You' : 'AI'}
           </span>
@@ -26,7 +26,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         
         <div className={`${isUser ? 'bg-blue-50 border-blue-200 text-gray-800' : 'bg-indigo-50 border-indigo-200 text-gray-800'} 
                         px-4 py-3 rounded-lg shadow-sm border`}>
-          <div className="whitespace-pre-wrap text-sm">
+          <div className="whitespace-pre-wrap text-sm break-words overflow-hidden">
             {message.content}
           </div>
         </div>

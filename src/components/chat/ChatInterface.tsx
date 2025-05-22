@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/context/ChatContext";
@@ -8,13 +7,11 @@ import { ReasoningDisplay } from "@/components/chat/ReasoningDisplay";
 import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
 import { AIChatInput } from "@/components/ui/ai-chat-input";
-
 interface ChatInterfaceProps {
   projectId: string;
   conversationId?: string;
   onConversationCreated: (id: string) => void;
 }
-
 export function ChatInterface({
   projectId,
   conversationId,
@@ -56,16 +53,13 @@ export function ChatInterface({
       }
     }
   }, [messages]);
-
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
-
-  return (
-    <div className="flex flex-col h-full">
+  return <div className="flex flex-col h-full">
       {/* Messages area with proper padding to prevent content being hidden under input */}
       <div className="flex-1 overflow-hidden min-h-0">
         <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
@@ -81,16 +75,9 @@ export function ChatInterface({
       
       {/* Input area with sufficient space for animation */}
       <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 min-h-[160px]"> {/* Using min-height instead of fixed height */}
-          <AIChatInput 
-            value={inputValue} 
-            onChange={setInputValue} 
-            onSend={handleSend} 
-            isLoading={isLoading} 
-            placeholder={getPlaceholderText(taskType)} 
-          />
+        <div className="p-4 min-h-[220px]"> {/* Using min-height instead of fixed height */}
+          <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

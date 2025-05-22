@@ -1,13 +1,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatLoadingIndicator } from "@/components/chat/ChatLoadingIndicator";
 import { ReasoningDisplay } from "@/components/chat/ReasoningDisplay";
 import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
-import { ModernChatInput } from "@/components/chat/ModernChatInput";
+import { AIChatInput } from "@/components/ui/ai-chat-input";
 
 interface ChatInterfaceProps {
   projectId: string;
@@ -86,10 +87,10 @@ export function ChatInterface({
         </ScrollArea>
       </div>
       
-      {/* Input area at the bottom - with adequate sizing for the component */}
+      {/* Input area at the bottom - with fixed minimum height to accommodate animations */}
       <div className="w-full border-t border-white/10 mt-auto">
-        <div className="p-4 bg-black/20 backdrop-blur-sm">
-          <ModernChatInput 
+        <div className="p-4 bg-black/20 backdrop-blur-sm min-h-[128px]">
+          <AIChatInput 
             value={inputValue}
             onChange={setInputValue}
             onSend={handleSend}

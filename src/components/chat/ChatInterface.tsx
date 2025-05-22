@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/context/ChatContext";
@@ -8,22 +7,23 @@ import { ReasoningDisplay } from "@/components/chat/ReasoningDisplay";
 import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
 import { AIChatInput } from "@/components/ui/ai-chat-input";
-
 interface ChatInterfaceProps {
   projectId: string;
   conversationId?: string;
   onConversationCreated: (id: string) => void;
 }
-
-export function ChatInterface({ 
-  projectId, 
-  conversationId, 
-  onConversationCreated 
+export function ChatInterface({
+  projectId,
+  conversationId,
+  onConversationCreated
 }: ChatInterfaceProps) {
-  const { messages, setCurrentProjectId, setSelectedConversationId } = useChat();
+  const {
+    messages,
+    setCurrentProjectId,
+    setSelectedConversationId
+  } = useChat();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
-  
   const {
     isLoading,
     reasoning,
@@ -35,13 +35,13 @@ export function ChatInterface({
     conversationId,
     onConversationCreated
   });
-  
+
   // Update current project ID and conversation ID in context
   useEffect(() => {
     setCurrentProjectId(projectId);
     setSelectedConversationId(conversationId);
   }, [projectId, conversationId, setCurrentProjectId, setSelectedConversationId]);
-  
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -53,51 +53,31 @@ export function ChatInterface({
       }
     }
   }, [messages]);
-
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
-  
-  return (
-    <div className="flex flex-col h-full relative">
+  return <div className="flex flex-col h-full relative">
       {/* Messages area - fixed height container with overflow handling */}
       <div className="flex-1 overflow-hidden min-h-0">
         <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
           <div className="space-y-4 pb-32"> {/* Added extra bottom padding to prevent content being hidden behind input */}
-            {messages.map((message, index) => (
-              <ChatMessage 
-                key={index}
-                message={message}
-              />
-            ))}
+            {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             
             <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} />
             
-            {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-              <ReasoningDisplay 
-                reasoning={reasoning}
-                confidence={confidence}
-              />
-            )}
+            {reasoning.length > 0 && messages.length > 0 && !isLoading && <ReasoningDisplay reasoning={reasoning} confidence={confidence} />}
           </div>
         </ScrollArea>
       </div>
       
       {/* Input area at the bottom - with fixed height and position */}
       <div className="w-full absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
-        <div className="p-4 max-h-[128px] min-h-[100px]">
-          <AIChatInput 
-            value={inputValue}
-            onChange={setInputValue}
-            onSend={handleSend}
-            isLoading={isLoading}
-            placeholder={getPlaceholderText(taskType)}
-          />
+        <div className="p-4 max-h-[128px] min-h-[100px] my-[33px] py-[16px]">
+          <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

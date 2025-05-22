@@ -74,7 +74,7 @@ export function ChatInterface({
       </div>
       
       {/* Input area at the bottom - with fixed height and position */}
-      <div className="w-full absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
+      <div className="w-full absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 my-[101px]">
         <div className="p-4 max-h-[128px] min-h-[100px] my-[33px] py-[16px]">
           <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} />
         </div>

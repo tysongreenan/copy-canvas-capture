@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { ChatLoadingIndicator } from "@/components/chat/ChatLoadingIndicator";
@@ -63,11 +62,11 @@ export function ChatInterface({
   };
   
   return (
-    <div className="flex flex-col h-full">
-      {/* Messages area - scrollable container that takes available space */}
-      <div className="flex-grow overflow-hidden min-h-0">
+    <div className="flex flex-col h-full relative">
+      {/* Messages area - fixed height container with overflow handling */}
+      <div className="flex-1 overflow-hidden min-h-0">
         <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-4">
+          <div className="space-y-4 pb-32"> {/* Added extra bottom padding to prevent content being hidden behind input */}
             {messages.map((message, index) => (
               <ChatMessage 
                 key={index}
@@ -87,9 +86,9 @@ export function ChatInterface({
         </ScrollArea>
       </div>
       
-      {/* Input area at the bottom - with fixed minimum height to accommodate animations */}
-      <div className="w-full border-t border-white/10 mt-auto">
-        <div className="p-4 bg-black/20 backdrop-blur-sm min-h-[128px]">
+      {/* Input area at the bottom - with fixed height and position */}
+      <div className="w-full absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
+        <div className="p-4 max-h-[128px] min-h-[100px]">
           <AIChatInput 
             value={inputValue}
             onChange={setInputValue}

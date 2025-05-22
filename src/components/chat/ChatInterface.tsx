@@ -63,37 +63,42 @@ export function ChatInterface({
   };
   
   return (
-    <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4 overflow-y-auto" ref={scrollAreaRef}>
-        <div className="space-y-4 pb-4">
-          {messages.map((message, index) => (
-            <ChatMessage 
-              key={index}
-              message={message}
-            />
-          ))}
-          
-          <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} />
-          
-          {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-            <ReasoningDisplay 
-              reasoning={reasoning}
-              confidence={confidence}
-            />
-          )}
+    <div className="flex flex-col h-full relative">
+      {/* Messages area with padding at the bottom to prevent content from being hidden behind input */}
+      <div className="flex-1 overflow-hidden pb-[140px]">
+        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+          <div className="space-y-4 pb-4">
+            {messages.map((message, index) => (
+              <ChatMessage 
+                key={index}
+                message={message}
+              />
+            ))}
+            
+            <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} />
+            
+            {reasoning.length > 0 && messages.length > 0 && !isLoading && (
+              <ReasoningDisplay 
+                reasoning={reasoning}
+                confidence={confidence}
+              />
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+      
+      {/* Fixed input area at the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <Separator className="bg-white/10" />
+        <div className="p-4 bg-black/20 backdrop-blur-sm">
+          <AIChatInput 
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSend}
+            isLoading={isLoading}
+            placeholder={getPlaceholderText(taskType)}
+          />
         </div>
-      </ScrollArea>
-      
-      <Separator className="bg-white/10" />
-      
-      <div className="p-4 bg-black/20">
-        <AIChatInput 
-          value={inputValue}
-          onChange={setInputValue}
-          onSend={handleSend}
-          isLoading={isLoading}
-          placeholder={getPlaceholderText(taskType)}
-        />
       </div>
     </div>
   );

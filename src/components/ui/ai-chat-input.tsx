@@ -157,7 +157,7 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
       borderRadius: 32,
       background: "rgba(255, 255, 255, 0.08)"
     }} onClick={handleActivate}>
-        <div className="flex flex-col items-stretch w-full h-full">
+        <div className="flex flex-col items-stretch w-full h-full bg-orange-900">
           {/* Input Row */}
           <div className="flex items-center gap-2 p-3 rounded-full max-w-3xl w-full bg-orange-900">
             <button className="p-3 rounded-full hover:bg-white/10 transition text-white/70" title="Attach file" type="button" tabIndex={-1} disabled={isLoading}>

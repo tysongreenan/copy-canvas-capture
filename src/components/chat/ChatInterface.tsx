@@ -75,7 +75,7 @@ export function ChatInterface({
       
       {/* Input area with sufficient space for animation */}
       <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 min-h-[220px] bg-white"> {/* Using min-height instead of fixed height */}
+        <div className="p-4 min-h-[270px] bg-white"> {/* Using min-height instead of fixed height */}
           <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} />
         </div>
       </div>

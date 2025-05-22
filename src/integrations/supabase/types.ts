@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_memories: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          importance_score: number | null
+          last_accessed_at: string | null
+          project_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          last_accessed_at?: string | null
+          project_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          importance_score?: number | null
+          last_accessed_at?: string | null
+          project_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_project_id"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_voices: {
         Row: {
           audience: string | null
@@ -122,6 +166,48 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_summaries: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          project_id: string
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          project_id: string
+          summary: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          summary?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_conversation_id"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_project_id"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -295,6 +381,20 @@ export type Database = {
           id: string
           content: string
           metadata: Json
+          similarity: number
+        }[]
+      }
+      search_agent_memories: {
+        Args: {
+          query_embedding: string
+          similarity_threshold: number
+          max_results: number
+          p_user_id: string
+          p_project_id: string
+        }
+        Returns: {
+          id: string
+          content: string
           similarity: number
         }[]
       }

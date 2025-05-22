@@ -5,6 +5,7 @@ import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { AgentService, AgentStep } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
 import { AgentTaskType, detectTaskType } from "@/utils/chatTaskDetection";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UseChatMessagingProps {
   projectId: string;
@@ -27,6 +28,7 @@ export function useChatMessaging({
   const [reasoning, setReasoning] = useState<AgentStep[]>([]);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
+  const [useMemory, setUseMemory] = useState(true);
   const { toast } = useToast();
   
   // Send message function
@@ -61,6 +63,10 @@ export function useChatMessaging({
       }
       
       try {
+        // Check authentication status
+        const { data: { user } } = await supabase.auth.getUser();
+        const isAuthenticated = !!user;
+        
         // Determine appropriate settings based on task type
         let temperature = 0.7;
         let maxTokens = 1500;
@@ -91,7 +97,8 @@ export function useChatMessaging({
             taskType: detectedTaskType,
             temperature: temperature,
             maxTokens: maxTokens,
-            modelName: modelName
+            modelName: modelName,
+            useMemory: useMemory && isAuthenticated // Only use memory if authenticated
           }
         );
         
@@ -150,7 +157,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory]
   );
 
   return {
@@ -158,6 +165,8 @@ export function useChatMessaging({
     reasoning,
     confidence,
     taskType,
+    useMemory,
+    setUseMemory,
     handleSendMessage
   };
 }

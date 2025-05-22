@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { MemoryService } from "./MemoryService";
 
 export interface AgentMessage {
   role: 'user' | 'assistant' | 'system';
@@ -46,6 +47,7 @@ export interface AgentRequestOptions {
   modelName?: string;
   temperature?: number;
   maxTokens?: number;
+  useMemory?: boolean;
 }
 
 export class AgentService {
@@ -70,6 +72,7 @@ export class AgentService {
         modelName: "gpt-4o-mini",
         temperature: 0.7,
         maxTokens: 1500,
+        useMemory: true, // Enable memory by default
       };
 
       // Special cases for different task types
@@ -95,6 +98,25 @@ export class AgentService {
       
       console.log(`Agent options: Task Type: ${finalOptions.taskType}, Model: ${finalOptions.modelName}`);
 
+      // Get relevant memories if memory is enabled and we have a project ID and the user is authenticated
+      let memories = [];
+      if (finalOptions.useMemory && projectId) {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          console.log("Fetching relevant memories for user and project");
+          memories = await MemoryService.getRelevantMemories(
+            user.id,
+            projectId,
+            message,
+            3,  // Limit to 3 most relevant memories
+            0.6  // Similarity threshold
+          );
+          console.log(`Found ${memories.length} relevant memories`);
+        }
+      }
+
       // Call the Supabase edge function that handles agent communication
       const { data, error } = await supabase.functions.invoke("agent-chat", {
         body: {
@@ -107,7 +129,8 @@ export class AgentService {
           enableMultiStepReasoning: finalOptions.enableMultiStepReasoning,
           modelName: finalOptions.modelName,
           temperature: finalOptions.temperature,
-          maxTokens: finalOptions.maxTokens
+          maxTokens: finalOptions.maxTokens,
+          memories: memories // Pass memories to the agent
         }
       });
       
@@ -121,6 +144,57 @@ export class AgentService {
     } catch (error: any) {
       console.error("Error in agent service:", error);
       throw new Error(`Agent error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Store the conversation as a memory after it's completed
+   */
+  public static async storeConversationMemory(
+    conversationId: string,
+    projectId: string
+  ): Promise<boolean> {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No user found, cannot store conversation memory");
+        return false;
+      }
+      
+      // Fetch all messages for this conversation
+      const { data: messages, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+      
+      if (messagesError || !messages || messages.length === 0) {
+        console.error("Failed to fetch conversation messages:", messagesError);
+        return false;
+      }
+      
+      // Format the messages for the summarization API
+      const formattedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+      
+      // Generate a summary of the conversation
+      const summary = await MemoryService.summarizeConversation(formattedMessages);
+      
+      // Store the summary as a memory
+      const summaryId = await MemoryService.storeConversationSummary(
+        user.id,
+        projectId,
+        conversationId,
+        summary
+      );
+      
+      return summaryId !== null;
+    } catch (error) {
+      console.error("Error storing conversation memory:", error);
+      return false;
     }
   }
 }

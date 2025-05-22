@@ -15,14 +15,46 @@ const PLACEHOLDERS = [
   "Summarize this article",
 ];
  
-const AIChatInput = () => {
+interface AIChatInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  onSend?: () => void;
+  isLoading?: boolean;
+}
+
+const AIChatInput: React.FC<AIChatInputProps> = ({ 
+  value: externalValue, 
+  onChange: externalOnChange,
+  onSend: externalOnSend,
+  isLoading = false
+}) => {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [isActive, setIsActive] = useState(false);
   const [thinkActive, setThinkActive] = useState(false);
   const [deepSearchActive, setDeepSearchActive] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [internalValue, setInternalValue] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
+ 
+  // Determine if using controlled or uncontrolled input
+  const isControlled = externalValue !== undefined;
+  const inputValue = isControlled ? externalValue : internalValue;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (!isControlled) {
+      setInternalValue(newValue);
+    }
+    if (externalOnChange) {
+      externalOnChange(newValue);
+    }
+  };
+
+  const handleSend = () => {
+    if (externalOnSend && inputValue.trim()) {
+      externalOnSend();
+    }
+  };
  
   // Cycle placeholder text when input is inactive
   useEffect(() => {
@@ -55,6 +87,13 @@ const AIChatInput = () => {
   }, [inputValue]);
  
   const handleActivate = () => setIsActive(true);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading && inputValue.trim()) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
  
   const containerVariants = {
     collapsed: {
@@ -104,7 +143,7 @@ const AIChatInput = () => {
   };
  
   return (
-    <div className="w-full min-h-screen flex justify-center items-center text-black">
+    <div className="w-full flex justify-center items-center text-black">
       <motion.div
         ref={wrapperRef}
         className="w-full max-w-3xl"
@@ -122,6 +161,7 @@ const AIChatInput = () => {
               title="Attach file"
               type="button"
               tabIndex={-1}
+              disabled={isLoading}
             >
               <Paperclip size={20} />
             </button>
@@ -131,10 +171,12 @@ const AIChatInput = () => {
               <input
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 className="flex-1 border-0 outline-0 rounded-md py-2 text-base bg-transparent w-full font-normal"
                 style={{ position: "relative", zIndex: 1 }}
                 onFocus={handleActivate}
+                disabled={isLoading}
               />
               <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-3 py-2">
                 <AnimatePresence mode="wait">
@@ -175,14 +217,21 @@ const AIChatInput = () => {
               title="Voice input"
               type="button"
               tabIndex={-1}
+              disabled={isLoading}
             >
               <Mic size={20} />
             </button>
             <button
-              className="flex items-center gap-1 bg-black hover:bg-zinc-700 text-white p-3 rounded-full font-medium justify-center"
+              className={`flex items-center gap-1 ${
+                isLoading || !inputValue.trim()
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-black hover:bg-zinc-700"
+              } text-white p-3 rounded-full font-medium justify-center`}
               title="Send"
               type="button"
               tabIndex={-1}
+              onClick={handleSend}
+              disabled={isLoading || !inputValue.trim()}
             >
               <Send size={18} />
             </button>
@@ -223,6 +272,7 @@ const AIChatInput = () => {
                   e.stopPropagation();
                   setThinkActive((a) => !a);
                 }}
+                disabled={isLoading}
               >
                 <Lightbulb
                   className="group-hover:fill-yellow-300 transition-all"
@@ -249,6 +299,7 @@ const AIChatInput = () => {
                   width: deepSearchActive ? 125 : 36,
                   paddingLeft: deepSearchActive ? 8 : 9,
                 }}
+                disabled={isLoading}
               >
                 <div className="flex-1">
                   <Globe size={18} />

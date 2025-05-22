@@ -1,14 +1,14 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatLoadingIndicator } from "@/components/chat/ChatLoadingIndicator";
 import { ReasoningDisplay } from "@/components/chat/ReasoningDisplay";
 import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
+import { AIChatInput } from "@/components/ui/ai-chat-input";
 
 interface ChatInterfaceProps {
   projectId: string;
@@ -23,6 +23,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const { messages, setCurrentProjectId, setSelectedConversationId } = useChat();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState("");
   
   const {
     isLoading,
@@ -53,6 +54,13 @@ export function ChatInterface({
       }
     }
   }, [messages]);
+
+  const handleSend = () => {
+    if (inputValue.trim() && !isLoading) {
+      handleSendMessage(inputValue);
+      setInputValue("");
+    }
+  };
   
   return (
     <div className="flex flex-col h-full">
@@ -79,9 +87,11 @@ export function ChatInterface({
       <Separator className="bg-white/10" />
       
       <div className="p-4 bg-black/20">
-        <ChatInput 
-          onSendMessage={handleSendMessage}
-          disabled={isLoading}
+        <AIChatInput 
+          value={inputValue}
+          onChange={setInputValue}
+          onSend={handleSend}
+          isLoading={isLoading}
           placeholder={getPlaceholderText(taskType)}
         />
       </div>

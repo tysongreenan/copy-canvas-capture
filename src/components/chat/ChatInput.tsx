@@ -1,21 +1,18 @@
 
 import { useState } from "react";
-import { Send, Filter } from "lucide-react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, contentTypeFilter?: string | null) => void;
+  onSendMessage: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type your message..." }: ChatInputProps) {
   const [message, setMessage] = useState("");
-  const [contentTypeFilter, setContentTypeFilter] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
@@ -26,7 +23,7 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
     
     try {
       setIsLoading(true);
-      await onSendMessage(message, contentTypeFilter);
+      await onSendMessage(message);
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -47,51 +44,9 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
     }
   };
   
-  const filterLabel = contentTypeFilter 
-    ? contentTypeFilter.replace("_", " ").replace(/\b\w/g, char => char.toUpperCase())
-    : "No Filter";
-  
   return (
     <form onSubmit={handleSubmit} className="relative">
       <div className="relative">
-        <div className="flex items-center gap-2 mb-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                className={`flex items-center gap-1 h-8 text-xs ${
-                  contentTypeFilter 
-                    ? 'bg-blue-900/30 border-blue-700/30 hover:bg-blue-900/50 text-white' 
-                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                }`}
-              >
-                <Filter className="h-3.5 w-3.5" />
-                <span>{filterLabel}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2 bg-gray-900 border-white/10 text-white">
-              <div className="space-y-1">
-                <h4 className="text-sm font-medium mb-2">Content Type Filter</h4>
-                <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
-                  <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900 text-white border-white/10">
-                    <SelectItem value="none">No Filter</SelectItem>
-                    <SelectItem value="title">Page Titles</SelectItem>
-                    <SelectItem value="meta_description">Meta Descriptions</SelectItem>
-                    <SelectItem value="headings">Headings</SelectItem>
-                    <SelectItem value="paragraphs">Paragraphs</SelectItem>
-                    <SelectItem value="list_items">List Items</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-        
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}

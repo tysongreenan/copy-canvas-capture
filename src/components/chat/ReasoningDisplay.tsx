@@ -70,7 +70,7 @@ export function ReasoningDisplay({ reasoning, confidence, evaluation }: Reasonin
           {reasoning.map((step, index) => (
             <div key={index} className="bg-white/5 p-3 rounded-md">
               <div className="font-medium text-xs uppercase tracking-wider text-blue-300 mb-1">
-                {step.step_type || "Analysis"} Step {index + 1}
+                {step.type || "Analysis"} Step {index + 1}
               </div>
               <div className="whitespace-pre-wrap">{step.content}</div>
               {step.toolName && (
@@ -96,18 +96,18 @@ export function ReasoningDisplay({ reasoning, confidence, evaluation }: Reasonin
               
               {showEvaluation && (
                 <div className="mt-3 space-y-3">
-                  {evaluation.evaluationHistory.map((eval, index) => (
+                  {evaluation.evaluationHistory.map((evalItem, index) => (
                     <div key={index} className="bg-black/30 p-3 rounded-md border border-white/10">
                       <div className="flex items-center justify-between mb-2">
                         <div className="font-medium text-xs uppercase tracking-wider text-blue-300">
                           Evaluation {index + 1}
                         </div>
-                        <div className={`text-sm font-medium ${getQualityColor(eval.score)}`}>
-                          Score: {Math.round(eval.score)}%
+                        <div className={`text-sm font-medium ${getQualityColor(evalItem.score)}`}>
+                          Score: {Math.round(evalItem.score)}%
                         </div>
                       </div>
                       <div className="text-xs whitespace-pre-wrap text-white/70">
-                        {eval.feedback}
+                        {evalItem.feedback}
                       </div>
                     </div>
                   ))}

@@ -15,7 +15,7 @@ export interface AgentTool {
 }
 
 export interface AgentStep {
-  type: string;
+  type: string;  // Changed from step_type to type to match usage in ReasoningDisplay
   content: string;
   toolName?: string;
   toolOutput?: any;

@@ -63,10 +63,10 @@ export function ChatInterface({
   };
   
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Messages area with padding at the bottom to prevent content from being hidden behind input */}
-      <div className="flex-1 overflow-hidden pb-[140px]">
-        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+    <div className="grid h-full grid-rows-[1fr_auto]">
+      {/* Messages area - will take all available space except for the input area */}
+      <div className="overflow-hidden w-full">
+        <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
           <div className="space-y-4 pb-4">
             {messages.map((message, index) => (
               <ChatMessage 
@@ -87,9 +87,8 @@ export function ChatInterface({
         </ScrollArea>
       </div>
       
-      {/* Fixed input area at the bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        <Separator className="bg-white/10" />
+      {/* Input area at the bottom - will be a fixed height */}
+      <div className="w-full border-t border-white/10">
         <div className="p-4 bg-black/20 backdrop-blur-sm">
           <AIChatInput 
             value={inputValue}

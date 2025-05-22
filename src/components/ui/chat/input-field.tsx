@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Mic, Paperclip, Send } from "lucide-react";
 import { AnimatedPlaceholder } from "./placeholder-animation";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 
 interface InputFieldProps {
   value: string;
@@ -28,14 +29,20 @@ export const InputField: React.FC<InputFieldProps> = ({
 }) => {
   return (
     <div className="flex items-center gap-2 p-3 rounded-full bg-white w-full">
-      <button
-        className="p-3 rounded-full hover:bg-gray-100 transition"
-        title="Attach file"
-        type="button"
-        tabIndex={-1}
-      >
-        <Paperclip size={20} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className="p-3 rounded-full hover:bg-gray-100 transition"
+            title="Attach file"
+            type="button"
+            tabIndex={-1}
+            disabled={isLoading}
+          >
+            <Paperclip size={20} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Attach file</TooltipContent>
+      </Tooltip>
 
       {/* Text Input & Placeholder */}
       <div className="relative flex-1">
@@ -57,29 +64,40 @@ export const InputField: React.FC<InputFieldProps> = ({
         </div>
       </div>
 
-      <button
-        className="p-3 rounded-full hover:bg-gray-100 transition"
-        title="Voice input"
-        type="button"
-        tabIndex={-1}
-      >
-        <Mic size={20} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className="p-3 rounded-full hover:bg-gray-100 transition"
+            title="Voice input"
+            type="button"
+            tabIndex={-1}
+            disabled={isLoading}
+          >
+            <Mic size={20} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Voice input</TooltipContent>
+      </Tooltip>
       
-      <button
-        className={`flex items-center gap-1 ${
-          isLoading || !value.trim()
-            ? "bg-gray-300 cursor-not-allowed"
-            : "bg-black hover:bg-zinc-700"
-        } text-white p-3 rounded-full font-medium justify-center`}
-        title="Send"
-        type="button"
-        tabIndex={-1}
-        onClick={onSend}
-        disabled={isLoading || !value.trim()}
-      >
-        <Send size={18} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className={`flex items-center gap-1 ${
+              isLoading || !value.trim()
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-black hover:bg-zinc-700"
+            } text-white p-3 rounded-full font-medium justify-center`}
+            title="Send"
+            type="button"
+            tabIndex={-1}
+            onClick={onSend}
+            disabled={isLoading || !value.trim()}
+          >
+            <Send size={18} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Send message</TooltipContent>
+      </Tooltip>
     </div>
   );
 };

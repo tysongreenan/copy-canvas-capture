@@ -13,6 +13,15 @@ interface UseChatMessagingProps {
   onConversationCreated: (id: string) => void;
 }
 
+export interface ChatEvaluation {
+  iterations: number;
+  quality: number;
+  evaluationHistory: Array<{
+    score: number;
+    feedback: string;
+  }>;
+}
+
 export function useChatMessaging({
   projectId,
   conversationId,
@@ -29,6 +38,10 @@ export function useChatMessaging({
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
   const [useMemory, setUseMemory] = useState(true);
+  const [usePromptChain, setUsePromptChain] = useState(true);
+  const [qualityThreshold, setQualityThreshold] = useState(90);
+  const [maxIterations, setMaxIterations] = useState(3);
+  const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const { toast } = useToast();
   
   // Send message function
@@ -40,6 +53,7 @@ export function useChatMessaging({
       
       // Reset reasoning state for new message
       setReasoning([]);
+      setEvaluation(undefined);
       
       // Detect task type
       const detectedTaskType = detectTaskType(message);
@@ -98,7 +112,10 @@ export function useChatMessaging({
             temperature: temperature,
             maxTokens: maxTokens,
             modelName: modelName,
-            useMemory: useMemory && isAuthenticated // Only use memory if authenticated
+            useMemory: useMemory && isAuthenticated, // Only use memory if authenticated
+            usePromptChain: usePromptChain,
+            qualityThreshold: qualityThreshold,
+            maxIterations: maxIterations
           }
         );
         
@@ -122,6 +139,11 @@ export function useChatMessaging({
         // Store confidence score if available
         if (response.confidence !== undefined) {
           setConfidence(response.confidence);
+        }
+
+        // Store evaluation information if available
+        if (response.evaluation) {
+          setEvaluation(response.evaluation);
         }
         
         // Create assistant message
@@ -157,7 +179,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations]
   );
 
   return {
@@ -167,6 +189,13 @@ export function useChatMessaging({
     taskType,
     useMemory,
     setUseMemory,
+    usePromptChain,
+    setUsePromptChain,
+    qualityThreshold,
+    setQualityThreshold,
+    maxIterations,
+    setMaxIterations,
+    evaluation,
     handleSendMessage
   };
 }

@@ -1,48 +1,76 @@
 
 project_id = "tjyedejdpwduiepctufc"
-org_id = "tjyedejdpwduiepctufc"
 
 [api]
+# Port to use for the API URL.
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemes = ["http", "https"]
 
 [db]
+# Port to use for the local database URL.
 port = 54322
-major_version = 15
 
 [studio]
+# Port to use for Supabase Studio.
 port = 54323
 
+# Email testing server. Emails sent with the local dev setup are not actually sent - the
+# mail server will catch them and make them available to view.
 [inbucket]
+# Port to use for the email testing server web interface.
 port = 54324
 smtp_port = 54325
 pop3_port = 54326
 
 [storage]
+# The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
 [auth]
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
 site_url = "http://localhost:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 seconds (one
+# week).
 jwt_expiry = 3600
+# Allow/disallow new user signups to your project.
 enable_signup = true
 
 [auth.email]
+# Allow/disallow new user signups via email to your project.
 enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 
-[auth.external.apple]
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+# Configure one of the supported SMS providers: twilio, messagebird, textlocal, vonage
+[auth.sms.twilio]
+account_sid = ""
+message_service_sid = ""
+auth_token = ""
+
+[analytics]
 enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
 
-[functions]
-[functions.process-embeddings]
-[functions.chat-completion]
 [functions.agent-chat]
+verify_jwt = false
 
+[functions.evaluate-response]
+verify_jwt = false
+
+[functions.generate-embedding]
+verify_jwt = false
+
+[functions.process-embeddings]
+verify_jwt = false
+
+[functions.summarize-conversation]
+verify_jwt = false

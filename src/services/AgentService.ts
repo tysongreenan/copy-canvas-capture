@@ -28,6 +28,15 @@ export interface AgentSource {
   similarity: number;
 }
 
+export interface AgentEvaluation {
+  iterations: number;
+  quality: number;
+  evaluationHistory: Array<{
+    score: number;
+    feedback: string;
+  }>;
+}
+
 export interface AgentResponse {
   message: string;
   threadId: string;
@@ -35,6 +44,7 @@ export interface AgentResponse {
   contentTypeFilter?: string | null;
   sources?: AgentSource[];
   confidence?: number;
+  evaluation?: AgentEvaluation;
 }
 
 export type AgentTaskType = 'general' | 'email' | 'summary' | 'research' | 'marketing' | 'content';
@@ -48,6 +58,9 @@ export interface AgentRequestOptions {
   temperature?: number;
   maxTokens?: number;
   useMemory?: boolean;
+  usePromptChain?: boolean;
+  qualityThreshold?: number;
+  maxIterations?: number;
 }
 
 export class AgentService {
@@ -73,6 +86,9 @@ export class AgentService {
         temperature: 0.7,
         maxTokens: 1500,
         useMemory: true, // Enable memory by default
+        usePromptChain: true, // Enable prompt chain by default
+        qualityThreshold: 90, // 90% quality threshold
+        maxIterations: 3, // Max 3 iterations
       };
 
       // Special cases for different task types
@@ -97,6 +113,7 @@ export class AgentService {
       const finalOptions = { ...defaultOptions, ...options };
       
       console.log(`Agent options: Task Type: ${finalOptions.taskType}, Model: ${finalOptions.modelName}`);
+      console.log(`Prompt Chain: ${finalOptions.usePromptChain}, Quality Threshold: ${finalOptions.qualityThreshold}%, Max Iterations: ${finalOptions.maxIterations}`);
 
       // Get relevant memories if memory is enabled and we have a project ID and the user is authenticated
       let memories = [];
@@ -130,7 +147,10 @@ export class AgentService {
           modelName: finalOptions.modelName,
           temperature: finalOptions.temperature,
           maxTokens: finalOptions.maxTokens,
-          memories: memories // Pass memories to the agent
+          memories: memories, // Pass memories to the agent
+          usePromptChain: finalOptions.usePromptChain,
+          qualityThreshold: finalOptions.qualityThreshold,
+          maxIterations: finalOptions.maxIterations
         }
       });
       

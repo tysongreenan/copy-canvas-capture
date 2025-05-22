@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { AI_Prompt } from "../ui/animated-ai-input";
+import { AIChatInput } from "../ui/ai-chat-input";
 
 export function AIPromptDemo() {
   const [inputValue, setValue] = useState("");
@@ -58,7 +58,7 @@ export function AIPromptDemo() {
           )}
         </div>
         
-        <AI_Prompt 
+        <AIChatInput 
           value={inputValue}
           onChange={setValue}
           onSend={handleSend}

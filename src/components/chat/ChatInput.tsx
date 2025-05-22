@@ -1,10 +1,11 @@
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface ChatInputProps {
   onSendMessage: (message: string, contentTypeFilter?: string | null) => void;
@@ -46,27 +47,47 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
     }
   };
   
+  const filterLabel = contentTypeFilter 
+    ? contentTypeFilter.replace("_", " ").replace(/\b\w/g, char => char.toUpperCase())
+    : "No Filter";
+  
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col gap-2">
-      <div className="flex justify-between items-center mb-2">
-        <h4 className="text-sm font-medium">Content Type Filter</h4>
-        
-        <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No Filter</SelectItem>
-            <SelectItem value="title">Page Titles</SelectItem>
-            <SelectItem value="meta_description">Meta Descriptions</SelectItem>
-            <SelectItem value="headings">Headings</SelectItem>
-            <SelectItem value="paragraphs">Paragraphs</SelectItem>
-            <SelectItem value="list_items">List Items</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
+    <form onSubmit={handleSubmit} className="relative">
       <div className="relative">
+        <div className="flex items-center gap-2 mb-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className={`flex items-center gap-1 h-8 text-xs ${contentTypeFilter ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : ''}`}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span>{filterLabel}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium mb-2">Content Type Filter</h4>
+                <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Filter</SelectItem>
+                    <SelectItem value="title">Page Titles</SelectItem>
+                    <SelectItem value="meta_description">Meta Descriptions</SelectItem>
+                    <SelectItem value="headings">Headings</SelectItem>
+                    <SelectItem value="paragraphs">Paragraphs</SelectItem>
+                    <SelectItem value="list_items">List Items</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}

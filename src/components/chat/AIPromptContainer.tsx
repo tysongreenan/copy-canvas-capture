@@ -1,11 +1,12 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, Filter } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface AIPromptContainerProps {
   onSendMessage: (message: string, response: string) => void;
@@ -68,24 +69,44 @@ export function AIPromptContainer({
     }
   };
   
+  const filterLabel = contentTypeFilter 
+    ? contentTypeFilter.replace("_", " ").replace(/\b\w/g, char => char.toUpperCase())
+    : "No Filter";
+  
   return (
     <form onSubmit={handleSend} className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h4 className="text-sm font-medium text-white/70">Content Type Filter</h4>
-        
-        <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
-          <SelectTrigger className="w-40 bg-white/5 text-white border-white/10">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900 text-white border border-white/10">
-            <SelectItem value="none">No Filter</SelectItem>
-            <SelectItem value="title">Page Titles</SelectItem>
-            <SelectItem value="meta_description">Meta Descriptions</SelectItem>
-            <SelectItem value="headings">Headings</SelectItem>
-            <SelectItem value="paragraphs">Paragraphs</SelectItem>
-            <SelectItem value="list_items">List Items</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex items-center justify-between mb-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              className={`flex items-center gap-1 h-8 text-xs bg-white/5 text-white border-white/10 hover:bg-white/10 ${contentTypeFilter ? 'bg-blue-900/30' : ''}`}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>{filterLabel}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2 bg-gray-900 text-white border border-white/10">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium mb-2">Content Type Filter</h4>
+              <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
+                <SelectTrigger className="w-full bg-white/5 text-white border-white/10">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 text-white border border-white/10">
+                  <SelectItem value="none">No Filter</SelectItem>
+                  <SelectItem value="title">Page Titles</SelectItem>
+                  <SelectItem value="meta_description">Meta Descriptions</SelectItem>
+                  <SelectItem value="headings">Headings</SelectItem>
+                  <SelectItem value="paragraphs">Paragraphs</SelectItem>
+                  <SelectItem value="list_items">List Items</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
       
       <div className="relative">

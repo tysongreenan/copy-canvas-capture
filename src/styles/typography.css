@@ -1,65 +1,14 @@
 
 /* Typography styles */
 
-/* Import Neue Haas Grotesk font */
-@font-face {
-  font-family: "Neue Haas Grotesk Display Pro";
-  src: url("https://use.typekit.net/af/8a9fdc/0000000000000000000149bd/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("woff2"),
-       url("https://use.typekit.net/af/8a9fdc/0000000000000000000149bd/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3") format("woff");
-  font-weight: 400;
-  font-style: normal;
-}
+/* Import Montserrat font for headlines */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
 
-@font-face {
-  font-family: "Neue Haas Grotesk Display Pro";
-  src: url("https://use.typekit.net/af/97fbd0/0000000000000000000149c3/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"),
-       url("https://use.typekit.net/af/97fbd0/0000000000000000000149c3/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff");
-  font-weight: 700;
-  font-style: normal;
-}
+/* Import Roboto font for body text */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
-/* SF Pro Text for body */
-@font-face {
-  font-family: "SF Pro Text";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscotext-regular-webfont.woff2");
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Pro Text";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscotext-medium-webfont.woff2");
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-regular-webfont.woff2");
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-medium-webfont.woff2");
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Pro Display";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-bold-webfont.woff2");
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "SF Mono";
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/SFMono-Regular.woff2");
-  font-weight: 400;
-  font-style: normal;
-}
+/* Import Roboto Mono for code and accent text */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap');
 
 @layer base {
   body {
@@ -73,7 +22,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-bold tracking-tight text-jet;
+    @apply font-sans font-semibold tracking-tight text-charcoal uppercase;
   }
 
   h1 {
@@ -95,6 +44,6 @@
   
   /* Style for code blocks */
   pre, code {
-    @apply bg-[#F3F4F6] font-mono rounded px-2 py-1;
+    @apply bg-cream font-mono rounded px-2 py-1;
   }
 }

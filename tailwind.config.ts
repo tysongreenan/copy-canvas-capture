@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,24 +21,19 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: [
-					'"Neue Haas Grotesk Display Pro"',
-					'"SF Pro Display"', 
-					'"SF Pro"', 
-					'-apple-system', 
-					'BlinkMacSystemFont', 
-					'system-ui', 
-					'Roboto', 
+					'Montserrat',
+					'system-ui',
 					'sans-serif'
 				],
 				body: [
-					'"SF Pro Text"',
-					'-apple-system',
-					'BlinkMacSystemFont',
-					'system-ui',
 					'Roboto',
+					'system-ui',
 					'sans-serif'
 				],
-				mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'monospace']
+				mono: [
+					'Roboto Mono',
+					'monospace'
+				]
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -83,10 +79,11 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Adding custom brand colors based on design notes
-				jet: "#111111",
-				slate: "#6B7280",
-				lumenBlue: "#00CFFF",
+				// Brand colors based on the Beggor brand guidelines
+				charcoal: "#2E2E2E",
+				tan: "#D2A679",
+				black: "#1A1A1A",
+				cream: "#F8F2E8",
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -110,21 +107,30 @@ export default {
 						height: '0'
 					}
 				},
-				'beam': {
+				'wag': {
+					'0%, 100%': {
+						transform: 'rotate(-8deg)'
+					},
+					'50%': {
+						transform: 'rotate(8deg)'
+					}
+				},
+				'dash': {
 					from: {
-						opacity: 0,
-						transform: 'translateX(-100%) skewX(-10deg)'
+						transform: 'translateX(-20%)',
+						opacity: 0.7,
 					},
 					to: {
+						transform: 'translateX(100%)',
 						opacity: 0.3,
-						transform: 'translateX(100%) skewX(-10deg)'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'beam': 'beam 2.5s ease-in-out infinite'
+				'wag': 'wag 1s ease-in-out infinite',
+				'dash': 'dash 2.5s ease-in-out infinite'
 			},
 			boxShadow: {
 				'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',

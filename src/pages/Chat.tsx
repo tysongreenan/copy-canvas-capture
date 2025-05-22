@@ -59,9 +59,9 @@ const Chat = () => {
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Header />
       
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/5 rounded-full mix-blend-normal filter blur-[128px] animate-pulse" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full mix-blend-normal filter blur-[128px] animate-pulse delay-700" />
-      <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-fuchsia-500/10 rounded-full mix-blend-normal filter blur-[96px] animate-pulse delay-1000" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-tan/10 rounded-full mix-blend-normal filter blur-[128px] animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cream/5 rounded-full mix-blend-normal filter blur-[128px] animate-pulse delay-700" />
+      <div className="absolute top-1/4 right-1/3 w-64 h-64 bg-tan/10 rounded-full mix-blend-normal filter blur-[96px] animate-pulse delay-1000" />
 
       <main className="flex-1 container max-w-6xl px-6 md:px-0 py-6 z-10">
         {/* Back button and Account Menu */}
@@ -101,7 +101,7 @@ const Chat = () => {
                       <div 
                         className={`max-w-[80%] rounded-lg p-4 ${
                           msg.role === 'user' 
-                            ? 'bg-blue-600/50 text-white' 
+                            ? 'bg-tan/50 text-white' 
                             : 'bg-white/10 text-white/90'
                         }`}
                       >
@@ -112,7 +112,7 @@ const Chat = () => {
                 </div>
               ) : (
                 <div className="py-12 text-center text-white/60">
-                  <p className="text-lg">Ask anything about your project!</p>
+                  <p className="text-lg">No requests yet—go ahead, beg for some copy!</p>
                 </div>
               )}
               
@@ -137,11 +137,11 @@ const Chat = () => {
 
       <footer className="py-6 text-center text-sm text-white/30 border-t border-white/5">
         <div className="container">
-          <p>Lumen © {new Date().getFullYear()} • Designed for web professionals</p>
+          <p>Beggor © {new Date().getFullYear()} • Fetch Better Copy</p>
         </div>
       </footer>
     </div>
   );
-};
+}
 
 export default Chat;

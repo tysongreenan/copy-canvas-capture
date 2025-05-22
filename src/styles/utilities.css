@@ -3,11 +3,11 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-tan bg-clip-text text-transparent;
   }
   
-  .text-gradient-lumen {
-    @apply bg-gradient-to-r from-lumenBlue via-lumenBlue to-lumenBlue/80 bg-clip-text text-transparent;
+  .text-gradient-beggor {
+    @apply bg-gradient-to-r from-tan via-tan to-tan/80 bg-clip-text text-transparent;
   }
 
   /* Card styling utilities */
@@ -17,6 +17,6 @@
   
   /* Underline accent for links */
   .link-underline {
-    @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-lumenBlue after:transition-all after:duration-300 hover:after:w-full;
+    @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-tan after:transition-all after:duration-300 hover:after:w-full;
   }
 }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SavedProject } from "@/services/ContentService";
 import { ChatService } from "@/services/ChatService";
-import { Globe, MessageSquare, Plus, Brush } from "lucide-react";
+import { Globe, MessageSquare, Plus, Brush, Dog } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface SidebarProps {
@@ -65,11 +65,15 @@ export function Sidebar({
     
     return (
         
-        <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
+        <div className="w-64 bg-cream border-r border-gray-200 flex flex-col h-full">
             {/* Header with logo */}
             <div className="p-4 border-b border-gray-200">
                 <Link to="/dashboard" className="flex items-center">
-                    <h1 className="text-xl font-bold text-gray-800">Lumen</h1>
+                    <div className="w-8 h-8 mr-2">
+                        {/* Beggor Logo */}
+                        <Dog className="text-tan" />
+                    </div>
+                    <h1 className="text-xl font-bold text-charcoal">Beggor</h1>
                 </Link>
             </div>
             
@@ -82,13 +86,13 @@ export function Sidebar({
                             key={project.id}
                             className={`flex items-center gap-2 p-2 rounded-md cursor-pointer mb-1 ${
                                 selectedProject?.id === project.id
-                                    ? "bg-gray-200"
-                                    : "hover:bg-gray-100"
+                                    ? "bg-tan/20"
+                                    : "hover:bg-tan/10"
                             }`}
                             onClick={() => onSelectProject(project)}
                         >
-                            <Globe className="h-4 w-4 text-gray-600" />
-                            <span className="text-sm text-gray-800 truncate">
+                            <Globe className="h-4 w-4 text-charcoal" />
+                            <span className="text-sm text-charcoal truncate">
                                 {project.title || "Untitled Project"}
                             </span>
                         </div>
@@ -96,7 +100,7 @@ export function Sidebar({
                     
                     {projects.length === 0 && (
                         <div className="text-center py-2 text-gray-500 text-sm">
-                            No projects yet
+                            No projects yet—go ahead, beg for some copy!
                         </div>
                     )}
                 </ScrollArea>
@@ -149,13 +153,13 @@ export function Sidebar({
                                             key={conversation.id}
                                             className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${
                                                 selectedConversationId === conversation.id
-                                                    ? "bg-gray-200"
-                                                    : "hover:bg-gray-100"
+                                                    ? "bg-tan/20"
+                                                    : "hover:bg-tan/10"
                                             }`}
                                             onClick={() => onSelectConversation(conversation.id)}
                                         >
-                                            <MessageSquare className="h-4 w-4 text-gray-600" />
-                                            <span className="text-sm text-gray-800 truncate">
+                                            <MessageSquare className="h-4 w-4 text-charcoal" />
+                                            <span className="text-sm text-charcoal truncate">
                                                 {conversation.title || "New Chat"}
                                             </span>
                                         </div>

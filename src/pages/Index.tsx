@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrapeForm } from "@/components/ScrapeForm";
 import { ScrapedContent } from "@/services/ScraperTypes";
 import { ContentDisplay } from "@/components/ContentDisplay";
-import { ArrowRight, Search, TestTube, Archive, CheckCircle, Clock, CreditCard } from "lucide-react";
+import { ArrowRight, Search, TestTube, Archive, CheckCircle, Clock, CreditCard, Dog } from "lucide-react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -66,19 +66,19 @@ const Index = () => {
       
       <main className="flex-1 relative z-0">
         {/* Hero Section with Try Now Functionality */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50 border-b border-gray-200">
+        <section className="py-16 md:py-24 bg-gradient-to-b from-white to-cream border-b border-gray-200">
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
               <div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  Illuminate Hidden Web Content
+                  Ask Boldly, Get Brilliant Copy
                 </h1>
-                <p className="text-lg text-gray-600 mb-8">
+                <p className="text-lg text-charcoal mb-8">
                   Extract clean, formatted content from any website instantly.
                   Perfect for copywriters, marketers, and developers.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+                  <Button asChild size="lg" className="bg-tan text-charcoal hover:bg-tan/90">
                     <a href="#try-now">
                       Try It Now <ArrowRight className="ml-2 w-4 h-4" />
                     </a>
@@ -90,18 +90,20 @@ const Index = () => {
               </div>
               <div className="relative">
                 <div className="rounded-lg overflow-hidden shadow-lg">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt="Lumen App Screenshot" 
-                    className="w-full h-auto"
-                  />
+                  <div className="bg-cream p-8 text-center">
+                    {/* Placeholder for the dachshund mascot */}
+                    <div className="inline-block">
+                      <Dog className="w-32 h-32 text-tan animate-wag origin-bottom" />
+                    </div>
+                    <p className="mt-4 text-charcoal font-semibold">Let Beggor fetch your copy.</p>
+                  </div>
                 </div>
               </div>
             </div>
             
             {/* Interactive Try Now Section */}
             <div id="try-now" className="mt-16 bg-white p-8 rounded-xl shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-center">Try Lumen Now</h2>
+              <h2 className="text-2xl font-bold mb-6 text-center">Try Beggor Now</h2>
               <ScrapeForm onResult={handleScrapedResult} />
             </div>
           </div>
@@ -109,13 +111,13 @@ const Index = () => {
 
         {/* Demo Result Section - Shows only when there's a result */}
         {scrapedResult && (
-          <section id="demo-result" className="py-16 md:py-20 border-b border-gray-200 bg-gray-50">
+          <section id="demo-result" className="py-16 md:py-20 border-b border-gray-200 bg-cream">
             <div className="container max-w-6xl px-6 md:px-0">
-              <h2 className="text-3xl font-bold mb-8 text-center">Your Extracted Content</h2>
+              <h2 className="text-3xl font-bold mb-8 text-center">Your Fetched Content</h2>
               <ContentDisplay data={scrapedResult} />
               <div className="mt-12 text-center">
                 <p className="text-lg mb-6">Like what you see? Get full access with our one-time purchase.</p>
-                <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+                <Button asChild size="lg" className="bg-tan text-charcoal hover:bg-tan/90">
                   <a href="#pricing">See Pricing</a>
                 </Button>
               </div>
@@ -127,29 +129,26 @@ const Index = () => {
         <section className="py-16 md:py-24 border-b border-gray-200">
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">About Lumen</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
+              <h2 className="text-3xl font-bold mb-4">About Beggor</h2>
+              <div className="h-1 w-20 bg-tan mx-auto"></div>
             </div>
             
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <p className="text-lg mb-6">
-                  Lumen was born from frustration. As web developers, we constantly needed to extract content from websites for migration projects, but existing tools were cumbersome and expensive with monthly subscriptions.
+                  Beggor was born from frustration. As web developers, we constantly needed to extract content from websites for migration projects, but existing tools were cumbersome and expensive with monthly subscriptions.
                 </p>
                 <p className="text-lg mb-6">
-                  We built Lumen to be the tool we always wanted - powerful, simple, and affordable with a one-time payment model.
+                  We built Beggor to be the tool we always wanted - powerful, simple, and affordable with a one-time payment model.
                 </p>
                 <p className="text-lg">
                   Our mission is to make web content extraction accessible to everyone, from freelancers to agencies, without recurring fees.
                 </p>
               </div>
               <div className="relative">
-                <div className="rounded-lg overflow-hidden">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt="Team working on Lumen" 
-                    className="w-full h-auto rounded-lg shadow-md"
-                  />
+                <div className="rounded-lg overflow-hidden bg-cream p-8 text-center">
+                  <Dog className="w-32 h-32 mx-auto text-tan animate-wag origin-bottom" />
+                  <p className="mt-4 text-charcoal font-semibold">"You got this? We got you."</p>
                 </div>
               </div>
             </div>
@@ -157,12 +156,12 @@ const Index = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 md:py-24 bg-gray-50 border-b border-gray-200">
+        <section className="py-16 md:py-24 bg-cream border-b border-gray-200">
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Powerful Features</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+              <div className="h-1 w-20 bg-tan mx-auto"></div>
+              <p className="text-charcoal mt-4 max-w-2xl mx-auto">
                 Everything you need to extract and repurpose website content efficiently.
               </p>
             </div>
@@ -171,11 +170,11 @@ const Index = () => {
               {features.map((feature, index) => (
                 <Card key={index} className="border-none shadow-md hover:shadow-lg transition-shadow">
                   <CardContent className="pt-6 px-6 pb-6 flex flex-col items-center text-center">
-                    <div className="mb-4 rounded-full bg-primary/10 p-3">
+                    <div className="mb-4 rounded-full bg-tan/10 p-3">
                       {feature.icon}
                     </div>
                     <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                    <p className="text-gray-600">{feature.description}</p>
+                    <p className="text-charcoal">{feature.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -184,17 +183,17 @@ const Index = () => {
             {/* Additional Feature Highlights */}
             <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex items-start">
-                <CheckCircle className="w-6 h-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <CheckCircle className="w-6 h-6 text-tan mr-4 flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-bold mb-2">Buy Once, Use Forever</h3>
-                  <p className="text-gray-600">No monthly subscriptions or hidden fees. Purchase once and enjoy lifetime access to all features.</p>
+                  <p className="text-charcoal">No monthly subscriptions or hidden fees. Purchase once and enjoy lifetime access to all features.</p>
                 </div>
               </div>
               <div className="flex items-start">
-                <Clock className="w-6 h-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <Clock className="w-6 h-6 text-tan mr-4 flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-bold mb-2">Save Hours of Work</h3>
-                  <p className="text-gray-600">Extract content in seconds that would take hours to manually copy and format.</p>
+                  <p className="text-charcoal">Extract content in seconds that would take hours to manually copy and format.</p>
                 </div>
               </div>
             </div>
@@ -206,17 +205,17 @@ const Index = () => {
           <div className="container max-w-6xl px-6 md:px-0">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Simple Pricing</h2>
-              <div className="h-1 w-20 bg-primary mx-auto"></div>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+              <div className="h-1 w-20 bg-tan mx-auto"></div>
+              <p className="text-charcoal mt-4 max-w-2xl mx-auto">
                 No subscriptions. No recurring fees. Just one simple payment for lifetime access.
               </p>
             </div>
             
             <div className="max-w-md mx-auto">
               {pricingPlans.map((plan, index) => (
-                <Card key={index} className={`border-2 ${plan.popular ? 'border-primary' : 'border-gray-200'} shadow-lg`}>
+                <Card key={index} className={`border-2 ${plan.popular ? 'border-tan' : 'border-gray-200'} shadow-lg`}>
                   {plan.popular && (
-                    <div className="bg-primary text-white text-center py-2 font-medium">
+                    <div className="bg-tan text-black text-center py-2 font-medium">
                       Popular Choice
                     </div>
                   )}
@@ -227,19 +226,19 @@ const Index = () => {
                         <span className="text-4xl font-bold">{plan.price}</span>
                         <span className="text-gray-500 ml-2">one-time</span>
                       </div>
-                      <p className="text-gray-600 mt-2">{plan.description}</p>
+                      <p className="text-charcoal mt-2">{plan.description}</p>
                     </div>
                     
                     <div className="space-y-3 mb-6">
                       {plan.features.map((feature, i) => (
                         <div key={i} className="flex items-center">
-                          <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                          <CheckCircle className="w-5 h-5 text-tan mr-3" />
                           <span>{feature}</span>
                         </div>
                       ))}
                     </div>
                     
-                    <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90">
+                    <Button asChild size="lg" className="w-full bg-tan text-charcoal hover:bg-tan/90">
                       <Link to="/auth">
                         <CreditCard className="mr-2 w-4 h-4" /> {plan.cta}
                       </Link>
@@ -257,12 +256,12 @@ const Index = () => {
         {/* Final CTA Section */}
         <section className="py-16 md:py-24">
           <div className="container max-w-5xl px-6 md:px-0">
-            <div className="bg-primary/10 rounded-xl p-8 md:p-12 text-center">
+            <div className="bg-tan/10 rounded-xl p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold mb-6">
-                Try Lumen Before You Buy
+                Try Beggor Before You Buy
               </h2>
               <p className="text-lg mb-8 max-w-2xl mx-auto">
-                Enter any website URL below to extract its content. See for yourself how powerful Lumen really is.
+                Enter any website URL below to extract its content. See for yourself how powerful Beggor really is.
               </p>
               
               <div className="max-w-2xl mx-auto">
@@ -281,16 +280,16 @@ const Index = () => {
         </section>
       </main>
       
-      <footer className="py-10 bg-gray-50 border-t text-center">
+      <footer className="py-10 bg-cream border-t text-center">
         <div className="container">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <p className="text-gray-500">Lumen © {new Date().getFullYear()} • Designed for web professionals</p>
+              <p className="text-charcoal">Beggor © {new Date().getFullYear()} • Fetch Better Copy</p>
             </div>
             <div className="flex gap-6">
-              <a href="#" className="text-gray-500 hover:text-primary transition-colors">Terms</a>
-              <a href="#" className="text-gray-500 hover:text-primary transition-colors">Privacy</a>
-              <a href="#" className="text-gray-500 hover:text-primary transition-colors">Contact</a>
+              <a href="#" className="text-gray-500 hover:text-tan transition-colors">Terms</a>
+              <a href="#" className="text-gray-500 hover:text-tan transition-colors">Privacy</a>
+              <a href="#" className="text-gray-500 hover:text-tan transition-colors">Contact</a>
             </div>
           </div>
         </div>

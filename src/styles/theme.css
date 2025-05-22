@@ -4,81 +4,80 @@
 @layer base {
   :root {
     --background: 0 0% 100%; /* Pure White */
-    --foreground: 0 0% 7%; /* Jet Black */
+    --foreground: 14 14% 18%; /* Charcoal */
 
     --card: 0 0% 100%; /* Pure White */
-    --card-foreground: 0 0% 7%; /* Jet Black */
+    --card-foreground: 14 14% 18%; /* Charcoal */
 
     --popover: 0 0% 100%; /* Pure White */
-    --popover-foreground: 0 0% 7%; /* Jet Black */
+    --popover-foreground: 14 14% 18%; /* Charcoal */
 
-    --primary: 192 100% 50%; /* Lumen Blue */
-    --primary-foreground: 0 0% 100%; /* White */
+    --primary: 32 53% 64%; /* Tan */
+    --primary-foreground: 0 0% 10%; /* Black */
 
-    --secondary: 220 14% 96%; /* Very Light Gray */
-    --secondary-foreground: 0 0% 7%; /* Jet Black */
+    --secondary: 36 57% 94%; /* Cream */
+    --secondary-foreground: 14 14% 18%; /* Charcoal */
 
-    --muted: 220 14% 96%; /* Very Light Gray */
-    --muted-foreground: 220 9% 46%; /* Slate Gray */
+    --muted: 36 57% 94%; /* Cream */
+    --muted-foreground: 14 14% 45%; /* Lighter Charcoal */
 
-    --accent: 220 14% 96%; /* Very Light Gray */
-    --accent-foreground: 0 0% 7%; /* Jet Black */
+    --accent: 36 57% 94%; /* Cream */
+    --accent-foreground: 14 14% 18%; /* Charcoal */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%; /* White */
 
-    --border: 220 13% 91%; /* Light Gray */
-    --input: 220 13% 91%; /* Light Gray */
-    --ring: 192 100% 50%; /* Lumen Blue */
+    --border: 14 14% 85%; /* Light Charcoal */
+    --input: 14 14% 85%; /* Light Charcoal */
+    --ring: 32 53% 64%; /* Tan */
 
     --radius: 0.75rem; /* Rounded corners for cards */
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 14 14% 26%;
+    --sidebar-primary: 32 53% 64%; /* Tan */
+    --sidebar-primary-foreground: 0 0% 10%; /* Black */
+    --sidebar-accent: 36 57% 94%; /* Cream */
+    --sidebar-accent-foreground: 14 14% 18%; /* Charcoal */
+    --sidebar-border: 14 14% 85%;
+    --sidebar-ring: 32 53% 64%; /* Tan */
   }
 
   .dark {
-    --background: 0 0% 10%; /* Slightly lighter black for better contrast */
-    --foreground: 0 0% 98%; /* White */
+    --background: 0 0% 10%; /* Slightly lighter black */
+    --foreground: 36 57% 94%; /* Cream */
 
     --card: 0 0% 12%; /* Dark Gray for cards */
-    --card-foreground: 0 0% 98%; /* White */
+    --card-foreground: 36 57% 94%; /* Cream */
 
     --popover: 0 0% 12%; /* Dark Gray */
-    --popover-foreground: 0 0% 98%; /* White */
+    --popover-foreground: 36 57% 94%; /* Cream */
 
-    --primary: 192 100% 50%; /* Lumen Blue */
-    --primary-foreground: 0 0% 7%; /* Jet Black */
+    --primary: 32 53% 64%; /* Tan */
+    --primary-foreground: 0 0% 10%; /* Black */
 
     --secondary: 0 0% 15%; /* Dark Gray */
-    --secondary-foreground: 0 0% 98%; /* White */
+    --secondary-foreground: 36 57% 94%; /* Cream */
 
     --muted: 0 0% 15%; /* Dark Gray */
-    --muted-foreground: 0 0% 65%; /* Light Gray */
+    --muted-foreground: 36 57% 75%; /* Light Cream */
 
     --accent: 0 0% 15%; /* Dark Gray */
-    --accent-foreground: 0 0% 98%; /* White */
+    --accent-foreground: 36 57% 94%; /* Cream */
 
     --destructive: 0 62.8% 30.6%; /* Dark Red */
-    --destructive-foreground: 0 0% 98%; /* White */
+    --destructive-foreground: 36 57% 94%; /* Cream */
 
     --border: 0 0% 20%; /* Dark Gray */
     --input: 0 0% 20%; /* Dark Gray */
-    --ring: 192 100% 50%; /* Lumen Blue */
-    --sidebar-background: 240 5.9% 12%; /* Slightly lighter than main background */
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --ring: 32 53% 64%; /* Tan */
+    --sidebar-background: 0 0% 12%; /* Slightly lighter than main background */
+    --sidebar-foreground: 36 57% 94%;
+    --sidebar-primary: 32 53% 64%; /* Tan */
+    --sidebar-primary-foreground: 0 0% 10%; /* Black */
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 36 57% 94%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 32 53% 64%; /* Tan */
   }
 }
-

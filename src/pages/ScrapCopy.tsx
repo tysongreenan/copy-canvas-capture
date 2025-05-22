@@ -98,7 +98,7 @@ const ScrapCopy = () => {
   </ul>
   
   <footer>
-    <p><small>Generated with Lumen Copy Scraper</small></p>
+    <p><small>Generated with Beggor Copy Scraper</small></p>
   </footer>
 </body>
 </html>`;

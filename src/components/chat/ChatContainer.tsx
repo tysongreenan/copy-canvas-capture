@@ -208,11 +208,13 @@ export function ChatContainer({ project }: ChatContainerProps) {
   };
   
   return (
-    <div className="flex flex-col h-[calc(100vh-13rem)]">
+    <div className="flex flex-col h-full">
       {/* Status Alert */}
-      <StatusAlert />
+      <div className="p-4">
+        <StatusAlert />
+      </div>
       
-      <div className="flex border rounded-lg overflow-hidden flex-1">
+      <div className="flex border-t border-white/10 flex-1 h-full overflow-hidden">
         {/* Desktop: Regular sidebar, Mobile: Sheet sidebar */}
         {isMobile ? (
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -239,7 +241,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
             </SheetContent>
           </Sheet>
         ) : (
-          <div className="w-80 border-r hidden md:block">
+          <div className="w-80 border-r border-white/10 hidden md:block">
             <ConversationsList
               projectId={project.id}
               selectedConversationId={selectedConversationId}
@@ -250,23 +252,23 @@ export function ChatContainer({ project }: ChatContainerProps) {
         )}
         
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="p-4 border-b flex items-center justify-between">
+          <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <h2 className="font-medium">Chat with {project.title || 'Website'}</h2>
+              <MessageSquare className="h-5 w-5 text-white/80" />
+              <h2 className="font-medium text-white">Chat with {project.title || 'Website'}</h2>
             </div>
             
             {hasEmbeddings && embeddingStatus === 'success' && (
-              <span className="text-xs flex items-center text-green-600">
+              <span className="text-xs flex items-center text-green-400">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Content processed
               </span>
             )}
             
             {hasEmbeddings && embeddingStatus === 'partial' && (
-              <span className="text-xs flex items-center text-amber-600">
+              <span className="text-xs flex items-center text-amber-400">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 Partially processed
               </span>
@@ -274,7 +276,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
           </div>
           
           {/* Chat interface wrapped in provider */}
-          <div className="flex-1">
+          <div className="flex-1 overflow-hidden">
             <ChatProvider>
               <ChatInterface 
                 projectId={project.id} 

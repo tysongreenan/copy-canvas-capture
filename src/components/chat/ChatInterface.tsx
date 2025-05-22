@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { ChatMessage } from "@/components/chat/ChatMessage";
@@ -353,8 +354,8 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
   
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-4 overflow-y-auto" ref={scrollAreaRef}>
+        <div className="space-y-4 pb-4">
           {messages.map((message, index) => (
             <ChatMessage 
               key={index}
@@ -363,32 +364,32 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
           ))}
           
           {isLoading && (
-            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center space-x-2 text-sm text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               <p>{getLoadingMessage()}</p>
             </div>
           )}
           
           {showFileUpload && !isLoading && (
-            <div className="flex flex-col p-4 rounded-lg border bg-muted/50 space-y-3">
+            <div className="flex flex-col p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
               <div className="flex items-start gap-2">
-                <Upload className="h-5 w-5 text-blue-500 mt-0.5" />
+                <Upload className="h-5 w-5 text-blue-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-sm">Upload Project Documents</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-medium text-sm text-white">Upload Project Documents</h4>
+                  <p className="text-sm text-white/70">
                     Upload additional context to help the AI better understand your project.
                   </p>
                 </div>
               </div>
               <FileUpload projectId={projectId} onSuccess={handleFileUploadSuccess} />
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-white/50">
                 <p>Supported formats: PDF, TXT, MD, DOCX</p>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowFileUpload(false)}
-                className="self-start"
+                className="self-start text-white/70 hover:text-white hover:bg-white/10"
               >
                 Cancel
               </Button>
@@ -399,17 +400,17 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
             <Collapsible
               open={showReasoning}
               onOpenChange={setShowReasoning}
-              className="mt-2 border rounded-md p-2 bg-slate-50 dark:bg-slate-900"
+              className="mt-2 border rounded-md p-2 border-white/10 bg-white/5"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Brain className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm font-medium">AI Reasoning Process</span>
+                  <Brain className="h-4 w-4 text-purple-400" />
+                  <span className="text-sm font-medium text-white/90">AI Reasoning Process</span>
                   {renderConfidenceIndicator()}
                 </div>
                 
                 <CollapsibleTrigger asChild>
-                  <button className="text-xs text-blue-500 hover:text-blue-700">
+                  <button className="text-xs text-blue-400 hover:text-blue-300">
                     {showReasoning ? "Hide Details" : "Show Details"}
                   </button>
                 </CollapsibleTrigger>
@@ -423,16 +424,16 @@ export function ChatInterface({ projectId, conversationId, onConversationCreated
         </div>
       </ScrollArea>
       
-      <Separator />
+      <Separator className="bg-white/10" />
       
-      <div className="p-4">
+      <div className="p-4 bg-black/20">
         {!showFileUpload && (
           <div className="flex items-center gap-2 mb-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowFileUpload(true)}
-              className="flex gap-1"
+              className="flex gap-1 bg-white/5 hover:bg-white/10 text-white border-white/10"
             >
               <Upload className="h-4 w-4" />
               Upload Files

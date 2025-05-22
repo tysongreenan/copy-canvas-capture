@@ -61,20 +61,24 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
                 type="button" 
                 variant="outline" 
                 size="sm" 
-                className={`flex items-center gap-1 h-8 text-xs ${contentTypeFilter ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : ''}`}
+                className={`flex items-center gap-1 h-8 text-xs ${
+                  contentTypeFilter 
+                    ? 'bg-blue-900/30 border-blue-700/30 hover:bg-blue-900/50 text-white' 
+                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                }`}
               >
                 <Filter className="h-3.5 w-3.5" />
                 <span>{filterLabel}</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-56 p-2">
+            <PopoverContent className="w-56 p-2 bg-gray-900 border-white/10 text-white">
               <div className="space-y-1">
                 <h4 className="text-sm font-medium mb-2">Content Type Filter</h4>
                 <Select value={contentTypeFilter || "none"} onValueChange={(value) => setContentTypeFilter(value === "none" ? null : value)}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900 text-white border-white/10">
                     <SelectItem value="none">No Filter</SelectItem>
                     <SelectItem value="title">Page Titles</SelectItem>
                     <SelectItem value="meta_description">Meta Descriptions</SelectItem>
@@ -94,7 +98,7 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled || isLoading}
-          className="min-h-24 pr-12 resize-none"
+          className="min-h-24 pr-12 resize-none bg-white/5 border-white/10 text-white placeholder:text-white/40"
           rows={3}
         />
         
@@ -102,7 +106,7 @@ export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type
           type="submit"
           size="icon"
           disabled={!message.trim() || disabled || isLoading}
-          className="absolute bottom-2 right-2 h-8 w-8"
+          className="absolute bottom-2 right-2 h-8 w-8 bg-blue-600 hover:bg-blue-700"
         >
           <Send className="h-4 w-4" />
           <span className="sr-only">Send</span>

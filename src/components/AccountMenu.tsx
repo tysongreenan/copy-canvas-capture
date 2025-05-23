@@ -1,25 +1,21 @@
-
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { Settings, CreditCard, LogOut, User } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/radix-dropdown-menu";
-
 export function AccountMenu() {
-  const { user, signOut } = useAuth();
-
+  const {
+    user,
+    signOut
+  } = useAuth();
   if (!user) {
-    return (
-      <Link to="/auth" className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm border border-gray-200 hover:bg-gray-50">
+    return <Link to="/auth" className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm border border-gray-200 hover:bg-gray-50">
         <User className="mr-2 h-4 w-4" />
         Sign In
-      </Link>
-    );
+      </Link>;
   }
-
-  return (
-    <DropdownMenu>
+  return <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm border border-gray-200 hover:bg-gray-50">
+        <button className="inline-flex items-center justify-center bg-white px-4 py-2 shadow-sm border border-gray-200 hover:bg-gray-50 rounded text-sm font-normal text-gray-500">
           <User className="mr-2 h-4 w-4" />
           {user.email?.split('@')[0]}
         </button>
@@ -48,6 +44,5 @@ export function AccountMenu() {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
-  );
+    </DropdownMenu>;
 }

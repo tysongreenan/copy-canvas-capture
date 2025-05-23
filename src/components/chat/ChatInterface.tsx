@@ -139,7 +139,7 @@ export function ChatInterface({
       {/* Header toolbar */}
       <div className="flex justify-between items-center px-4 pt-4">
         {/* Memory button (if conversation exists) */}
-        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white" onClick={handleSaveMemory} disabled={savingMemory}>
+        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" onClick={handleSaveMemory} disabled={savingMemory} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black">
             <Brain size={16} />
             {savingMemory ? "Saving Memory..." : "Save as Memory"}
           </Button>}

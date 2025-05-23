@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/context/ChatContext";
@@ -71,18 +72,18 @@ export function ChatInterface({
     if (scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollArea) {
-        setTimeout(() => {
-          scrollArea.scrollTop = scrollArea.scrollHeight;
-        }, 100);
+        scrollArea.scrollTop = scrollArea.scrollHeight;
       }
     }
   }, [messages]);
+  
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
+  
   const handleThinkToggle = (active: boolean) => {
     setThinkActive(active);
 
@@ -95,6 +96,7 @@ export function ChatInterface({
       });
     }
   };
+  
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
     setSavingMemory(true);
@@ -246,28 +248,35 @@ export function ChatInterface({
         </div>
       </div>
       
-      {/* Messages area with proper padding to prevent content being hidden under input */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 py-0 px-[40px] my-0">
-          <div className="space-y-4 pb-0"> {/* Increased bottom padding for more space */}
-            {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
-            
-            <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} isThinking={thinkActive} />
-            
-            {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-              <ReasoningDisplay 
-                reasoning={reasoning} 
-                confidence={confidence} 
-                evaluation={evaluation} 
-              />
-            )}
+      {/* Main content area with fixed height and proper scrolling */}
+      <div className="flex-1 flex flex-col overflow-hidden h-[calc(100%-140px)]">
+        {/* ScrollArea with fixed height to ensure scrolling */}
+        <ScrollArea 
+          ref={scrollAreaRef} 
+          className="flex-1 h-full overflow-hidden" 
+          scrollHideDelay={100}
+        >
+          <div className="p-4 px-[40px]">
+            <div className="space-y-4 pb-4">
+              {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
+              
+              <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} isThinking={thinkActive} />
+              
+              {reasoning.length > 0 && messages.length > 0 && !isLoading && (
+                <ReasoningDisplay 
+                  reasoning={reasoning} 
+                  confidence={confidence} 
+                  evaluation={evaluation} 
+                />
+              )}
+            </div>
           </div>
         </ScrollArea>
       </div>
       
-      {/* Input area with sufficient space for animation */}
-      <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 bg-white min-h-[64px]"> {/* Changed background color */}
+      {/* Input area fixed at the bottom */}
+      <div className="mt-auto w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
+        <div className="p-4 bg-white min-h-[64px]">
           <AIChatInput 
             value={inputValue} 
             onChange={setInputValue} 

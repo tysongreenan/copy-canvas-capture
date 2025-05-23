@@ -53,7 +53,7 @@ export function ChatInput({
   };
   
   return (
-    <form onSubmit={handleSubmit} className="relative">
+    <form onSubmit={handleSubmit} className="relative w-full">
       <div className="relative">
         <Textarea
           value={message}

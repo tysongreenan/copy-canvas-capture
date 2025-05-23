@@ -208,7 +208,7 @@ export function ChatInterface({
       {/* Messages area with proper padding to prevent content being hidden under input */}
       <div className="flex-1 overflow-hidden min-h-0">
         <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
-          <div className="space-y-4 pb-48"> {/* Increased bottom padding for more space */}
+          <div className="space-y-4 pb-0"> {/* Increased bottom padding for more space */}
             {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             
             <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} isThinking={thinkActive} />

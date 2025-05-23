@@ -1,5 +1,5 @@
 
-export type AgentTaskType = 'general' | 'email' | 'marketing' | 'research' | 'summary';
+export type AgentTaskType = 'general' | 'email' | 'marketing' | 'research' | 'summary' | 'content';
 
 /**
  * Detects the most likely task type based on message content
@@ -16,6 +16,14 @@ export const detectTaskType = (message: string): AgentTaskType => {
       lowerMessage.includes('blog post') ||
       lowerMessage.includes('content strategy')) {
     return 'marketing';
+  }
+  
+  // Content creation detection
+  if (lowerMessage.includes('create content') ||
+      lowerMessage.includes('article') ||
+      lowerMessage.includes('content creation') ||
+      lowerMessage.includes('write a post')) {
+    return 'content';
   }
   
   // Email task detection

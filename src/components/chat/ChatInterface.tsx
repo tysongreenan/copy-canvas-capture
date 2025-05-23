@@ -12,21 +12,15 @@ import { Brain, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentService } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-
 interface ChatInterfaceProps {
   projectId: string;
   conversationId?: string;
   onConversationCreated: (id: string) => void;
 }
-
 export function ChatInterface({
   projectId,
   conversationId,
@@ -40,8 +34,9 @@ export function ChatInterface({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [savingMemory, setSavingMemory] = useState(false);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const {
     isLoading,
     reasoning,
@@ -80,55 +75,53 @@ export function ChatInterface({
       }
     }
   }, [messages]);
-  
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
-  
   const handleThinkToggle = (active: boolean) => {
     setThinkActive(active);
-    
+
     // When think is activated, ensure prompt chain is also enabled
     if (active && !usePromptChain) {
       setUsePromptChain(true);
       toast({
         title: "Think Mode Activated",
-        description: "Response evaluation has been enabled to improve accuracy",
+        description: "Response evaluation has been enabled to improve accuracy"
       });
     }
   };
-  
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
-    
     setSavingMemory(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast({
           title: "Authentication Required",
           description: "You must be logged in to save memories",
-          variant: "destructive",
+          variant: "destructive"
         });
         setSavingMemory(false);
         return;
       }
-      
       const success = await AgentService.storeConversationMemory(conversationId, projectId);
-      
       if (success) {
         toast({
           title: "Memory Saved",
-          description: "The conversation has been analyzed and stored as a memory for future reference",
+          description: "The conversation has been analyzed and stored as a memory for future reference"
         });
       } else {
         toast({
           title: "Failed to Save Memory",
           description: "There was an issue storing this conversation as a memory",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -136,39 +129,26 @@ export function ChatInterface({
       toast({
         title: "Error",
         description: "An unexpected error occurred while saving memory",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setSavingMemory(false);
     }
   };
-
   return <div className="flex flex-col h-full">
       {/* Header toolbar */}
       <div className="flex justify-between items-center px-4 pt-4">
         {/* Memory button (if conversation exists) */}
-        {conversationId && messages.length > 2 && (
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white"
-            onClick={handleSaveMemory}
-            disabled={savingMemory}
-          >
+        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white" onClick={handleSaveMemory} disabled={savingMemory}>
             <Brain size={16} />
             {savingMemory ? "Saving Memory..." : "Save as Memory"}
-          </Button>
-        )}
+          </Button>}
         
         {/* Settings Popover */}
         <div className={conversationId && messages.length > 2 ? "" : "ml-auto"}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button 
-                size="sm"
-                variant="outline"
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white border-white/10"
-              >
+              <Button size="sm" variant="outline" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white border-white/10">
                 <Settings size={16} />
                 <span>Response Settings</span>
               </Button>
@@ -180,43 +160,28 @@ export function ChatInterface({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="prompt-chain" className="text-sm">Enable Response Evaluation</Label>
-                    <Switch 
-                      id="prompt-chain" 
-                      checked={usePromptChain || thinkActive}
-                      onCheckedChange={(checked) => {
-                        setUsePromptChain(checked);
-                        // Think mode requires prompt chain to be enabled
-                        if (!checked && thinkActive) {
-                          setThinkActive(false);
-                        }
-                      }}
-                      disabled={thinkActive} // Disable toggle if Think is active
-                    />
+                    <Switch id="prompt-chain" checked={usePromptChain || thinkActive} onCheckedChange={checked => {
+                    setUsePromptChain(checked);
+                    // Think mode requires prompt chain to be enabled
+                    if (!checked && thinkActive) {
+                      setThinkActive(false);
+                    }
+                  }} disabled={thinkActive} // Disable toggle if Think is active
+                  />
                   </div>
                   <p className="text-xs text-white/60">
-                    {thinkActive 
-                      ? "Response evaluation is required when Think mode is active" 
-                      : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
+                    {thinkActive ? "Response evaluation is required when Think mode is active" : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
                   </p>
                 </div>
                 
-                {(usePromptChain || thinkActive) && (
-                  <>
+                {(usePromptChain || thinkActive) && <>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="quality-threshold" className="text-sm">
                           Quality Threshold: {qualityThreshold}%
                         </Label>
                       </div>
-                      <Slider
-                        id="quality-threshold"
-                        min={70}
-                        max={98}
-                        step={1}
-                        value={[qualityThreshold]}
-                        onValueChange={(values) => setQualityThreshold(values[0])}
-                        className="py-4"
-                      />
+                      <Slider id="quality-threshold" min={70} max={98} step={1} value={[qualityThreshold]} onValueChange={values => setQualityThreshold(values[0])} className="py-4" />
                       <p className="text-xs text-white/60">
                         Higher values require more accurate responses but may take longer
                       </p>
@@ -228,21 +193,12 @@ export function ChatInterface({
                           Maximum Iterations: {maxIterations}
                         </Label>
                       </div>
-                      <Slider
-                        id="max-iterations"
-                        min={1}
-                        max={5}
-                        step={1}
-                        value={[maxIterations]}
-                        onValueChange={(values) => setMaxIterations(values[0])}
-                        className="py-4"
-                      />
+                      <Slider id="max-iterations" min={1} max={5} step={1} value={[maxIterations]} onValueChange={values => setMaxIterations(values[0])} className="py-4" />
                       <p className="text-xs text-white/60">
                         More iterations allow for better refinement but increase response time
                       </p>
                     </div>
-                  </>
-                )}
+                  </>}
               </div>
             </PopoverContent>
           </Popover>
@@ -255,35 +211,17 @@ export function ChatInterface({
           <div className="space-y-4 pb-48"> {/* Increased bottom padding for more space */}
             {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             
-            <ChatLoadingIndicator 
-              isLoading={isLoading} 
-              taskType={taskType} 
-              isThinking={thinkActive} 
-            />
+            <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} isThinking={thinkActive} />
             
-            {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-              <ReasoningDisplay 
-                reasoning={reasoning} 
-                confidence={confidence} 
-                evaluation={evaluation}
-              />
-            )}
+            {reasoning.length > 0 && messages.length > 0 && !isLoading && <ReasoningDisplay reasoning={reasoning} confidence={confidence} evaluation={evaluation} />}
           </div>
         </ScrollArea>
       </div>
       
       {/* Input area with sufficient space for animation */}
       <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 min-h-[270px] bg-black/50"> {/* Changed background color */}
-          <AIChatInput 
-            value={inputValue} 
-            onChange={setInputValue} 
-            onSend={handleSend} 
-            isLoading={isLoading} 
-            placeholder={getPlaceholderText(taskType)}
-            thinkActive={thinkActive}
-            onThinkToggle={handleThinkToggle}
-          />
+        <div className="p-4 min-h-[270px] bg-white/100"> {/* Changed background color */}
+          <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} thinkActive={thinkActive} onThinkToggle={handleThinkToggle} />
         </div>
       </div>
     </div>;

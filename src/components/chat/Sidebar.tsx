@@ -122,7 +122,7 @@ export function Sidebar({
             
             {/* Project pages section (when a project is selected) */}
             {selectedProject && <div className="p-3 border-t border-gray-200">
-                    <h2 className="text-sm font-semibold text-gray-500 mb-2">BRAND</h2>
+                    <h2 className="text-sm font-semibold text-gray-500 mb-2 py-[6px] text-left">Knowledge Base</h2>
                     <Button variant="outline" size="sm" className="w-full" asChild>
                         <Link to={`/branding/${selectedProject.id}`}>
                             <Brush className="h-4 w-4 mr-2" />

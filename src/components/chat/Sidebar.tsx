@@ -58,7 +58,7 @@ export function Sidebar({
             {/* Header with logo */}
             <div className="p-4 border-b border-gray-200">
                 <Link to="/dashboard" className="flex items-center">
-                    <div className="w-8 h-8 mr-2">
+                    <div className="w-5 h-5 mr-2">
                         {/* Beggor Logo */}
                         <Dog className="text-tan" />
                     </div>

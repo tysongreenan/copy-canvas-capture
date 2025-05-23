@@ -137,9 +137,9 @@ export function ChatInterface({
   };
   return <div className="flex flex-col h-full">
       {/* Header toolbar */}
-      <div className="flex justify-between items-center px-4 pt-4">
+      <div className="flex justify-between items-center px-4 pt-4 py-[10px]">
         {/* Memory button (if conversation exists) */}
-        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" onClick={handleSaveMemory} disabled={savingMemory} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black">
+        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" onClick={handleSaveMemory} disabled={savingMemory} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm">
             <Brain size={16} />
             {savingMemory ? "Saving Memory..." : "Save as Memory"}
           </Button>}
@@ -148,7 +148,7 @@ export function ChatInterface({
         <div className={conversationId && messages.length > 2 ? "" : "ml-auto"}>
           <Popover>
             <PopoverTrigger asChild>
-              <Button size="sm" variant="outline" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white border-white/10">
+              <Button size="sm" variant="outline" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black">
                 <Settings size={16} />
                 <span>Response Settings</span>
               </Button>
@@ -207,7 +207,7 @@ export function ChatInterface({
       
       {/* Messages area with proper padding to prevent content being hidden under input */}
       <div className="flex-1 overflow-hidden min-h-0">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 py-0">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 py-0 px-[40px] my-0">
           <div className="space-y-4 pb-0"> {/* Increased bottom padding for more space */}
             {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             

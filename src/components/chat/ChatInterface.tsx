@@ -207,7 +207,7 @@ export function ChatInterface({
       
       {/* Messages area with proper padding to prevent content being hidden under input */}
       <div className="flex-1 overflow-hidden min-h-0">
-        <ScrollArea ref={scrollAreaRef} className="<div className=\"flex-1 overflow-y-auto p-4 py-0\">">
+        <ScrollArea className="h-full w-full p-4" ref={scrollAreaRef}>
           <div className="space-y-4 pb-0"> {/* Increased bottom padding for more space */}
             {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             
@@ -220,7 +220,7 @@ export function ChatInterface({
       
       {/* Input area with sufficient space for animation */}
       <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 bg-white min-h-[64px]"> {/* Changed background color */}
+        <div className="p-4 min-h-[270px] bg-white/100"> {/* Changed background color */}
           <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} thinkActive={thinkActive} onThinkToggle={handleThinkToggle} />
         </div>
       </div>

@@ -118,19 +118,24 @@ export class AgentService {
       // Get relevant memories if memory is enabled and we have a project ID and the user is authenticated
       let memories = [];
       if (finalOptions.useMemory && projectId) {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          console.log("Fetching relevant memories for user and project");
-          memories = await MemoryService.getRelevantMemories(
-            user.id,
-            projectId,
-            message,
-            3,  // Limit to 3 most relevant memories
-            0.6  // Similarity threshold
-          );
-          console.log(`Found ${memories.length} relevant memories`);
+        try {
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            console.log("Fetching relevant memories for user and project");
+            memories = await MemoryService.getRelevantMemories(
+              user.id,
+              projectId,
+              message,
+              3,  // Limit to 3 most relevant memories
+              0.6  // Similarity threshold
+            );
+            console.log(`Found ${memories.length} relevant memories`);
+          }
+        } catch (memoryError) {
+          console.error("Error fetching memories, continuing without them:", memoryError);
+          // Continue without memories if there's an error
         }
       }
 

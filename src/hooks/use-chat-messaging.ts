@@ -103,6 +103,9 @@ export function useChatMessaging({
           modelName = "gpt-4o";
         }
         
+        // When Think mode is active, disable memory to avoid vector search errors
+        const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
+        
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
           message,
@@ -113,7 +116,7 @@ export function useChatMessaging({
             temperature: temperature,
             maxTokens: maxTokens,
             modelName: modelName,
-            useMemory: useMemory && isAuthenticated, // Only use memory if authenticated
+            useMemory: shouldUseMemory, // Only use memory if authenticated and Think is not active
             usePromptChain: usePromptChain || thinkActive, // Always use prompt chain if think is active
             qualityThreshold: qualityThreshold,
             maxIterations: maxIterations,

@@ -1,87 +1,90 @@
 
-export type AgentTaskType = 'general' | 'email' | 'marketing' | 'research' | 'summary' | 'content';
+export type AgentTaskType = 'general' | 'email' | 'summary' | 'research' | 'marketing' | 'content';
 
-/**
- * Detects the most likely task type based on message content
- */
-export const detectTaskType = (message: string): AgentTaskType => {
+export function detectTaskType(message: string): AgentTaskType {
+  // Convert to lowercase for case-insensitive matching
   const lowerMessage = message.toLowerCase();
   
-  // Marketing and content task detection
-  if (lowerMessage.includes('seo') || 
-      lowerMessage.includes('eeat') || 
-      lowerMessage.includes('e-e-a-t') ||
-      lowerMessage.includes('marketing strategy') ||
-      lowerMessage.includes('content calendar') ||
-      lowerMessage.includes('blog post') ||
-      lowerMessage.includes('content strategy')) {
-    return 'marketing';
-  }
-  
-  // Content creation detection
-  if (lowerMessage.includes('create content') ||
-      lowerMessage.includes('article') ||
-      lowerMessage.includes('content creation') ||
-      lowerMessage.includes('write a post')) {
-    return 'content';
-  }
-  
-  // Email task detection
-  if (lowerMessage.includes('email') || 
-      lowerMessage.includes('subject line') || 
-      lowerMessage.includes('newsletter')) {
+  // Check for email patterns
+  if (
+    lowerMessage.includes('write an email') || 
+    lowerMessage.includes('draft an email') ||
+    lowerMessage.includes('email template') ||
+    lowerMessage.includes('compose an email') ||
+    (lowerMessage.includes('subject:') && (lowerMessage.includes('dear') || lowerMessage.includes('hi,')))
+  ) {
     return 'email';
   }
   
-  // Summary task detection
-  if (lowerMessage.includes('summarize') || 
-      lowerMessage.includes('summary') || 
-      lowerMessage.startsWith('tldr')) {
+  // Check for summary patterns
+  if (
+    lowerMessage.includes('summarize') ||
+    lowerMessage.includes('tldr') ||
+    lowerMessage.includes('summary of') ||
+    lowerMessage.includes('key points') ||
+    lowerMessage.startsWith('condense') ||
+    lowerMessage.includes('in summary')
+  ) {
     return 'summary';
   }
   
-  // Research task detection
-  if (lowerMessage.includes('research') || 
-      lowerMessage.includes('find information') ||
-      lowerMessage.includes('tell me about')) {
+  // Check for research patterns
+  if (
+    lowerMessage.includes('research') ||
+    lowerMessage.includes('analyze') ||
+    lowerMessage.includes('investigate') ||
+    lowerMessage.includes('explain') ||
+    lowerMessage.includes('what is') ||
+    lowerMessage.includes('how does') ||
+    lowerMessage.includes('why does')
+  ) {
     return 'research';
   }
   
+  // Check for marketing patterns
+  if (
+    lowerMessage.includes('marketing') ||
+    lowerMessage.includes('campaign') ||
+    lowerMessage.includes('advertisement') ||
+    lowerMessage.includes('promotion') ||
+    lowerMessage.includes('brand') ||
+    lowerMessage.includes('target audience') ||
+    lowerMessage.includes('social media post')
+  ) {
+    return 'marketing';
+  }
+  
+  // Check for content creation patterns
+  if (
+    lowerMessage.includes('write a') ||
+    lowerMessage.includes('create content') ||
+    lowerMessage.includes('blog post') ||
+    lowerMessage.includes('article') ||
+    lowerMessage.includes('story') ||
+    lowerMessage.includes('generate text') ||
+    lowerMessage.includes('content for')
+  ) {
+    return 'content';
+  }
+  
+  // Default to general
   return 'general';
-};
+}
 
-/**
- * Get appropriate placeholder text based on task type
- */
-export const getPlaceholderText = (taskType: AgentTaskType): string => {
-  switch(taskType) {
+export function getPlaceholderText(taskType: AgentTaskType): string {
+  switch (taskType) {
     case 'email':
-      return "Describe the email you want to create...";
-    case 'marketing':
-      return "Ask about marketing strategies, content ideas, or SEO best practices...";
-    case 'research':
-      return "What would you like me to research for you?";
+      return 'Write a professional email to...';
     case 'summary':
-      return "What would you like me to summarize?";
-    default:
-      return "Type your message here...";
-  }
-};
-
-/**
- * Get loading message based on task type
- */
-export const getLoadingMessage = (taskType: AgentTaskType): string => {
-  switch(taskType) {
-    case 'email':
-      return "Crafting email content...";
-    case 'marketing':
-      return "Analyzing marketing strategies...";
+      return 'Summarize the key points from...';
     case 'research':
-      return "Researching information...";
-    case 'summary':
-      return "Creating summary...";
+      return 'Research and explain...';
+    case 'marketing':
+      return 'Help me create marketing content for...';
+    case 'content':
+      return 'Write content for...';
+    case 'general':
     default:
-      return "Thinking...";
+      return 'Ask me anything...';
   }
-};
+}

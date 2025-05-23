@@ -51,16 +51,23 @@ serve(async (req) => {
       systemMessage = "You are a content creation specialist who can generate engaging and compelling content for various platforms and purposes.";
     }
 
-    // Add memory context if available
+    // Add memory context if available - with try/catch for safety
+    let hasMemories = false;
     if (memories && memories.length > 0) {
-      systemMessage += "\n\nHere are some relevant memories from previous conversations that might help with your response:";
-      
-      // Format memories in a helpful way
-      memories.forEach((memory: any, index: number) => {
-        systemMessage += `\n\nMemory ${index + 1}: ${memory.content}`;
-      });
-      
-      systemMessage += "\n\nUse these memories when they're relevant to the user's query, but don't mention that you're using 'memories' in your response.";
+      try {
+        systemMessage += "\n\nHere are some relevant memories from previous conversations that might help with your response:";
+        
+        // Format memories in a helpful way
+        memories.forEach((memory, index) => {
+          systemMessage += `\n\nMemory ${index + 1}: ${memory.content}`;
+        });
+        
+        systemMessage += "\n\nUse these memories when they're relevant to the user's query, but don't mention that you're using 'memories' in your response.";
+        hasMemories = true;
+      } catch (memoryError) {
+        console.error("Error processing memories:", memoryError);
+        // Continue without memories if there's an error
+      }
     }
 
     // Add any content type filter instructions
@@ -224,7 +231,7 @@ serve(async (req) => {
                 response: currentResponse,
                 originalQuery: message,
                 taskType: taskType, 
-                context: memories
+                context: hasMemories ? memories : [] // Only pass memories if we successfully processed them
               })
             }
           );
@@ -296,9 +303,9 @@ serve(async (req) => {
         let highestScore = 0;
         let bestIndex = 0;
         
-        evaluationHistory.forEach((eval, index) => {
-          if (eval.score > highestScore) {
-            highestScore = eval.score;
+        evaluationHistory.forEach((evalItem, index) => {
+          if (evalItem.score > highestScore) {
+            highestScore = evalItem.score;
             bestIndex = index;
           }
         });

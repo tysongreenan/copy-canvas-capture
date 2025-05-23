@@ -68,7 +68,7 @@ export function Sidebar({
             
             {/* Projects section */}
             <div className="p-3">
-                <h2 className="text-sm font-semibold text-gray-500 mb-2 text-left">PROJECTS</h2>
+                <h2 className="text-sm font-semibold text-gray-500 mb-2 text-left py-[4px]">PROJECTS</h2>
                 <ScrollArea className="h-40">
                     {projects.map(project => <div key={project.id} className={`flex items-center gap-2 p-2 rounded-md cursor-pointer mb-1 ${selectedProject?.id === project.id ? "bg-tan/20" : "hover:bg-tan/10"}`} onClick={() => onSelectProject(project)}>
                             <Globe className="h-4 w-4 text-charcoal" />
@@ -96,7 +96,7 @@ export function Sidebar({
             {/* Conversations section */}
             <div className="flex-1 overflow-hidden p-3">
                 {selectedProject && <>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 py-[6px]">
                             <h2 className="text-sm font-semibold text-gray-500">CHATS</h2>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleNewChat}>
                                 <Plus className="h-4 w-4" />

@@ -42,6 +42,7 @@ export function useChatMessaging({
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
+  const [thinkActive, setThinkActive] = useState(false);
   const { toast } = useToast();
   
   // Send message function
@@ -113,9 +114,10 @@ export function useChatMessaging({
             maxTokens: maxTokens,
             modelName: modelName,
             useMemory: useMemory && isAuthenticated, // Only use memory if authenticated
-            usePromptChain: usePromptChain,
+            usePromptChain: usePromptChain || thinkActive, // Always use prompt chain if think is active
             qualityThreshold: qualityThreshold,
-            maxIterations: maxIterations
+            maxIterations: maxIterations,
+            enableMultiStepReasoning: thinkActive // Enable multi-step reasoning when think is active
           }
         );
         
@@ -179,7 +181,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, thinkActive]
   );
 
   return {
@@ -196,6 +198,8 @@ export function useChatMessaging({
     maxIterations,
     setMaxIterations,
     evaluation,
+    thinkActive,
+    setThinkActive,
     handleSendMessage
   };
 }

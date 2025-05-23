@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/context/ChatContext";
@@ -55,6 +54,8 @@ export function ChatInterface({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
+    thinkActive,
+    setThinkActive,
     handleSendMessage
   } = useChatMessaging({
     projectId,
@@ -84,6 +85,19 @@ export function ChatInterface({
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
+    }
+  };
+  
+  const handleThinkToggle = (active: boolean) => {
+    setThinkActive(active);
+    
+    // When think is activated, ensure prompt chain is also enabled
+    if (active && !usePromptChain) {
+      setUsePromptChain(true);
+      toast({
+        title: "Think Mode Activated",
+        description: "Response evaluation has been enabled to improve accuracy",
+      });
     }
   };
   
@@ -168,16 +182,25 @@ export function ChatInterface({
                     <Label htmlFor="prompt-chain" className="text-sm">Enable Response Evaluation</Label>
                     <Switch 
                       id="prompt-chain" 
-                      checked={usePromptChain}
-                      onCheckedChange={setUsePromptChain}
+                      checked={usePromptChain || thinkActive}
+                      onCheckedChange={(checked) => {
+                        setUsePromptChain(checked);
+                        // Think mode requires prompt chain to be enabled
+                        if (!checked && thinkActive) {
+                          setThinkActive(false);
+                        }
+                      }}
+                      disabled={thinkActive} // Disable toggle if Think is active
                     />
                   </div>
                   <p className="text-xs text-white/60">
-                    When enabled, responses will be evaluated and improved until they meet your quality threshold
+                    {thinkActive 
+                      ? "Response evaluation is required when Think mode is active" 
+                      : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
                   </p>
                 </div>
                 
-                {usePromptChain && (
+                {(usePromptChain || thinkActive) && (
                   <>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -232,7 +255,11 @@ export function ChatInterface({
           <div className="space-y-4 pb-48"> {/* Increased bottom padding for more space */}
             {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
             
-            <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} />
+            <ChatLoadingIndicator 
+              isLoading={isLoading} 
+              taskType={taskType} 
+              isThinking={thinkActive} 
+            />
             
             {reasoning.length > 0 && messages.length > 0 && !isLoading && (
               <ReasoningDisplay 
@@ -247,13 +274,15 @@ export function ChatInterface({
       
       {/* Input area with sufficient space for animation */}
       <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10 flex-shrink-0">
-        <div className="p-4 min-h-[270px] bg-white"> {/* Using min-height instead of fixed height */}
+        <div className="p-4 min-h-[270px] bg-black/50"> {/* Changed background color */}
           <AIChatInput 
             value={inputValue} 
             onChange={setInputValue} 
             onSend={handleSend} 
             isLoading={isLoading} 
-            placeholder={getPlaceholderText(taskType)} 
+            placeholder={getPlaceholderText(taskType)}
+            thinkActive={thinkActive}
+            onThinkToggle={handleThinkToggle}
           />
         </div>
       </div>

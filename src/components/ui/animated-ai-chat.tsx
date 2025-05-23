@@ -7,13 +7,17 @@ interface AnimatedAIChatProps {
   onChange?: (value: string) => void;
   onSend?: () => void;
   isLoading?: boolean;
+  thinkActive?: boolean;
+  onThinkToggle?: (active: boolean) => void;
 }
 
 export const AnimatedAIChat: React.FC<AnimatedAIChatProps> = ({
   value,
   onChange,
   onSend,
-  isLoading
+  isLoading,
+  thinkActive,
+  onThinkToggle
 }) => {
   return (
     <div className="w-full">
@@ -22,6 +26,8 @@ export const AnimatedAIChat: React.FC<AnimatedAIChatProps> = ({
         onChange={onChange}
         onSend={onSend}
         isLoading={isLoading}
+        thinkActive={thinkActive}
+        onThinkToggle={onThinkToggle}
       />
     </div>
   );

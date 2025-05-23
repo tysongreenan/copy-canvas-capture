@@ -11,13 +11,17 @@ interface AIChatInputProps {
   onSend?: () => void;
   isLoading?: boolean;
   placeholder?: string;
+  thinkActive?: boolean;
+  onThinkToggle?: (active: boolean) => void;
 }
 const AIChatInput: React.FC<AIChatInputProps> = ({
   value: externalValue,
   onChange: externalOnChange,
   onSend: externalOnSend,
   isLoading = false,
-  placeholder
+  placeholder,
+  thinkActive: externalThinkActive,
+  onThinkToggle
 }) => {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
@@ -26,6 +30,13 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
   const [deepSearchActive, setDeepSearchActive] = useState(false);
   const [internalValue, setInternalValue] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Use external think state if provided
+  useEffect(() => {
+    if (externalThinkActive !== undefined) {
+      setThinkActive(externalThinkActive);
+    }
+  }, [externalThinkActive]);
 
   // Determine if using controlled or uncontrolled input
   const isControlled = externalValue !== undefined;
@@ -74,6 +85,17 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
       handleSend();
     }
   };
+
+  // Handler for think button toggle
+  const handleThinkToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newValue = !thinkActive;
+    setThinkActive(newValue);
+    if (onThinkToggle) {
+      onThinkToggle(newValue);
+    }
+  };
+  
   const containerVariants = {
     collapsed: {
       height: 68,
@@ -220,10 +242,7 @@ const AIChatInput: React.FC<AIChatInputProps> = ({
         }}>
             <div className="flex gap-3 items-center">
               {/* Think Toggle */}
-              <button className={`flex items-center gap-1 px-4 py-2 rounded-full transition-all font-medium group ${thinkActive ? "bg-blue-600/20 outline outline-blue-400/60 text-blue-200" : "bg-white/5 text-white/70 hover:bg-white/10"}`} title="Think" type="button" onClick={e => {
-              e.stopPropagation();
-              setThinkActive(a => !a);
-            }} disabled={isLoading}>
+              <button className={`flex items-center gap-1 px-4 py-2 rounded-full transition-all font-medium group ${thinkActive ? "bg-blue-600/20 outline outline-blue-400/60 text-blue-200" : "bg-white/5 text-white/70 hover:bg-white/10"}`} title="Think" type="button" onClick={handleThinkToggle} disabled={isLoading}>
                 <Lightbulb className={`${thinkActive ? "text-yellow-300" : ""} group-hover:text-yellow-300 transition-all`} size={18} />
                 Think
               </button>

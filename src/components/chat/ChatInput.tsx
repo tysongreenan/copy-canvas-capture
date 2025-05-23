@@ -9,9 +9,17 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  thinkActive?: boolean;
+  onThinkToggle?: (active: boolean) => void;
 }
 
-export function ChatInput({ onSendMessage, disabled = false, placeholder = "Type your message..." }: ChatInputProps) {
+export function ChatInput({ 
+  onSendMessage, 
+  disabled = false, 
+  placeholder = "Type your message...",
+  thinkActive,
+  onThinkToggle
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();

@@ -1,14 +1,15 @@
 
 import { useState } from "react";
-import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrapeForm } from "@/components/ScrapeForm";
+import { Navigate } from "react-router-dom";
 import { ScrapedContent } from "@/services/ScraperTypes";
+import { Hero2 } from "@/components/ui/hero-2-1";
+import { ScrapeForm } from "@/components/ScrapeForm";
 import { ContentDisplay } from "@/components/ContentDisplay";
-import { ArrowRight, Search, TestTube, Archive, CheckCircle, Clock, CreditCard, Dog } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, TestTube, Archive, CheckCircle, Clock, CreditCard, Dog, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const { user } = useAuth();
@@ -62,48 +63,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white relative">
-      <Header />
+      {/* New Hero Section */}
+      <Hero2 />
       
       <main className="flex-1 relative z-0">
-        {/* Hero Section with Try Now Functionality */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-white to-cream border-b border-gray-200">
+        {/* Interactive Try Now Section */}
+        <section id="try-now" className="py-16 md:py-24 bg-gradient-to-b from-black to-charcoal">
           <div className="container max-w-6xl px-6 md:px-0">
-            <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                  Ask Boldly, Get Brilliant Copy
-                </h1>
-                <p className="text-lg text-charcoal mb-8">
-                  Extract clean, formatted content from any website instantly.
-                  Perfect for copywriters, marketers, and developers.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button asChild size="lg" className="bg-tan text-charcoal hover:bg-tan/90">
-                    <a href="#try-now">
-                      Try It Now <ArrowRight className="ml-2 w-4 h-4" />
-                    </a>
-                  </Button>
-                  <Button asChild size="lg" variant="outline">
-                    <a href="#pricing">See Pricing</a>
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="rounded-lg overflow-hidden shadow-lg">
-                  <div className="bg-cream p-8 text-center">
-                    {/* Placeholder for the dachshund mascot */}
-                    <div className="inline-block">
-                      <Dog className="w-32 h-32 text-tan animate-wag origin-bottom" />
-                    </div>
-                    <p className="mt-4 text-charcoal font-semibold">Let Beggor fetch your copy.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Interactive Try Now Section */}
-            <div id="try-now" className="mt-16 bg-white p-8 rounded-xl shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-center">Try Beggor Now</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-cream">Try Beggor Now</h2>
+            <div className="bg-cream/10 backdrop-blur-sm p-8 rounded-xl">
               <ScrapeForm onResult={handleScrapedResult} />
             </div>
           </div>

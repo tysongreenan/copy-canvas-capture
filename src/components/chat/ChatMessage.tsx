@@ -18,14 +18,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
       transition={{ duration: 0.3 }}
     >
       <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} max-w-2xl w-full gap-3`}>
-        <Avatar className={`h-8 w-8 ${isUser ? 'bg-blue-100' : 'bg-indigo-100'} flex-shrink-0 flex items-center justify-center`}>
-          <span className={`text-xs font-medium ${isUser ? 'text-blue-700' : 'text-indigo-700'}`}>
+        <Avatar className={`h-8 w-8 ${isUser ? 'bg-tan text-black' : 'bg-gray-100 text-gray-700'} flex-shrink-0 flex items-center justify-center`}>
+          <span className={`text-xs font-medium`}>
             {isUser ? 'You' : 'AI'}
           </span>
         </Avatar>
         
-        <div className={`${isUser ? 'bg-blue-50 border-blue-200 text-gray-800' : 'bg-indigo-50 border-indigo-200 text-gray-800'} 
-                        px-4 py-3 rounded-lg shadow-sm border flex-1 min-w-0`}>
+        <div className={`${isUser ? 'bg-tan text-black px-4 py-3 rounded-lg' : ''} 
+                        flex-1 min-w-0`}>
           <div className="whitespace-pre-wrap text-sm break-words">
             {message.content}
           </div>

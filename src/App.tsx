@@ -17,7 +17,7 @@ import { ChatDemo } from "./components/chat/ChatDemo";
 import ProjectWizard from "./pages/ProjectWizard";
 
 // Update document title
-document.title = "Lumen - Chat with your website content";
+document.title = "Beggor - Extract Website Content Like a Pro";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +25,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col bg-background text-foreground">
+        <div className="min-h-screen w-full flex flex-col bg-background text-foreground overflow-x-hidden">
           <Toaster />
           <Sonner />
           <BrowserRouter>

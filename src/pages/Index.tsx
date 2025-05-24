@@ -62,16 +62,16 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white relative">
+    <div className="min-h-screen w-full flex flex-col bg-white relative overflow-x-hidden">
       {/* New Hero Section */}
       <Hero2 />
       
-      <main className="flex-1 relative z-0">
+      <main className="flex-1 relative z-0 w-full">
         {/* Interactive Try Now Section */}
-        <section id="try-now" className="py-16 md:py-24 bg-gradient-to-b from-black to-charcoal">
-          <div className="container max-w-6xl px-6 md:px-0">
+        <section id="try-now" className="py-16 md:py-24 bg-gradient-to-b from-black to-charcoal w-full">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <h2 className="text-2xl font-bold mb-6 text-center text-cream">Try Beggor Now</h2>
-            <div className="bg-cream/10 backdrop-blur-sm p-8 rounded-xl">
+            <div className="bg-cream/10 backdrop-blur-sm p-6 sm:p-8 rounded-xl">
               <ScrapeForm onResult={handleScrapedResult} />
             </div>
           </div>
@@ -79,8 +79,8 @@ const Index = () => {
 
         {/* Demo Result Section - Shows only when there's a result */}
         {scrapedResult && (
-          <section id="demo-result" className="py-16 md:py-20 border-b border-gray-200 bg-cream">
-            <div className="container max-w-6xl px-6 md:px-0">
+          <section id="demo-result" className="py-16 md:py-20 border-b border-gray-200 bg-cream w-full">
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6">
               <h2 className="text-3xl font-bold mb-8 text-center">Your Fetched Content</h2>
               <ContentDisplay data={scrapedResult} />
               <div className="mt-12 text-center">
@@ -94,8 +94,8 @@ const Index = () => {
         )}
 
         {/* About Us Section */}
-        <section className="py-16 md:py-24 border-b border-gray-200">
-          <div className="container max-w-6xl px-6 md:px-0">
+        <section className="py-16 md:py-24 border-b border-gray-200 w-full">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">About Beggor</h2>
               <div className="h-1 w-20 bg-tan mx-auto"></div>
@@ -124,8 +124,8 @@ const Index = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-16 md:py-24 bg-cream border-b border-gray-200">
-          <div className="container max-w-6xl px-6 md:px-0">
+        <section className="py-16 md:py-24 bg-cream border-b border-gray-200 w-full">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Powerful Features</h2>
               <div className="h-1 w-20 bg-tan mx-auto"></div>
@@ -169,8 +169,8 @@ const Index = () => {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-16 md:py-24 border-b border-gray-200">
-          <div className="container max-w-6xl px-6 md:px-0">
+        <section id="pricing" className="py-16 md:py-24 border-b border-gray-200 w-full">
+          <div className="container mx-auto max-w-6xl px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Simple Pricing</h2>
               <div className="h-1 w-20 bg-tan mx-auto"></div>
@@ -222,9 +222,9 @@ const Index = () => {
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-16 md:py-24">
-          <div className="container max-w-5xl px-6 md:px-0">
-            <div className="bg-tan/10 rounded-xl p-8 md:p-12 text-center">
+        <section className="py-16 md:py-24 w-full">
+          <div className="container mx-auto max-w-5xl px-4 sm:px-6">
+            <div className="bg-tan/10 rounded-xl p-6 sm:p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold mb-6">
                 Try Beggor Before You Buy
               </h2>
@@ -248,8 +248,8 @@ const Index = () => {
         </section>
       </main>
       
-      <footer className="py-10 bg-cream border-t text-center">
-        <div className="container">
+      <footer className="py-10 bg-cream border-t text-center w-full">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <p className="text-charcoal">Beggor © {new Date().getFullYear()} • Fetch Better Copy</p>

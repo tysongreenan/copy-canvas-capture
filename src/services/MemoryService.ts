@@ -52,7 +52,7 @@ export class MemoryService {
   }
 
   /**
-   * Retrieve relevant memories for a specific user, project, and query
+   * Retrieve relevant memories using enhanced search that includes global knowledge context
    */
   public static async getRelevantMemories(
     userId: string,
@@ -104,7 +104,7 @@ export class MemoryService {
   }
 
   /**
-   * Store a conversation summary
+   * Store a conversation summary with enhanced context
    */
   public static async storeConversationSummary(
     userId: string,
@@ -130,8 +130,8 @@ export class MemoryService {
         return null;
       }
 
-      // Also store this as a memory
-      await this.storeMemory(userId, projectId, summary);
+      // Also store this as a memory with enhanced metadata
+      await this.storeMemory(userId, projectId, `Conversation Summary: ${summary}`);
 
       return data.id;
     } catch (error) {
@@ -184,7 +184,7 @@ export class MemoryService {
   }
 
   /**
-   * Generate a summary for a conversation
+   * Generate a conversation summary with marketing context awareness
    */
   public static async summarizeConversation(messages: any[]): Promise<string> {
     try {
@@ -210,6 +210,75 @@ export class MemoryService {
     } catch (error) {
       console.error("Exception in summarizeConversation:", error);
       return "Failed to generate conversation summary due to an error.";
+    }
+  }
+
+  /**
+   * Get marketing insights relevant to a query by combining memories and global knowledge
+   */
+  public static async getMarketingInsights(
+    userId: string,
+    projectId: string,
+    query: string,
+    includeGlobal: boolean = true
+  ): Promise<{
+    memories: Memory[];
+    globalInsights: any[];
+    combined: string;
+  }> {
+    try {
+      // Get user memories
+      const memories = await this.getRelevantMemories(userId, projectId, query, 3, 0.6);
+      
+      let globalInsights = [];
+      
+      if (includeGlobal) {
+        // Generate embedding for global knowledge search
+        const queryEmbedding = await this.generateEmbedding(query);
+        
+        if (queryEmbedding) {
+          // Search global knowledge
+          const { data, error } = await supabase.rpc(
+            'match_documents_multilevel',
+            {
+              query_embedding: queryEmbedding,
+              match_threshold: 0.2,
+              match_count: 5,
+              p_project_id: null, // No project filter for global search
+              include_global: true,
+              marketing_domain: null,
+              complexity_level: null
+            }
+          );
+          
+          if (!error && data) {
+            globalInsights = data.filter(item => item.source_type === 'global');
+          }
+        }
+      }
+      
+      // Combine insights into a coherent context
+      let combined = "";
+      
+      if (memories.length > 0) {
+        combined += "Personal Context:\n";
+        memories.forEach((memory, index) => {
+          combined += `${index + 1}. ${memory.content}\n`;
+        });
+        combined += "\n";
+      }
+      
+      if (globalInsights.length > 0) {
+        combined += "Marketing Principles:\n";
+        globalInsights.forEach((insight, index) => {
+          combined += `${index + 1}. ${insight.source_info}: ${insight.content}\n`;
+        });
+      }
+      
+      return { memories, globalInsights, combined };
+    } catch (error) {
+      console.error("Exception in getMarketingInsights:", error);
+      return { memories: [], globalInsights: [], combined: "" };
     }
   }
 }

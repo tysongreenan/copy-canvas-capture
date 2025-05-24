@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -47,94 +46,56 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Base system message with the new persona
-    let systemMessage = `You are a senior marketing strategist and direct response copy chief. Your job is to not only complete the user's requests for marketing content, but to also teach, coach, and improve the user's marketing skills.
+    // Enhanced system message with marketing expertise
+    let systemMessage = `You are a senior marketing strategist and direct response copy chief with access to a comprehensive knowledge base of proven marketing principles, frameworks, and examples from industry legends like Claude Hopkins, David Ogilvy, Eugene Schwartz, and modern experts.
+
+Your expertise spans:
+- Classic direct response principles and scientific advertising methods
+- Modern conversion optimization and growth marketing
+- Copywriting frameworks (AIDA, PAS, Before/After/Bridge, StoryBrand, JTBD)
+- Brand strategy, positioning, and messaging
+- Email marketing, social media, and content strategy
+- Psychological triggers and persuasion techniques
 
 Always:
+- Reference specific marketing principles and frameworks when relevant
+- Cite authoritative sources (Hopkins, Ogilvy, etc.) to back up recommendations
 - Ask clarifying questions to understand their goal, target customer, and offer
-- Explain your reasoning as you write, using proven marketing frameworks (AIDA, PAS, Before/After/Bridge, Problem/Agitation/Solution, etc.)
-- Critique user-provided copy, offering concrete ways to improve
-- Reference classic and modern marketing principles (Hopkins, Ogilvy, Cialdini, modern conversion optimization, etc.)
-- Encourage the user to think like a marketer: challenge unclear requests, suggest alternatives, and explain why something works (or doesn't)
-- Make your guidance clear and actionable for non-experts
-- When possible, offer swipe examples and additional resources
+- Explain your reasoning using proven marketing frameworks
+- Provide concrete examples and actionable advice
+- Challenge unclear requests and suggest better approaches
+- Teach marketing principles while solving immediate problems
 
-Your goal: Level up every user so they can think and create like a professional marketer.`;
+When giving advice, blend:
+- Timeless marketing principles from your knowledge base
+- Project-specific insights from their content
+- Modern best practices and testing approaches
+- Specific examples and case studies
+
+Your goal: Transform every user into a more strategic marketer while delivering exceptional results.`;
     
-    // Task-specific enhancements to the base persona
-    if (taskType === 'email') {
-      systemMessage += `
+    // Task-specific enhancements
+    const taskSpecificGuidance = {
+      'email': 'Focus on email marketing expertise: subject line psychology, email structure, segmentation, deliverability, and automation sequences.',
+      'copywriting': 'Emphasize copywriting mastery: headlines, hooks, frameworks, conversion copy, and persuasion techniques.',
+      'marketing': 'Apply comprehensive marketing strategy: positioning, messaging, channel selection, and campaign optimization.',
+      'branding': 'Focus on brand strategy: positioning, voice, messaging architecture, and brand differentiation.',
+      'research': 'Provide strategic research guidance: market analysis, customer insights, competitive intelligence, and data interpretation.',
+      'summary': 'Extract strategic insights and actionable takeaways with clear next steps and applications.'
+    };
 
-As an email marketing specialist, focus on:
-- Subject line strategy and psychology (curiosity gaps, urgency, personalization)
-- Email structure and flow (hook, story, offer, close)
-- CTA optimization and placement
-- List segmentation and targeting strategies
-- A/B testing recommendations
-- Deliverability best practices
-
-Always ask: Who is the target audience? What's the specific goal? What's the offer or value proposition?
-Explain direct response principles like the "slippery slide" and why each element works.
-Provide concrete examples and suggest testing variations.`;
-    } else if (taskType === 'summary') {
-      systemMessage += `
-
-When summarizing content, approach it strategically:
-- Identify key marketing insights and actionable takeaways
-- Highlight what worked/didn't work and why
-- Extract proven principles that can be applied elsewhere
-- Note target audience insights and messaging strategies
-- Suggest how the user can apply these learnings
-
-Always ask: What are you planning to do with this summary? What specific insights are you looking for?
-Focus on strategic implications, not just facts.`;
-    } else if (taskType === 'research') {
-      systemMessage += `
-
-As a strategic researcher, focus on:
-- Competitive analysis and market positioning insights
-- Target audience behavior and psychology
-- Messaging angles and positioning opportunities
-- Channel and campaign performance data
-- Market trends and implications
-
-Always ask: What decision are you trying to make with this research? Who is your target customer?
-Provide actionable insights, not just data. Explain what the research means for their marketing strategy.
-Reference proven research methodologies and suggest additional research directions.`;
-    } else if (taskType === 'marketing' || taskType === 'content') {
-      systemMessage += `
-
-For marketing and content creation, emphasize:
-- Strategic thinking about audience, message, and channel fit
-- Content that moves people through the customer journey
-- Conversion optimization principles
-- Brand voice and positioning consistency
-- Performance measurement and optimization
-
-Always ask: What's the business goal? Who exactly is the target audience? What action do you want them to take?
-Use proven frameworks like AIDA, PAS, or Before/After/Bridge. Explain why each element works.
-Suggest testing variations and measurement strategies.`;
-    } else {
-      systemMessage += `
-
-For general marketing guidance:
-- Think strategically about the user's business goals and customer journey
-- Apply proven marketing principles and frameworks
-- Challenge assumptions and suggest better approaches
-- Provide educational context for every recommendation
-
-Always ask clarifying questions to understand the full context.
-Explain your reasoning and reference proven marketing principles.
-Coach the user to think more strategically about their marketing.`;
+    if (taskSpecificGuidance[taskType]) {
+      systemMessage += `\n\nFor this ${taskType} request: ${taskSpecificGuidance[taskType]}`;
     }
 
-    // RAG: Search for relevant documents if projectId is provided
+    // Enhanced RAG: Search both project-specific and global knowledge
     let relevantContexts = "";
     let hasRAGResults = false;
+    let ragSources = [];
     
-    if (projectId && supabaseUrl && supabaseKey) {
+    if (supabaseUrl && supabaseKey) {
       try {
-        console.log(`Performing RAG search for project: ${projectId}`);
+        console.log(`Performing enhanced RAG search for project: ${projectId}`);
         
         // Generate embedding for the query
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
@@ -153,78 +114,104 @@ Coach the user to think more strategically about their marketing.`;
           const embeddingData = await embeddingResponse.json();
           const embedding = embeddingData.data[0].embedding;
 
-          // Use a lower similarity threshold for better fuzzy matching
-          const similarityThreshold = 0.2;
+          // Use enhanced multi-level search
+          const similarityThreshold = 0.15; // Lower threshold for better coverage
           
-          // Prepare parameters for the match_documents function
-          const matchParams: any = {
-            query_embedding: embedding,
-            match_threshold: similarityThreshold,
-            match_count: 10,
-            p_project_id: projectId
+          // Determine marketing domain from task type
+          const marketingDomainMap = {
+            'email': 'email-marketing',
+            'copywriting': 'copywriting', 
+            'marketing': 'general-marketing',
+            'branding': 'branding',
+            'research': 'research',
+            'summary': null // Allow all domains for summaries
           };
           
-          // Add content type filter if provided
-          if (contentTypeFilter) {
-            matchParams.content_type = contentTypeFilter;
-          }
+          const marketingDomain = marketingDomainMap[taskType] || null;
           
-          // Perform vector similarity search
-          const { data: similarDocs, error } = await supabase.rpc(
-            'match_documents',
-            matchParams
+          // Search using the new multi-level function
+          const { data: searchResults, error } = await supabase.rpc(
+            'match_documents_multilevel',
+            {
+              query_embedding: embedding,
+              match_threshold: similarityThreshold,
+              match_count: 15, // Increased for better coverage
+              p_project_id: projectId,
+              content_type: contentTypeFilter,
+              include_global: true,
+              marketing_domain: marketingDomain,
+              complexity_level: null // Allow all complexity levels
+            }
           );
 
-          if (!error && similarDocs && similarDocs.length > 0) {
-            // Format documents for assistant input
-            relevantContexts = "Relevant context from your knowledge base:\n\n" + 
-              similarDocs.map((doc: any, index: number) => 
-                `Document ${index + 1}:\n${doc.content}\nSource: ${doc.metadata?.source || 'Unknown'}\nType: ${doc.metadata?.type || 'Unknown'}`
-              ).join("\n\n");
+          if (!error && searchResults && searchResults.length > 0) {
+            // Separate project and global results
+            const projectResults = searchResults.filter(doc => doc.source_type === 'project');
+            const globalResults = searchResults.filter(doc => doc.source_type === 'global');
             
-            console.log(`Found ${similarDocs.length} relevant documents from knowledge base${contentTypeFilter ? ` with type '${contentTypeFilter}'` : ''}`);
+            let contextSections = [];
+            
+            if (projectResults.length > 0) {
+              contextSections.push(
+                "=== YOUR PROJECT CONTENT ===\n" + 
+                projectResults.map((doc, index) => 
+                  `Project Content ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match):\n${doc.content}\n`
+                ).join("\n")
+              );
+            }
+            
+            if (globalResults.length > 0) {
+              contextSections.push(
+                "=== MARKETING KNOWLEDGE BASE ===\n" + 
+                globalResults.map((doc, index) => {
+                  const metadata = doc.metadata || {};
+                  return `Marketing Principle ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
+                }).join("\n")
+              );
+              
+              // Track sources for attribution
+              ragSources = globalResults.map(doc => ({
+                source: doc.source_info,
+                content_type: doc.metadata?.content_type,
+                marketing_domain: doc.metadata?.marketing_domain
+              }));
+            }
+            
+            relevantContexts = contextSections.join("\n");
+            
+            console.log(`Found ${projectResults.length} project documents and ${globalResults.length} marketing principles`);
             hasRAGResults = true;
           } else {
-            console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
+            console.log(`No relevant documents found with threshold ${similarityThreshold}`);
           }
         } else {
           console.error("Failed to generate embedding for RAG search");
         }
       } catch (ragError) {
-        console.error("Error during RAG search:", ragError);
-        // Continue without RAG if there's an error
+        console.error("Error during enhanced RAG search:", ragError);
       }
     }
 
-    // Add memory context if available - with try/catch for safety
+    // Add memory context if available
     let hasMemories = false;
     if (memories && memories.length > 0) {
       try {
-        systemMessage += "\n\nHere are some relevant insights from previous conversations that might help with your response:";
+        systemMessage += "\n\n=== CONVERSATION CONTEXT ===\nRelevant insights from previous conversations:";
         
-        // Format memories in a helpful way
         memories.forEach((memory, index) => {
-          systemMessage += `\n\nPrevious Insight ${index + 1}: ${memory.content}`;
+          systemMessage += `\n\nInsight ${index + 1}: ${memory.content}`;
         });
         
-        systemMessage += "\n\nUse these insights when they're relevant to the user's query, but don't mention that you're using 'previous insights' in your response.";
+        systemMessage += "\n\nUse these insights when relevant, building on previous context.";
         hasMemories = true;
       } catch (memoryError) {
         console.error("Error processing memories:", memoryError);
-        // Continue without memories if there's an error
       }
     }
 
-    // Add any content type filter instructions
-    if (contentTypeFilter) {
-      systemMessage += `\n\nFocus your responses specifically on content related to: ${contentTypeFilter}`;
-    }
-
-    // Add context about RAG results
-    if (projectId && !hasRAGResults) {
-      systemMessage += contentTypeFilter 
-        ? `\n\nNote: I couldn't find any relevant information in the '${contentTypeFilter}' content type for your query. I can search across all content types instead, or you can try a different question. When using general knowledge, I'll make it clear that I'm not drawing from your specific documents.`
-        : `\n\nNote: When answering, I'll use both general marketing knowledge and any specific context from your knowledge base. If no specific context is available, I'll use general marketing insights and suggest what kind of information you might want to add to your knowledge base for more specific answers.`;
+    // Add context about available knowledge
+    if (hasRAGResults) {
+      systemMessage += "\n\nYou have access to both the user's project content and a comprehensive marketing knowledge base. When possible, connect their specific situation to proven marketing principles, cite your sources, and explain why certain approaches work.";
     }
 
     // Generate initial response with OpenAI
@@ -269,7 +256,7 @@ Coach the user to think more strategically about their marketing.`;
                 type: "function",
                 function: {
                   name: "think_step_by_step",
-                  description: "Think through a problem step by step to reach a conclusion or answer",
+                  description: "Think through a marketing problem step by step using proven frameworks and principles",
                   parameters: {
                     type: "object",
                     properties: {
@@ -286,6 +273,11 @@ Coach the user to think more strategically about their marketing.`;
                             content: {
                               type: "string",
                               description: "The content of the reasoning step"
+                            },
+                            frameworks_used: {
+                              type: "array",
+                              items: { type: "string" },
+                              description: "Marketing frameworks or principles referenced in this step"
                             }
                           },
                           required: ["step_type", "content"]
@@ -294,13 +286,13 @@ Coach the user to think more strategically about their marketing.`;
                       },
                       final_answer: {
                         type: "string",
-                        description: "The final answer or conclusion reached after reasoning"
+                        description: "The final marketing recommendation based on proven principles"
                       },
                       confidence_score: {
                         type: "number",
                         minimum: 0,
                         maximum: 1,
-                        description: "A score from 0 to 1 indicating how confident you are in your answer"
+                        description: "Confidence in the recommendation based on supporting evidence"
                       }
                     },
                     required: ["reasoning_steps", "final_answer", "confidence_score"]
@@ -388,7 +380,7 @@ Coach the user to think more strategically about their marketing.`;
                 response: currentResponse,
                 originalQuery: message,
                 taskType: taskType, 
-                context: hasMemories ? memories : [] // Only pass memories if we successfully processed them
+                context: hasMemories ? memories : []
               })
             }
           );
@@ -481,7 +473,8 @@ Coach the user to think more strategically about their marketing.`;
       message: finalResponse || currentResponse,
       threadId: threadId || crypto.randomUUID(),
       contentTypeFilter: contentTypeFilter,
-      hasRAGResults: hasRAGResults // Include info about whether RAG was used
+      hasRAGResults: hasRAGResults,
+      sources: ragSources // Include marketing knowledge sources
     };
     
     // Add additional information if we used reasoning

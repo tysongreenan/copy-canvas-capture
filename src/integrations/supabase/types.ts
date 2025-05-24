@@ -247,6 +247,90 @@ export type Database = {
           },
         ]
       }
+      global_knowledge: {
+        Row: {
+          complexity_level: string | null
+          content: string
+          content_type: string
+          created_at: string
+          embedding: string | null
+          id: string
+          marketing_domain: string
+          metadata: Json | null
+          quality_score: number | null
+          source: string
+          tags: Json | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          complexity_level?: string | null
+          content: string
+          content_type: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          marketing_domain: string
+          metadata?: Json | null
+          quality_score?: number | null
+          source: string
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          complexity_level?: string | null
+          content?: string
+          content_type?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          marketing_domain?: string
+          metadata?: Json | null
+          quality_score?: number | null
+          source?: string
+          tags?: Json | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      knowledge_sources: {
+        Row: {
+          author: string | null
+          authority_score: number | null
+          created_at: string
+          description: string | null
+          id: string
+          last_processed_at: string | null
+          name: string
+          source_type: string
+          url: string | null
+        }
+        Insert: {
+          author?: string | null
+          authority_score?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_processed_at?: string | null
+          name: string
+          source_type: string
+          url?: string | null
+        }
+        Update: {
+          author?: string | null
+          authority_score?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_processed_at?: string | null
+          name?: string
+          source_type?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -382,6 +466,26 @@ export type Database = {
           content: string
           metadata: Json
           similarity: number
+        }[]
+      }
+      match_documents_multilevel: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+          p_project_id?: string
+          content_type?: string
+          include_global?: boolean
+          marketing_domain?: string
+          complexity_level?: string
+        }
+        Returns: {
+          id: string
+          content: string
+          metadata: Json
+          similarity: number
+          source_type: string
+          source_info: string
         }[]
       }
       search_agent_memories: {

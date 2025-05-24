@@ -221,7 +221,7 @@ export function ChatInterface({
       
       {/* Input area fixed at the bottom */}
       <div className="mt-auto w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
-        <div className="p-4 bg-white min-h-[64px]">
+        <div className="p-4 bg-white min-h-[64px] max-h-[50vh] overflow-auto">
           <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} thinkActive={thinkActive} onThinkToggle={handleThinkToggle} />
         </div>
       </div>

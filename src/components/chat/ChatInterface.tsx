@@ -235,48 +235,27 @@ export function ChatInterface({
         </div>
       </div>
       
-      {/* Main content area with fixed height and proper scrolling */}
-      <div className="flex flex-col h-[70vh]">
-        {/* Main content area with scrolling */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 h-full overflow-auto" ref={scrollAreaRef}>
-            <div className="p-4 px-[50px]">
-              <div className="space-y-4 pb-4">
-                {messages.map((message, index) => (
-                  <ChatMessage key={index} message={message} />
-                ))}
-                <ChatLoadingIndicator 
-                  isLoading={isLoading} 
-                  taskType={taskType}
-                  isThinking={thinkActive && isLoading}
-                />
-                {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-                  <ReasoningDisplay 
-                    reasoning={reasoning}
-                    confidence={confidence}
-                    evaluation={evaluation}
-                  />
-                )}
-              </div>
-            </div>
-          </ScrollArea>
-        </div>
-      
-        {/* Input area fixed at the bottom */}
-        <div className="mt-auto w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
-          <div className="p-4 bg-white min-h-[64px] max-h-[30vh] overflow-auto">
-            <AIChatInput 
-              value={inputValue}
-              onChange={setInputValue}
-              onSend={handleSend}
-              isLoading={isLoading}
-              thinkActive={thinkActive}
-              onThinkToggle={handleThinkToggle}
-              placeholder={getPlaceholderText(taskType)}
-            />
-          </div>
+     <div className="flex flex-col h-[70vh] pb-4">
+  {/* Scrollable messages */}
+  <div className="flex-1 flex flex-col overflow-hidden">
+    <ScrollArea className="flex-1 h-full overflow-auto" ref={scrollAreaRef}>
+      <div className="p-4 px-[50px]">
+        <div className="space-y-4 pb-4">
+          {messages.map((message, index) => (
+            <ChatMessage key={index} message={message} />
+          ))}
+          <ChatLoadingIndicator ... />
+          {reasoning.length > 0 && messages.length > 0 && !isLoading && (
+            <ReasoningDisplay ... />
+          )}
         </div>
       </div>
+    </ScrollArea>
+  </div>
+  {/* Input pinned at bottom */}
+  <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
+    <div className="p-4 bg-white min-h-[64px] max-h-[30vh] overflow-auto">
+      <AIChatInput ... />
     </div>
-  );
-}
+  </div>
+</div>

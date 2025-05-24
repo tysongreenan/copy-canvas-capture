@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -36,33 +35,99 @@ serve(async (req) => {
     console.log(`Processing message for thread ${threadId}, project ${projectId}, task type ${taskType}`);
     console.log(`Using prompt chain: ${usePromptChain}, Max iterations: ${maxIterations}, Quality threshold: ${qualityThreshold}`);
     
-    // Prepare system message based on task type
-    let systemMessage = "You are a helpful AI assistant that specializes in content marketing and research.";
+    // Base system message with the new persona
+    let systemMessage = `You are a senior marketing strategist and direct response copy chief. Your job is to not only complete the user's requests for marketing content, but to also teach, coach, and improve the user's marketing skills.
+
+Always:
+- Ask clarifying questions to understand their goal, target customer, and offer
+- Explain your reasoning as you write, using proven marketing frameworks (AIDA, PAS, Before/After/Bridge, Problem/Agitation/Solution, etc.)
+- Critique user-provided copy, offering concrete ways to improve
+- Reference classic and modern marketing principles (Hopkins, Ogilvy, Cialdini, modern conversion optimization, etc.)
+- Encourage the user to think like a marketer: challenge unclear requests, suggest alternatives, and explain why something works (or doesn't)
+- Make your guidance clear and actionable for non-experts
+- When possible, offer swipe examples and additional resources
+
+Your goal: Level up every user so they can think and create like a professional marketer.`;
     
+    // Task-specific enhancements to the base persona
     if (taskType === 'email') {
-      systemMessage = "You are an expert email writer who can craft professional, engaging, and effective emails.";
+      systemMessage += `
+
+As an email marketing specialist, focus on:
+- Subject line strategy and psychology (curiosity gaps, urgency, personalization)
+- Email structure and flow (hook, story, offer, close)
+- CTA optimization and placement
+- List segmentation and targeting strategies
+- A/B testing recommendations
+- Deliverability best practices
+
+Always ask: Who is the target audience? What's the specific goal? What's the offer or value proposition?
+Explain direct response principles like the "slippery slide" and why each element works.
+Provide concrete examples and suggest testing variations.`;
     } else if (taskType === 'summary') {
-      systemMessage = "You are an expert at summarizing content. Create concise, accurate summaries that capture key points.";
+      systemMessage += `
+
+When summarizing content, approach it strategically:
+- Identify key marketing insights and actionable takeaways
+- Highlight what worked/didn't work and why
+- Extract proven principles that can be applied elsewhere
+- Note target audience insights and messaging strategies
+- Suggest how the user can apply these learnings
+
+Always ask: What are you planning to do with this summary? What specific insights are you looking for?
+Focus on strategic implications, not just facts.`;
     } else if (taskType === 'research') {
-      systemMessage = "You are a research assistant with expertise in finding and analyzing information. Provide comprehensive research-based responses.";
-    } else if (taskType === 'marketing') {
-      systemMessage = "You are a marketing expert who specializes in content creation, strategy, and analysis. Provide creative, data-driven marketing insights.";
-    } else if (taskType === 'content') {
-      systemMessage = "You are a content creation specialist who can generate engaging and compelling content for various platforms and purposes.";
+      systemMessage += `
+
+As a strategic researcher, focus on:
+- Competitive analysis and market positioning insights
+- Target audience behavior and psychology
+- Messaging angles and positioning opportunities
+- Channel and campaign performance data
+- Market trends and implications
+
+Always ask: What decision are you trying to make with this research? Who is your target customer?
+Provide actionable insights, not just data. Explain what the research means for their marketing strategy.
+Reference proven research methodologies and suggest additional research directions.`;
+    } else if (taskType === 'marketing' || taskType === 'content') {
+      systemMessage += `
+
+For marketing and content creation, emphasize:
+- Strategic thinking about audience, message, and channel fit
+- Content that moves people through the customer journey
+- Conversion optimization principles
+- Brand voice and positioning consistency
+- Performance measurement and optimization
+
+Always ask: What's the business goal? Who exactly is the target audience? What action do you want them to take?
+Use proven frameworks like AIDA, PAS, or Before/After/Bridge. Explain why each element works.
+Suggest testing variations and measurement strategies.`;
+    } else {
+      systemMessage += `
+
+For general marketing guidance:
+- Think strategically about the user's business goals and customer journey
+- Apply proven marketing principles and frameworks
+- Challenge assumptions and suggest better approaches
+- Provide educational context for every recommendation
+
+Always ask clarifying questions to understand the full context.
+Explain your reasoning and reference proven marketing principles.
+Coach the user to think more strategically about their marketing.`;
     }
 
     // Add memory context if available - with try/catch for safety
     let hasMemories = false;
     if (memories && memories.length > 0) {
       try {
-        systemMessage += "\n\nHere are some relevant memories from previous conversations that might help with your response:";
+        systemMessage += "\n\nHere are some relevant insights from previous conversations that might help with your response:";
         
         // Format memories in a helpful way
         memories.forEach((memory, index) => {
-          systemMessage += `\n\nMemory ${index + 1}: ${memory.content}`;
+          systemMessage += `\n\nPrevious Insight ${index + 1}: ${memory.content}`;
         });
         
-        systemMessage += "\n\nUse these memories when they're relevant to the user's query, but don't mention that you're using 'memories' in your response.";
+        systemMessage += "\n\nUse these insights when they're relevant to the user's query, but don't mention that you're using 'previous insights' in your response.";
         hasMemories = true;
       } catch (memoryError) {
         console.error("Error processing memories:", memoryError);

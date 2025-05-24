@@ -10,11 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, Shield } from "lucide-react";
+import { User, LogOut, Settings, Shield, Info } from "lucide-react";
+import { RoleService } from "@/services/RoleService";
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
   const { isMasterAdmin } = useRole();
+
+  const handleGetUserId = async () => {
+    await RoleService.printCurrentUserId();
+  };
 
   if (!user) {
     return (
@@ -47,6 +52,11 @@ export function UserMenu() {
             <Settings className="mr-2 h-4 w-4" />
             <span>Dashboard</span>
           </Link>
+        </DropdownMenuItem>
+        {/* TEMPORARY: Remove after setup */}
+        <DropdownMenuItem onClick={handleGetUserId} className="flex items-center cursor-pointer text-blue-600">
+          <Info className="mr-2 h-4 w-4" />
+          <span>Get User ID (Temp)</span>
         </DropdownMenuItem>
         {isMasterAdmin && (
           <DropdownMenuItem asChild>

@@ -109,4 +109,27 @@ export class RoleService {
       return null;
     }
   }
+
+  /**
+   * TEMPORARY: Print current user ID to console for setup
+   * Use this to get your user ID, then manually assign master_admin role in Supabase
+   * After setup, you can remove this function
+   */
+  public static async printCurrentUserId(): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        console.log("=== TEMPORARY USER ID HELPER ===");
+        console.log("Your User ID:", user.id);
+        console.log("Your Email:", user.email);
+        console.log("Run this SQL in Supabase to make yourself master admin:");
+        console.log(`INSERT INTO public.user_roles (user_id, role) VALUES ('${user.id}', 'master_admin');`);
+        console.log("=== END HELPER ===");
+      } else {
+        console.log("No user logged in");
+      }
+    } catch (error) {
+      console.error("Exception in printCurrentUserId:", error);
+    }
+  }
 }

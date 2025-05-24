@@ -40,9 +40,9 @@ const Index = () => {
   
   const pricingPlans = [
     {
-      name: "Lifetime Access",
-      price: "$79",
-      description: "One-time payment, lifetime access",
+      name: "Monthly Plan",
+      price: "$20",
+      description: "Save time by never prompting again.",
       features: [
         "Unlimited extractions",
         "Full content preservation",

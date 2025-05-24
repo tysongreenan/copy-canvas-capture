@@ -178,7 +178,23 @@ export class GlobalKnowledgeService {
         return [];
       }
 
-      return data || [];
+      // Transform the database result to match our interface
+      const transformedData: GlobalKnowledge[] = (data || []).map(item => ({
+        id: item.id,
+        content: item.content,
+        title: item.title,
+        source: item.source,
+        content_type: item.content_type,
+        marketing_domain: item.marketing_domain,
+        complexity_level: item.complexity_level,
+        tags: Array.isArray(item.tags) ? item.tags as string[] : [],
+        metadata: item.metadata,
+        quality_score: item.quality_score,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      return transformedData;
     } catch (error) {
       console.error("Exception in searchKnowledge:", error);
       return [];

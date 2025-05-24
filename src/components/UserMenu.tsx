@@ -1,5 +1,6 @@
 
 import { useAuth } from "@/context/AuthContext";
+import { useRole } from "@/hooks/use-role";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
@@ -9,10 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings, Shield } from "lucide-react";
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
+  const { isMasterAdmin } = useRole();
 
   if (!user) {
     return (
@@ -46,12 +48,20 @@ export function UserMenu() {
             <span>Dashboard</span>
           </Link>
         </DropdownMenuItem>
+        {isMasterAdmin && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin/knowledge" className="flex items-center cursor-pointer">
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Admin Panel</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()} className="flex items-center cursor-pointer text-red-500">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+        </Link>
+      </DropdownMenuItem>
     </DropdownMenu>
   );
 }

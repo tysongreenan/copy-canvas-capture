@@ -12,6 +12,7 @@ import Project from "./pages/Project";
 import Sitemap from "./pages/Sitemap";
 import ScrapCopy from "./pages/ScrapCopy";
 import BrandingDetails from "./pages/BrandingDetails";
+import AdminKnowledge from "./pages/AdminKnowledge";
 import { ChatDemo } from "./components/chat/ChatDemo";
 import ProjectWizard from "./pages/ProjectWizard";
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/scrapcopy" element={<ScrapCopy />} />
               <Route path="/chat" element={<ChatDemo />} />
               <Route path="/chat/:id" element={<ChatDemo />} />
+              <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               {/* Redirect /dashboard to /chat */}
               <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
               <Route path="*" element={<NotFound />} />

@@ -8,17 +8,20 @@
   
   /* Update App styles */
   #root {
-    max-width: 1280px;
-    margin: 0 auto;
+    margin: 0;
     padding: 0;
     text-align: center;
     width: 100%;
+    max-width: none;
   }
 
   /* Full height layout for dark mode */
   html, body {
     @apply min-h-screen w-full;
     height: 100%;
+    margin: 0;
+    padding: 0;
+    max-width: none;
   }
 
   /* Make dark mode background fill the screen */

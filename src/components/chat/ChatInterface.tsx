@@ -16,11 +16,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+
 interface ChatInterfaceProps {
   projectId: string;
   conversationId?: string;
   onConversationCreated: (id: string) => void;
 }
+
 export function ChatInterface({
   projectId,
   conversationId,
@@ -260,18 +262,21 @@ export function ChatInterface({
             </div>
           </ScrollArea>
         </div>
-        {/* Input pinned at bottom */}
-        <div className="w-full border-t border-white/10 bg-black/20 backdrop-blur-sm z-10">
-          <div className="p-4 bg-white min-h-[64px] max-h-[30vh] overflow-auto">
-            <AIChatInput 
-              value={inputValue} 
-              onChange={setInputValue} 
-              onSend={handleSend} 
-              isLoading={isLoading} 
-              placeholder={getPlaceholderText(taskType)} 
-              thinkActive={thinkActive} 
-              onThinkToggle={handleThinkToggle} 
-            />
+        
+        {/* Input pinned at bottom with Lovable-style design */}
+        <div className="w-full border-t border-gray-200 bg-white shadow-sm">
+          <div className="flex justify-center w-full">
+            <div className="w-full max-w-4xl px-6 py-4">
+              <AIChatInput 
+                value={inputValue} 
+                onChange={setInputValue} 
+                onSend={handleSend} 
+                isLoading={isLoading} 
+                placeholder={getPlaceholderText(taskType)} 
+                thinkActive={thinkActive} 
+                onThinkToggle={handleThinkToggle} 
+              />
+            </div>
           </div>
         </div>
       </div>

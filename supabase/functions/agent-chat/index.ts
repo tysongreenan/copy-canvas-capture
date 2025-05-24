@@ -1,5 +1,7 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -34,6 +36,16 @@ serve(async (req) => {
 
     console.log(`Processing message for thread ${threadId}, project ${projectId}, task type ${taskType}`);
     console.log(`Using prompt chain: ${usePromptChain}, Max iterations: ${maxIterations}, Quality threshold: ${qualityThreshold}`);
+    
+    // Initialize Supabase client for RAG search
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("Missing Supabase configuration - RAG functionality will be disabled");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Base system message with the new persona
     let systemMessage = `You are a senior marketing strategist and direct response copy chief. Your job is to not only complete the user's requests for marketing content, but to also teach, coach, and improve the user's marketing skills.
@@ -116,6 +128,74 @@ Explain your reasoning and reference proven marketing principles.
 Coach the user to think more strategically about their marketing.`;
     }
 
+    // RAG: Search for relevant documents if projectId is provided
+    let relevantContexts = "";
+    let hasRAGResults = false;
+    
+    if (projectId && supabaseUrl && supabaseKey) {
+      try {
+        console.log(`Performing RAG search for project: ${projectId}`);
+        
+        // Generate embedding for the query
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: message,
+            model: 'text-embedding-3-small',
+          }),
+        });
+
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json();
+          const embedding = embeddingData.data[0].embedding;
+
+          // Use a lower similarity threshold for better fuzzy matching
+          const similarityThreshold = 0.2;
+          
+          // Prepare parameters for the match_documents function
+          const matchParams: any = {
+            query_embedding: embedding,
+            match_threshold: similarityThreshold,
+            match_count: 10,
+            p_project_id: projectId
+          };
+          
+          // Add content type filter if provided
+          if (contentTypeFilter) {
+            matchParams.content_type = contentTypeFilter;
+          }
+          
+          // Perform vector similarity search
+          const { data: similarDocs, error } = await supabase.rpc(
+            'match_documents',
+            matchParams
+          );
+
+          if (!error && similarDocs && similarDocs.length > 0) {
+            // Format documents for assistant input
+            relevantContexts = "Relevant context from your knowledge base:\n\n" + 
+              similarDocs.map((doc: any, index: number) => 
+                `Document ${index + 1}:\n${doc.content}\nSource: ${doc.metadata?.source || 'Unknown'}\nType: ${doc.metadata?.type || 'Unknown'}`
+              ).join("\n\n");
+            
+            console.log(`Found ${similarDocs.length} relevant documents from knowledge base${contentTypeFilter ? ` with type '${contentTypeFilter}'` : ''}`);
+            hasRAGResults = true;
+          } else {
+            console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
+          }
+        } else {
+          console.error("Failed to generate embedding for RAG search");
+        }
+      } catch (ragError) {
+        console.error("Error during RAG search:", ragError);
+        // Continue without RAG if there's an error
+      }
+    }
+
     // Add memory context if available - with try/catch for safety
     let hasMemories = false;
     if (memories && memories.length > 0) {
@@ -140,6 +220,13 @@ Coach the user to think more strategically about their marketing.`;
       systemMessage += `\n\nFocus your responses specifically on content related to: ${contentTypeFilter}`;
     }
 
+    // Add context about RAG results
+    if (projectId && !hasRAGResults) {
+      systemMessage += contentTypeFilter 
+        ? `\n\nNote: I couldn't find any relevant information in the '${contentTypeFilter}' content type for your query. I can search across all content types instead, or you can try a different question. When using general knowledge, I'll make it clear that I'm not drawing from your specific documents.`
+        : `\n\nNote: When answering, I'll use both general marketing knowledge and any specific context from your knowledge base. If no specific context is available, I'll use general marketing insights and suggest what kind of information you might want to add to your knowledge base for more specific answers.`;
+    }
+
     // Generate initial response with OpenAI
     const generateResponse = async (
       systemPrompt: string, 
@@ -156,6 +243,11 @@ Coach the user to think more strategically about their marketing.`;
         enhancedSystemPrompt += "\n\nPlease provide a new response that addresses these issues while answering the original query.";
       }
 
+      // Add relevant context to the user message if available
+      const userMessageWithContext = relevantContexts 
+        ? `${userMessage}\n\n${relevantContexts}` 
+        : userMessage;
+
       if (enableMultiStepReasoning) {
         return await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -167,7 +259,7 @@ Coach the user to think more strategically about their marketing.`;
             model: modelName,
             messages: [
               { role: "system", content: enhancedSystemPrompt },
-              { role: "user", content: userMessage }
+              { role: "user", content: userMessageWithContext }
             ],
             temperature: temperature,
             max_tokens: maxTokens,
@@ -230,7 +322,7 @@ Coach the user to think more strategically about their marketing.`;
             model: modelName,
             messages: [
               { role: "system", content: enhancedSystemPrompt },
-              { role: "user", content: userMessage }
+              { role: "user", content: userMessageWithContext }
             ],
             temperature: temperature,
             max_tokens: maxTokens
@@ -388,7 +480,8 @@ Coach the user to think more strategically about their marketing.`;
     const result: any = {
       message: finalResponse || currentResponse,
       threadId: threadId || crypto.randomUUID(),
-      contentTypeFilter: contentTypeFilter
+      contentTypeFilter: contentTypeFilter,
+      hasRAGResults: hasRAGResults // Include info about whether RAG was used
     };
     
     // Add additional information if we used reasoning

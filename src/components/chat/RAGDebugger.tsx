@@ -87,7 +87,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Set embedding info as string
+      // Set embedding info as string - fix the type error
       setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`);
 
       // Try different thresholds

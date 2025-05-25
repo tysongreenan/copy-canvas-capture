@@ -16,6 +16,7 @@ serve(async (req) => {
 
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIApiKey) {
+    console.error("OpenAI API key not configured");
     return new Response(
       JSON.stringify({ error: 'OpenAI API key not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -23,28 +24,40 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, assistantId, projectId, useFineTunedModel, contentTypeFilter, history, memories } = await req.json();
-
-    // --- START DEBUG LOGS ---
-    console.log("--- AGENT CHAT DEBUG ---");
-    console.log("Received message:", message);
-    console.log("Received projectId:", projectId);
-    console.log("Received threadId:", threadId);
-    console.log("Received contentTypeFilter:", contentTypeFilter);
-    console.log("Received history:", JSON.stringify(history));
-    console.log("Received memories:", JSON.stringify(memories));
-    // --- END DEBUG LOGS ---
+    console.log("=== AGENT CHAT FUNCTION START ===");
+    
+    const requestBody = await req.json();
+    console.log("Request body received:", JSON.stringify(requestBody, null, 2));
+    
+    const { 
+      message, 
+      threadId, 
+      assistantId, 
+      projectId, 
+      taskType = 'general',
+      modelName = 'gpt-4o-mini',
+      temperature = 0.7,
+      maxTokens = 1500,
+      memories = [],
+      usePromptChain = true,
+      qualityThreshold = 90,
+      maxIterations = 3,
+      minQualityScore = 60,
+      enableMultiStepReasoning = false
+    } = requestBody;
 
     if (!message || !assistantId) {
+      console.error("Missing required fields: message or assistantId");
       return new Response(
         JSON.stringify({ error: 'Message and assistantId are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing message: "${message}" with assistant ${assistantId}`);
-    console.log(`Using fine-tuned model: ${useFineTunedModel ? 'Yes' : 'No'}`);
-    console.log(`Content type filter: ${contentTypeFilter || 'None'}`);
+    console.log(`Processing message: "${message}"`);
+    console.log(`Assistant ID: ${assistantId}`);
+    console.log(`Project ID: ${projectId}`);
+    console.log(`Task Type: ${taskType}`);
 
     let activeThreadId = threadId;
     
@@ -53,6 +66,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
     if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase configuration");
       throw new Error("Missing Supabase configuration");
     }
     
@@ -60,6 +74,7 @@ serve(async (req) => {
     
     // If no thread ID is provided, create a new thread
     if (!activeThreadId) {
+      console.log("Creating new thread...");
       const threadResponse = await fetch('https://api.openai.com/v1/threads', {
         method: 'POST',
         headers: {
@@ -72,6 +87,7 @@ serve(async (req) => {
 
       if (!threadResponse.ok) {
         const error = await threadResponse.json();
+        console.error("Failed to create thread:", error);
         throw new Error(error.error?.message || 'Failed to create thread');
       }
 
@@ -80,13 +96,14 @@ serve(async (req) => {
       console.log(`Created new thread with ID: ${activeThreadId}`);
     }
 
-    // If projectId is provided, search for relevant documents in our RAG system
+    // RAG search functionality
     let relevantContexts = "";
-    let hasRAGResults = false;
     let ragSources = [];
     
     if (projectId) {
       try {
+        console.log("Starting RAG search...");
+        
         // Generate embedding for the query
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
           method: 'POST',
@@ -103,35 +120,27 @@ serve(async (req) => {
         if (embeddingResponse.ok) {
           const embeddingData = await embeddingResponse.json();
           const embedding = embeddingData.data[0].embedding;
+          console.log(`Generated embedding with ${embedding.length} dimensions`);
 
-          // Use a lower similarity threshold for better fuzzy matching
-          const similarityThreshold = 0.2;
-          
-          // Prepare parameters for the match_documents_multilevel function
-          const matchParams: any = {
-            query_embedding: embedding,
-            match_threshold: similarityThreshold,
-            match_count: 10,
-            p_project_id: projectId
-          };
-          
-          // Add content type filter if provided
-          if (contentTypeFilter) {
-            matchParams.p_content_type = contentTypeFilter;
-          }
-
-          // --- START DEBUG LOGS ---
-          console.log("Match documents parameters:", JSON.stringify(matchParams));
-          // --- END DEBUG LOGS ---
-
-          // Perform vector similarity search with optional content type filter
+          // Search for similar documents
           const { data: similarDocs, error } = await supabase.rpc(
             'match_documents_quality_weighted',
-            matchParams
+            {
+              query_embedding: embedding,
+              match_threshold: 0.2,
+              match_count: 10,
+              p_project_id: projectId,
+              p_content_type: null,
+              include_global: true,
+              p_marketing_domain: null,
+              p_complexity_level: null,
+              p_min_quality_score: minQualityScore
+            }
           );
 
           if (!error && similarDocs && similarDocs.length > 0) {
-            // Separate project and global results
+            console.log(`Found ${similarDocs.length} relevant documents`);
+            
             const projectResults = similarDocs.filter(doc => doc.source_type === 'project');
             const globalResults = similarDocs.filter(doc => doc.source_type === 'global');
             
@@ -141,7 +150,7 @@ serve(async (req) => {
               contextSections.push(
                 "=== YOUR PROJECT CONTENT ===\n" + 
                 projectResults.map((doc, index) => 
-                  `Project Content ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\n${doc.content}\n`
+                  `Project Content ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%):\n${doc.content}\n`
                 ).join("\n")
               );
             }
@@ -149,30 +158,24 @@ serve(async (req) => {
             if (globalResults.length > 0) {
               contextSections.push(
                 "=== MARKETING KNOWLEDGE BASE ===\n" + 
-                globalResults.map((doc, index) => {
-                  const metadata = doc.metadata || {};
-                  return `Marketing Principle ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
-                }).join("\n")
+                globalResults.map((doc, index) => 
+                  `Marketing Principle ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%):\n${doc.content}\n`
+                ).join("\n")
               );
-              
-              // Track sources for attribution
-              ragSources = similarDocs.map(doc => ({
-                source: doc.source_info,
-                content: doc.content.substring(0, 200) + '...',
-                similarity: doc.similarity,
-                quality_score: doc.quality_score,
-                weighted_score: doc.weighted_score,
-                metadata: doc.metadata,
-                contentType: doc.metadata?.type || doc.content_type || 'Unknown'
-              }));
             }
             
             relevantContexts = contextSections.join("\n");
-            
-            console.log(`Found ${projectResults.length} project documents and ${globalResults.length} marketing principles`);
-            hasRAGResults = true;
+            ragSources = similarDocs.map(doc => ({
+              id: doc.id,
+              content: doc.content.substring(0, 200) + '...',
+              similarity: doc.similarity,
+              quality_score: doc.quality_score,
+              weighted_score: doc.weighted_score,
+              source_type: doc.source_type,
+              source_info: doc.source_info
+            }));
           } else {
-            console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
+            console.log("No relevant documents found");
           }
         } else {
           console.error("Failed to generate embedding for RAG search");
@@ -184,119 +187,52 @@ serve(async (req) => {
     }
 
     // Add memory context if available
-    let hasMemories = false;
     if (memories && memories.length > 0) {
-      try {
-        relevantContexts += "\n\n=== CONVERSATION CONTEXT ===\nRelevant insights from previous conversations:";
-        
-        memories.forEach((memory, index) => {
-          relevantContexts += `\n\nInsight ${index + 1}: ${memory.content}`;
-        });
-        
-        relevantContexts += "\n\nUse these insights when relevant, building on previous context.";
-        hasMemories = true;
-      } catch (memoryError) {
-        console.error("Error processing memories:", memoryError);
-      }
+      console.log(`Adding ${memories.length} memories to context`);
+      relevantContexts += "\n\n=== CONVERSATION CONTEXT ===\nRelevant insights from previous conversations:\n";
+      memories.forEach((memory, index) => {
+        relevantContexts += `\nInsight ${index + 1}: ${memory.content}`;
+      });
     }
 
-    // Create a system message with instructions for handling no-context situations
-    let systemPrompt = "";
-    
-    // Updated system prompt logic
-    if (projectId && !hasRAGResults) {
-      systemPrompt = contentTypeFilter 
-        ? `You are an AI assistant specializing in marketing research and strategy.
-IMPORTANT INSTRUCTIONS:
-1. I couldn't find any relevant information in the '${contentTypeFilter}' content type for your query within the provided project content.
-2. If you'd like, I can search across all content types instead, or you can try a different question.
-3. When using general knowledge, make it clear to the user that you're not drawing from their specific documents.
-4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
-`
-        : `You are an AI assistant specializing in marketing research and strategy.
-When answering, consider both general marketing knowledge and any specific context provided.
-IMPORTANT INSTRUCTIONS:
-1. If no relevant context is provided from the knowledge base, use your general marketing knowledge to give a helpful response.
-2. When using general knowledge, make it clear to the user that you're not drawing from their specific documents.
-3. Never say that you couldn't find information or refuse to answer. Instead, provide general marketing insights that might be helpful.
-4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
-`;
-    } else if (!projectId) {
-      systemPrompt = `You are a helpful AI assistant specializing in general marketing knowledge.
-IMPORTANT INSTRUCTIONS:
-1. Answer questions based on your general marketing knowledge.
-2. Clearly state that you are providing general marketing insights.
-3. If a question seems to imply specific project context, gently guide the user to either provide a project ID or clarify that you are drawing on general knowledge.
-`;
-    } else {
-      systemPrompt = `You are a senior marketing strategist and direct response copy chief with access to a comprehensive knowledge base of proven marketing principles, frameworks, and examples from industry legends like Claude Hopkins, David Ogilvy, Eugene Schwartz, and modern experts.
-Your expertise spans:
-- Classic direct response principles and scientific advertising methods
-- Modern conversion optimization and growth marketing
-- Copywriting frameworks (AIDA, PAS, Before/After/Bridge, StoryBrand, JTBD)
-- Brand strategy, positioning, and messaging
-- Email marketing, social media, and content strategy
-- Psychological triggers and persuasion techniques
+    // Create system prompt
+    const systemPrompt = `You are a senior marketing strategist and direct response copy chief with access to a comprehensive knowledge base of proven marketing principles, frameworks, and examples from industry legends like Claude Hopkins, David Ogilvy, Eugene Schwartz, and modern experts.
 
 Always:
 - Reference specific marketing principles and frameworks from the provided context when relevant
-- Cite authoritative sources (Hopkins, Ogilvy, etc.) to back up recommendations from context
-- Ask clarifying questions to understand their goal, target customer, and offer IF THE CONTEXT IS INSUFFICIENT
-- Explain your reasoning using proven marketing frameworks from context
 - Provide concrete examples and actionable advice from context
-- Challenge unclear requests and suggest better approaches IF THE CONTEXT IS INSUFFICIENT
-- Teach marketing principles while solving immediate problems
-- Prioritize information from "YOUR PROJECT CONTENT" over "MARKETING KNOWLEDGE BASE" if both are provided.
+- Prioritize information from "YOUR PROJECT CONTENT" over "MARKETING KNOWLEDGE BASE" if both are provided
+- When using general knowledge, make it clear you're not drawing from their specific documents
 
-When giving advice, blend:
-- Timeless marketing principles from your knowledge base context
-- Project-specific insights from their content context
-- Modern best practices and testing approaches
-- Specific examples and case studies from context
+Your goal: Transform every user into a more strategic marketer while delivering exceptional results.`;
 
-Your goal: Transform every user into a more strategic marketer while delivering exceptional results.
-`;
-    }
-
-    // Add the user's message to the thread, along with relevant context if available
+    // Add the user's message to the thread
     const userMessageContent = relevantContexts 
       ? `${message}\n\n${relevantContexts}` 
       : message;
-      
-    const messages = [];
 
-    // Add the dynamic system prompt as the first message
-    messages.push({
-      role: "system",
-      content: systemPrompt
+    console.log("Adding user message to thread...");
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: userMessageContent
+      })
     });
 
-    // Add conversation history if available
-    if (history && history.length > 0) {
-      const cleanedHistory = history.filter(msg => !msg.content.startsWith('[System Note:') && msg.role !== 'system');
-      messages.push(...cleanedHistory);
+    if (!messageResponse.ok) {
+      const error = await messageResponse.json();
+      console.error("Failed to add message to thread:", error);
+      throw new Error(error.error?.message || 'Failed to add message to thread');
     }
-    
-    // Add the user's current query
-    messages.push({
-      role: "user",
-      content: userMessageContent
-    });
 
-    // --- START DEBUG LOGS ---
-    console.log("Final messages array sent to OpenAI:", JSON.stringify(messages));
-    // --- END DEBUG LOGS ---
-
-    // Run the assistant on the thread with the specified model override
-    const runPayload: any = {
-      assistant_id: assistantId
-    };
-    
-    // Override the model with the fine-tuned model if requested
-    if (useFineTunedModel) {
-      runPayload.model = "ft:gpt-4o-mini-2024-07-18:personal::AzyZoigT";
-    }
-    
+    // Run the assistant
+    console.log("Starting assistant run...");
     const runResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/runs`, {
       method: 'POST',
       headers: {
@@ -304,21 +240,28 @@ Your goal: Transform every user into a more strategic marketer while delivering 
         'Content-Type': 'application/json',
         'OpenAI-Beta': 'assistants=v2'
       },
-      body: JSON.stringify(runPayload)
+      body: JSON.stringify({
+        assistant_id: assistantId,
+        model: modelName,
+        temperature: temperature,
+        max_tokens: maxTokens
+      })
     });
 
     if (!runResponse.ok) {
       const error = await runResponse.json();
+      console.error("Failed to run assistant:", error);
       throw new Error(error.error?.message || 'Failed to run assistant');
     }
 
     const runData = await runResponse.json();
     const runId = runData.id;
+    console.log(`Started run with ID: ${runId}`);
 
-    // Poll for the run to complete
+    // Poll for the run to complete with timeout
     let runStatus = runData.status;
     let attempts = 0;
-    const maxAttempts = 60;
+    const maxAttempts = 30; // Reduced from 60 to 30 seconds max
     
     while (runStatus !== 'completed' && runStatus !== 'failed' && runStatus !== 'expired' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -333,6 +276,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
 
       if (!runCheckResponse.ok) {
         const error = await runCheckResponse.json();
+        console.error("Failed to check run status:", error);
         throw new Error(error.error?.message || 'Failed to check run status');
       }
 
@@ -344,10 +288,12 @@ Your goal: Transform every user into a more strategic marketer while delivering 
     }
 
     if (runStatus !== 'completed') {
+      console.error(`Run did not complete successfully. Status: ${runStatus} after ${attempts} attempts`);
       throw new Error(`Run did not complete successfully. Status: ${runStatus}`);
     }
 
     // Get the assistant's response
+    console.log("Fetching assistant response...");
     const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -358,6 +304,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
 
     if (!messagesResponse.ok) {
       const error = await messagesResponse.json();
+      console.error("Failed to get messages:", error);
       throw new Error(error.error?.message || 'Failed to get messages');
     }
 
@@ -365,6 +312,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
     const assistantMessage = messagesData.data.find(msg => msg.role === 'assistant');
 
     if (!assistantMessage) {
+      console.error("No assistant message found in response");
       throw new Error('No assistant message found');
     }
 
@@ -378,20 +326,34 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       });
     }
 
+    console.log("Assistant response extracted successfully");
+
     // Return the response with metadata
+    const response = {
+      message: responseContent,
+      threadId: activeThreadId,
+      sources: ragSources,
+      reasoning: [],
+      confidence: undefined,
+      evaluation: undefined
+    };
+
+    console.log("=== AGENT CHAT FUNCTION SUCCESS ===");
     return new Response(
-      JSON.stringify({ 
-        message: responseContent, 
-        threadId: activeThreadId,
-        contentTypeFilter: contentTypeFilter || null 
-      }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in assistant-chat function:', error);
+    console.error('=== AGENT CHAT FUNCTION ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        details: 'Check function logs for more information'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

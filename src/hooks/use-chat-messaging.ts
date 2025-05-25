@@ -37,7 +37,7 @@ export function useChatMessaging({
   const [reasoning, setReasoning] = useState<AgentStep[]>([]);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
-  const [useMemory, setUseMemory] = useState(true);
+  const [useMemory, setUseMemory] = useState(false); // Temporarily disabled
   const [usePromptChain, setUsePromptChain] = useState(true);
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
@@ -75,13 +75,19 @@ export function useChatMessaging({
       
       // Save the message to the database if we have a conversation ID
       if (conversationId) {
-        await saveMessageToDatabase(userMessage);
+        try {
+          await saveMessageToDatabase(userMessage);
+        } catch (error) {
+          console.error("Error saving user message:", error);
+        }
       }
       
       try {
         // Check authentication status
         const { data: { user } } = await supabase.auth.getUser();
         const isAuthenticated = !!user;
+        
+        console.log(`Authentication status: ${isAuthenticated ? 'authenticated' : 'not authenticated'}`);
         
         // Determine appropriate settings based on task type
         let temperature = 0.7;
@@ -109,11 +115,7 @@ export function useChatMessaging({
           taskMinQuality = Math.max(minQualityScore, 75);
         }
         
-        // When Think mode is active, disable memory to avoid vector search errors
-        // Also disable memory if user is not authenticated to prevent database errors
-        const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
-        
-        console.log(`Memory settings: useMemory=${useMemory}, isAuthenticated=${isAuthenticated}, thinkActive=${thinkActive}, shouldUseMemory=${shouldUseMemory}`);
+        console.log(`Task settings: type=${detectedTaskType}, model=${modelName}, temp=${temperature}`);
         
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
@@ -125,7 +127,7 @@ export function useChatMessaging({
             temperature: temperature,
             maxTokens: maxTokens,
             modelName: modelName,
-            useMemory: shouldUseMemory,
+            useMemory: false, // Temporarily disabled to prevent vector errors
             usePromptChain: usePromptChain || thinkActive,
             qualityThreshold: qualityThreshold,
             maxIterations: maxIterations,
@@ -133,6 +135,8 @@ export function useChatMessaging({
             enableMultiStepReasoning: thinkActive
           }
         );
+        
+        console.log("Agent response received:", response);
         
         // Save the thread ID for future messages
         if (response.threadId) {
@@ -175,20 +179,36 @@ export function useChatMessaging({
         
         // Save the assistant message to the database if we have a conversation ID
         if (conversationId) {
-          await saveMessageToDatabase(assistantMessage);
+          try {
+            await saveMessageToDatabase(assistantMessage);
+          } catch (error) {
+            console.error("Error saving assistant message:", error);
+          }
         }
         
         // If this is a new conversation, call the callback with a new conversation ID
-        if (!conversationId) {
+        if (!conversationId && response.threadId) {
           onConversationCreated(response.threadId);
         }
+        
       } catch (error) {
         console.error("Error sending message:", error);
         toast({
           title: "Error",
-          description: "Failed to send message. Please try again.",
+          description: `Failed to send message: ${error.message}`,
           variant: "destructive"
         });
+        
+        // Create an error message to show in the chat
+        const errorMessage: ChatMessageType = {
+          id: crypto.randomUUID(),
+          conversation_id: conversationId || "",
+          role: 'assistant',
+          content: "I apologize, but I encountered an error processing your message. Please try again.",
+          created_at: new Date().toISOString()
+        };
+        addMessage(errorMessage);
+        
       } finally {
         setIsLoading(false);
       }

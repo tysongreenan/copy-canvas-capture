@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,7 +72,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const runDebugSearch = async () => {
     setIsLoading(true);
     setResults([]);
-    setEmbeddingInfo(''); // Reset embedding info
+    setEmbeddingInfo('');
     
     try {
       // Generate embedding
@@ -87,8 +86,9 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Set embedding info as string - fix the type error
-      setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`);
+      // Set embedding info as string - convert array to descriptive string
+      const embeddingDescription = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
+      setEmbeddingInfo(embeddingDescription);
 
       // Try different thresholds
       const thresholds = [0.3, 0.2, 0.1, 0.05];

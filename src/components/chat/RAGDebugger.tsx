@@ -16,7 +16,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const [query, setQuery] = useState('the junction');
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [embedding, setEmbedding] = useState<number[]>([]);
+  const [embeddingInfo, setEmbeddingInfo] = useState<string>('');
   const { toast } = useToast();
 
   const generateEmbedding = async (text: string) => {
@@ -86,7 +86,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      setEmbedding(queryEmbedding);
+      setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`);
 
       // Try different thresholds
       const thresholds = [0.3, 0.2, 0.1, 0.05];
@@ -142,14 +142,14 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
           </Button>
         </div>
 
-        {embedding.length > 0 && (
+        {embeddingInfo && (
           <div>
             <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
               <Zap size={16} />
               Embedding Info
             </h4>
             <p className="text-xs text-gray-600">
-              Dimensions: {embedding.length} | First 5 values: [{embedding.slice(0, 5).map(v => v.toFixed(4)).join(', ')}...]
+              {embeddingInfo}
             </p>
           </div>
         )}

@@ -153,6 +153,7 @@ export class AgentService {
         body: {
           message,
           threadId,
+          assistantId: "asst_hLaKt8VKignxoY0V0NyZxGWO", // Add the required assistantId
           projectId,
           taskType: finalOptions.taskType,
           contentTypeFilter: finalOptions.contentTypeFilter,

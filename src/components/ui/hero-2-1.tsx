@@ -103,13 +103,8 @@ const Hero2 = () => {
         {/* Hero section */}
         <div className="w-full px-4 mt-12">
           <div className="container mx-auto text-center max-w-7xl">
-            <h1 className="mx-auto max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight text-white uppercase tracking-tight">
-              Extract Website Content Like a Pro
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-gray-300 px-4">
-              Beggor fetches clean, formatted content from any website instantly. 
-              Perfect for copywriters, marketers, and developers who need content fast.
-            </p>
+            <h1 className="mx-auto max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight text-white uppercase tracking-tight">Context-Aware Marketing Copy. No Prompts Needed.</h1>
+            <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-gray-300 px-4">Tired of endlessly prompting AI? Beggor AI Studio understands your business, prospects, and leads to generate brilliant, on-brand marketing copy that simply gets it. Focus on strategy, not repetition, and transform your content creation workflow.</p>
             <div className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0 px-4">
               <Link to="/auth">
                 <button className="w-full sm:w-auto h-12 rounded-full bg-tan px-8 text-base font-medium text-charcoal hover:bg-tan/90">

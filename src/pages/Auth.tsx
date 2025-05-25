@@ -1,82 +1,72 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const {
+    signIn,
+    signUp,
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  
+
   // Redirect if already logged in - fix: moved this after hooks declaration
   if (user) {
-    navigate("/chat");  // Changed from "/" to "/chat" to redirect to chat
+    navigate("/chat"); // Changed from "/" to "/chat" to redirect to chat
     return null;
   }
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast({
         title: "Missing fields",
         description: "Please enter both email and password",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate("/chat");  // Changed from "/" to "/chat"
+      navigate("/chat"); // Changed from "/" to "/chat"
     } catch (error) {
       console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
   };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast({
         title: "Missing fields",
         description: "Please enter both email and password",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     if (password.length < 6) {
       toast({
         title: "Weak password",
         description: "Password must be at least 6 characters long",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     setLoading(true);
     try {
       await signUp(email, password);
       toast({
         title: "Account created",
-        description: "Please check your email to confirm your registration",
+        description: "Please check your email to confirm your registration"
       });
     } catch (error) {
       console.error("Signup error:", error);
@@ -84,9 +74,7 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white relative">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-100 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-primary rounded-full opacity-10 blur-3xl"></div>
@@ -96,7 +84,7 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">CopyScraper</h1>
+            <h1 className="text-3xl font-bold mb-2">BEGGOR AI STUDIO</h1>
             <p className="text-gray-500">Login or create an account to save your scraped content</p>
           </div>
           
@@ -118,25 +106,11 @@ const Auth = () => {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
+                      <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                      <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -158,25 +132,11 @@ const Auth = () => {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="new-email">Email</Label>
-                      <Input
-                        id="new-email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
+                      <Input id="new-email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="new-password">Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                      <Input id="new-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                       <p className="text-xs text-gray-500">
                         Password must be at least 6 characters long
                       </p>
@@ -199,8 +159,6 @@ const Auth = () => {
           <p>CopyScraper • Designed for web professionals</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Auth;

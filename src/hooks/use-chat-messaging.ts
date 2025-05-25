@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
@@ -37,11 +36,11 @@ export function useChatMessaging({
   const [reasoning, setReasoning] = useState<AgentStep[]>([]);
   const [confidence, setConfidence] = useState<number | undefined>(undefined);
   const [taskType, setTaskType] = useState<AgentTaskType>('general');
-  const [useMemory, setUseMemory] = useState(false); // Temporarily disabled
+  const [useMemory, setUseMemory] = useState(true);
   const [usePromptChain, setUsePromptChain] = useState(true);
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
-  const [minQualityScore, setMinQualityScore] = useState(60);
+  const [minQualityScore, setMinQualityScore] = useState(60); // New state for minimum quality
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const [thinkActive, setThinkActive] = useState(false);
   const { toast } = useToast();
@@ -75,19 +74,13 @@ export function useChatMessaging({
       
       // Save the message to the database if we have a conversation ID
       if (conversationId) {
-        try {
-          await saveMessageToDatabase(userMessage);
-        } catch (error) {
-          console.error("Error saving user message:", error);
-        }
+        await saveMessageToDatabase(userMessage);
       }
       
       try {
         // Check authentication status
         const { data: { user } } = await supabase.auth.getUser();
         const isAuthenticated = !!user;
-        
-        console.log(`Authentication status: ${isAuthenticated ? 'authenticated' : 'not authenticated'}`);
         
         // Determine appropriate settings based on task type
         let temperature = 0.7;
@@ -115,7 +108,8 @@ export function useChatMessaging({
           taskMinQuality = Math.max(minQualityScore, 75);
         }
         
-        console.log(`Task settings: type=${detectedTaskType}, model=${modelName}, temp=${temperature}`);
+        // When Think mode is active, disable memory to avoid vector search errors
+        const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
         
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
@@ -127,16 +121,14 @@ export function useChatMessaging({
             temperature: temperature,
             maxTokens: maxTokens,
             modelName: modelName,
-            useMemory: false, // Temporarily disabled to prevent vector errors
+            useMemory: shouldUseMemory,
             usePromptChain: usePromptChain || thinkActive,
             qualityThreshold: qualityThreshold,
             maxIterations: maxIterations,
-            minQualityScore: taskMinQuality,
+            minQualityScore: taskMinQuality, // Pass the minimum quality score
             enableMultiStepReasoning: thinkActive
           }
         );
-        
-        console.log("Agent response received:", response);
         
         // Save the thread ID for future messages
         if (response.threadId) {
@@ -179,36 +171,21 @@ export function useChatMessaging({
         
         // Save the assistant message to the database if we have a conversation ID
         if (conversationId) {
-          try {
-            await saveMessageToDatabase(assistantMessage);
-          } catch (error) {
-            console.error("Error saving assistant message:", error);
-          }
+          await saveMessageToDatabase(assistantMessage);
         }
         
         // If this is a new conversation, call the callback with a new conversation ID
-        if (!conversationId && response.threadId) {
+        if (!conversationId) {
+          // Call the callback to create a new conversation with the thread ID
           onConversationCreated(response.threadId);
         }
-        
       } catch (error) {
         console.error("Error sending message:", error);
         toast({
           title: "Error",
-          description: `Failed to send message: ${error.message}`,
+          description: "Failed to send message. Please try again.",
           variant: "destructive"
         });
-        
-        // Create an error message to show in the chat
-        const errorMessage: ChatMessageType = {
-          id: crypto.randomUUID(),
-          conversation_id: conversationId || "",
-          role: 'assistant',
-          content: "I apologize, but I encountered an error processing your message. Please try again.",
-          created_at: new Date().toISOString()
-        };
-        addMessage(errorMessage);
-        
       } finally {
         setIsLoading(false);
       }
@@ -229,8 +206,8 @@ export function useChatMessaging({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
-    minQualityScore,
-    setMinQualityScore,
+    minQualityScore, // Export the new state
+    setMinQualityScore, // Export the setter
     evaluation,
     thinkActive,
     setThinkActive,

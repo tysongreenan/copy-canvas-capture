@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
 
@@ -89,11 +90,34 @@ serve(async (req) => {
           // Continue without embedding - we'll still store the content
         }
         
+        // Generate AI quality assessment
+        let qualityScore = 0.7; // Default baseline
+        let qualityAssessment = null;
+        
+        try {
+          console.log(`Assessing quality for chunk ${i + 1}...`);
+          const assessmentResponse = await supabase.functions.invoke("assess-content-quality", {
+            body: { 
+              content: chunk,
+              contentType,
+              marketingDomain
+            }
+          });
+          
+          if (assessmentResponse.data && !assessmentResponse.error) {
+            qualityAssessment = assessmentResponse.data;
+            qualityScore = qualityAssessment.overall_score;
+            console.log(`Quality assessment completed for chunk ${i + 1}:`, qualityScore);
+          } else {
+            console.warn(`Quality assessment failed for chunk ${i + 1}:`, assessmentResponse.error);
+          }
+        } catch (assessmentError) {
+          console.warn(`Quality assessment error for chunk ${i + 1}:`, assessmentError.message);
+          // Continue with baseline score
+        }
+        
         // Parse tags
         const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
-        
-        // Calculate baseline quality score
-        const baselineQuality = calculateBaselineQuality(chunk, fileName, fileType);
         
         // Insert the chunk into the global_knowledge table
         const insertData = {
@@ -104,7 +128,7 @@ serve(async (req) => {
           marketing_domain: marketingDomain || 'general-marketing',
           complexity_level: complexityLevel || 'beginner',
           tags: tagsArray,
-          quality_score: baselineQuality,
+          quality_score: qualityScore,
           metadata: {
             source_file: fileName,
             file_type: fileType,
@@ -114,7 +138,9 @@ serve(async (req) => {
             embedding_status: embedding ? 'success' : 'failed',
             embedding_error: embeddingError,
             content_length: chunk.length,
-            baseline_quality_factors: getQualityFactors(chunk, fileName, fileType)
+            quality_assessment: qualityAssessment,
+            assessment_date: qualityAssessment ? new Date().toISOString() : null,
+            ai_assessed: !!qualityAssessment
           },
         };
 
@@ -146,7 +172,7 @@ serve(async (req) => {
           status: 'success',
           id: data.id,
           has_embedding: !!embedding,
-          quality_score: baselineQuality
+          quality_score: qualityScore
         });
         
       } catch (chunkError) {

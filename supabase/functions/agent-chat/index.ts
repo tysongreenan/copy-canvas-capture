@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -30,11 +31,13 @@ serve(async (req) => {
       memories = [],
       usePromptChain = true,
       maxIterations = 3,
-      qualityThreshold = 90
+      qualityThreshold = 90,
+      minQualityScore = 60
     } = await req.json();
 
     console.log(`Processing message for thread ${threadId}, project ${projectId}, task type ${taskType}`);
     console.log(`Using prompt chain: ${usePromptChain}, Max iterations: ${maxIterations}, Quality threshold: ${qualityThreshold}`);
+    console.log(`Minimum quality score: ${minQualityScore}%`);
     
     // Initialize Supabase client for RAG search
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -88,14 +91,14 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       systemMessage += `\n\nFor this ${taskType} request: ${taskSpecificGuidance[taskType]}`;
     }
 
-    // Enhanced RAG: Search both project-specific and global knowledge
+    // Enhanced RAG: Search both project-specific and global knowledge using quality-weighted retrieval
     let relevantContexts = "";
     let hasRAGResults = false;
     let ragSources = [];
     
     if (supabaseUrl && supabaseKey) {
       try {
-        console.log(`Performing enhanced RAG search for project: ${projectId}`);
+        console.log(`Performing quality-weighted RAG search for project: ${projectId}`);
         
         // Generate embedding for the query
         const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
@@ -114,8 +117,8 @@ Your goal: Transform every user into a more strategic marketer while delivering 
           const embeddingData = await embeddingResponse.json();
           const embedding = embeddingData.data[0].embedding;
 
-          // Use enhanced multi-level search
-          const similarityThreshold = 0.15; // Lower threshold for better coverage
+          // Use quality-weighted search with improved parameters
+          const similarityThreshold = 0.1; // Lowered from 0.15 for better coverage
           
           // Determine marketing domain from task type
           const marketingDomainMap = {
@@ -129,9 +132,14 @@ Your goal: Transform every user into a more strategic marketer while delivering 
           
           const marketingDomain = marketingDomainMap[taskType] || null;
           
-          // Search using the new multi-level function
+          // Convert minQualityScore from 0-100 scale to 0-1 scale for database function
+          const minQualityScoreDecimal = minQualityScore / 100;
+          
+          console.log(`Using similarity threshold: ${similarityThreshold}, min quality score: ${minQualityScore}% (${minQualityScoreDecimal})`);
+          
+          // Search using the new quality-weighted function
           const { data: searchResults, error } = await supabase.rpc(
-            'match_documents_multilevel',
+            'match_documents_quality_weighted',
             {
               query_embedding: embedding,
               match_threshold: similarityThreshold,
@@ -140,14 +148,19 @@ Your goal: Transform every user into a more strategic marketer while delivering 
               content_type: contentTypeFilter,
               include_global: true,
               marketing_domain: marketingDomain,
-              complexity_level: null // Allow all complexity levels
+              complexity_level: null, // Allow all complexity levels
+              p_min_quality_score: minQualityScoreDecimal
             }
           );
 
           if (!error && searchResults && searchResults.length > 0) {
+            console.log(`Found ${searchResults.length} quality-weighted documents`);
+            
             // Separate project and global results
             const projectResults = searchResults.filter(doc => doc.source_type === 'project');
             const globalResults = searchResults.filter(doc => doc.source_type === 'global');
+            
+            console.log(`Project results: ${projectResults.length}, Global results: ${globalResults.length}`);
             
             let contextSections = [];
             
@@ -155,7 +168,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
               contextSections.push(
                 "=== YOUR PROJECT CONTENT ===\n" + 
                 projectResults.map((doc, index) => 
-                  `Project Content ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match):\n${doc.content}\n`
+                  `Project Content ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match, ${doc.quality_score.toFixed(0)}% quality, ${(doc.weighted_score * 100).toFixed(0)}% weighted):\n${doc.content}\n`
                 ).join("\n")
               );
             }
@@ -165,15 +178,20 @@ Your goal: Transform every user into a more strategic marketer while delivering 
                 "=== MARKETING KNOWLEDGE BASE ===\n" + 
                 globalResults.map((doc, index) => {
                   const metadata = doc.metadata || {};
-                  return `Marketing Principle ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
+                  return `Marketing Principle ${index + 1} (${(doc.similarity * 100).toFixed(1)}% match, ${doc.quality_score.toFixed(0)}% quality, ${(doc.weighted_score * 100).toFixed(0)}% weighted):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
                 }).join("\n")
               );
               
-              // Track sources for attribution
-              ragSources = globalResults.map(doc => ({
-                source: doc.source_info,
-                content_type: doc.metadata?.content_type,
-                marketing_domain: doc.metadata?.marketing_domain
+              // Track sources for attribution with quality information
+              ragSources = searchResults.map(doc => ({
+                id: doc.id,
+                content: doc.content,
+                metadata: doc.metadata,
+                similarity: doc.similarity,
+                quality_score: doc.quality_score,
+                weighted_score: doc.weighted_score,
+                source_type: doc.source_type,
+                source_info: doc.source_info
               }));
             }
             
@@ -182,13 +200,16 @@ Your goal: Transform every user into a more strategic marketer while delivering 
             console.log(`Found ${projectResults.length} project documents and ${globalResults.length} marketing principles`);
             hasRAGResults = true;
           } else {
-            console.log(`No relevant documents found with threshold ${similarityThreshold}`);
+            console.log(`No relevant documents found with threshold ${similarityThreshold} and min quality ${minQualityScore}%`);
+            if (error) {
+              console.error("RAG search error:", error);
+            }
           }
         } else {
           console.error("Failed to generate embedding for RAG search");
         }
       } catch (ragError) {
-        console.error("Error during enhanced RAG search:", ragError);
+        console.error("Error during quality-weighted RAG search:", ragError);
       }
     }
 
@@ -474,7 +495,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       threadId: threadId || crypto.randomUUID(),
       contentTypeFilter: contentTypeFilter,
       hasRAGResults: hasRAGResults,
-      sources: ragSources // Include marketing knowledge sources
+      sources: ragSources // Include sources with quality information
     };
     
     // Add additional information if we used reasoning

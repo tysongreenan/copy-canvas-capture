@@ -374,7 +374,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       throw new Error(error.error?.message || 'Failed to get messages');
     }
 
-    const messagesData = await messagesData.json();
+    const messagesData = await messagesResponse.json();
     const assistantMessage = messagesData.data.find(msg => msg.role === 'assistant');
 
     if (!assistantMessage) {

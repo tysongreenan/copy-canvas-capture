@@ -1,16 +1,12 @@
-
 "use client";
 
 import { useState } from "react";
 import { ArrowRight, Menu, X, Dog } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-
 const Hero2 = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black">
+  return <div className="relative min-h-screen w-full overflow-hidden bg-black">
       {/* Gradient background with grain effect */}
       <div className="absolute -right-60 -top-10 flex flex-col items-end blur-xl z-0">
         <div className="h-[10rem] w-[60rem] rounded-full bg-gradient-to-b from-tan to-cream blur-[6rem] z-1"></div>
@@ -28,7 +24,7 @@ const Hero2 = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tan text-charcoal">
                 <Dog className="w-5 h-5" />
               </div>
-              <span className="ml-2 text-xl font-bold text-white uppercase tracking-tight">Beggor</span>
+              <span className="ml-2 text-xl font-bold text-white uppercase tracking-tight">BEGGOR AI Studio</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -48,30 +44,24 @@ const Hero2 = () => {
             </div>
 
             {/* Mobile menu button */}
-            <button
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
+            <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               <span className="sr-only">Toggle menu</span>
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6 text-white" />
-              ) : (
-                <Menu className="h-6 w-6 text-white" />
-              )}
+              {mobileMenuOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
             </button>
           </div>
         </nav>
 
         {/* Mobile Navigation Menu with animation */}
         <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ y: "-100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-100%" }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-0 z-50 flex flex-col p-4 bg-black/95 md:hidden"
-            >
+          {mobileMenuOpen && <motion.div initial={{
+          y: "-100%"
+        }} animate={{
+          y: 0
+        }} exit={{
+          y: "-100%"
+        }} transition={{
+          duration: 0.3
+        }} className="fixed inset-0 z-50 flex flex-col p-4 bg-black/95 md:hidden">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tan text-charcoal">
@@ -97,8 +87,7 @@ const Hero2 = () => {
                   </Link>
                 </div>
               </div>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
 
         {/* Badge */}
@@ -127,10 +116,9 @@ const Hero2 = () => {
                   Start Your Free Trial
                 </button>
               </Link>
-              <button 
-                onClick={() => document.getElementById('try-now')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto h-12 rounded-full border border-tan px-8 text-base font-medium text-tan hover:bg-tan/10"
-              >
+              <button onClick={() => document.getElementById('try-now')?.scrollIntoView({
+              behavior: 'smooth'
+            })} className="w-full sm:w-auto h-12 rounded-full border border-tan px-8 text-base font-medium text-tan hover:bg-tan/10">
                 Try Demo
               </button>
             </div>
@@ -150,25 +138,25 @@ const Hero2 = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
-function NavItem({ label }: { label: string }) {
-  return (
-    <div className="flex items-center text-sm text-gray-300 hover:text-cream cursor-pointer">
+function NavItem({
+  label
+}: {
+  label: string;
+}) {
+  return <div className="flex items-center text-sm text-gray-300 hover:text-cream cursor-pointer">
       <span>{label}</span>
-    </div>
-  );
+    </div>;
 }
-
-function MobileNavItem({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-between border-b border-gray-800 pb-2 text-lg text-white">
+function MobileNavItem({
+  label
+}: {
+  label: string;
+}) {
+  return <div className="flex items-center justify-between border-b border-gray-800 pb-2 text-lg text-white">
       <span>{label}</span>
       <ArrowRight className="h-4 w-4 text-gray-400" />
-    </div>
-  );
+    </div>;
 }
-
 export { Hero2 };

@@ -162,15 +162,15 @@ export function ReasoningDisplay({ reasoning, confidence, evaluation }: Reasonin
                   Quality Evaluation History
                 </div>
                 <div className="space-y-2">
-                  {evaluation.evaluationHistory.map((eval, index) => (
+                  {evaluation.evaluationHistory.map((evaluation, index) => (
                     <div key={index} className="p-2 bg-white rounded border text-xs">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium">Iteration {index + 1}</span>
-                        <Badge variant={eval.score >= 90 ? "default" : "secondary"}>
-                          {eval.score.toFixed(0)}% quality
+                        <Badge variant={evaluation.score >= 90 ? "default" : "secondary"}>
+                          {evaluation.score.toFixed(0)}% quality
                         </Badge>
                       </div>
-                      <div className="text-gray-600">{eval.feedback}</div>
+                      <div className="text-gray-600">{evaluation.feedback}</div>
                     </div>
                   ))}
                 </div>

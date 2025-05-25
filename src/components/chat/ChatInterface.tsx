@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChat } from "@/context/ChatContext";
@@ -9,7 +8,7 @@ import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
 import { AIChatInput } from "@/components/ui/ai-chat-input";
 import { Button } from "@/components/ui/button";
-import { Brain, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Brain, Settings, ChevronDown, ChevronUp, Bug } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgentService } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { RAGDebugger } from "@/components/chat/RAGDebugger";
 
 interface ChatInterfaceProps {
   projectId: string;
@@ -37,6 +37,7 @@ export function ChatInterface({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [savingMemory, setSavingMemory] = useState(false);
+  const [showDebugger, setShowDebugger] = useState(false);
   const {
     toast
   } = useToast();
@@ -158,6 +159,17 @@ export function ChatInterface({
           </Button>
         )}
 
+        {/* Debug button */}
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => setShowDebugger(!showDebugger)} 
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm"
+        >
+          <Bug size={16} />
+          {showDebugger ? "Hide Debugger" : "Show RAG Debugger"}
+        </Button>
+
         {/* Settings Popover */}
         <div className={conversationId && messages.length > 2 ? "" : "ml-auto"}>
           <Popover>
@@ -239,6 +251,13 @@ export function ChatInterface({
           </Popover>
         </div>
       </div>
+
+      {/* RAG Debugger */}
+      {showDebugger && (
+        <div className="px-4 pb-4">
+          <RAGDebugger projectId={projectId} />
+        </div>
+      )}
       
       <div className="flex flex-col h-[85vh] pb-4">
         {/* Scrollable messages with centered container */}

@@ -51,6 +51,8 @@ export function ChatInterface({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
+    minQualityScore,
+    setMinQualityScore,
     thinkActive,
     setThinkActive,
     handleSendMessage
@@ -75,12 +77,14 @@ export function ChatInterface({
       }
     }
   }, [messages]);
+  
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
+  
   const handleThinkToggle = (active: boolean) => {
     setThinkActive(active);
 
@@ -93,6 +97,7 @@ export function ChatInterface({
       });
     }
   };
+  
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
     setSavingMemory(true);
@@ -135,6 +140,7 @@ export function ChatInterface({
       setSavingMemory(false);
     }
   };
+  
   return (
     <div className="flex flex-col h-full">
       {/* Header toolbar */}
@@ -183,6 +189,26 @@ export function ChatInterface({
                   </div>
                   <p className="text-xs text-white/60">
                     {thinkActive ? "Response evaluation is required when Think mode is active" : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="min-quality" className="text-sm">
+                      Minimum Content Quality: {minQualityScore}%
+                    </Label>
+                  </div>
+                  <Slider 
+                    id="min-quality" 
+                    min={40} 
+                    max={90} 
+                    step={5} 
+                    value={[minQualityScore]} 
+                    onValueChange={values => setMinQualityScore(values[0])} 
+                    className="py-4" 
+                  />
+                  <p className="text-xs text-white/60">
+                    Only retrieve knowledge content above this quality threshold
                   </p>
                 </div>
                 

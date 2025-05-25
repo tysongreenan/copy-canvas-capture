@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
@@ -41,6 +40,7 @@ export function useChatMessaging({
   const [usePromptChain, setUsePromptChain] = useState(true);
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
+  const [minQualityScore, setMinQualityScore] = useState(60); // New state for minimum quality
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const [thinkActive, setThinkActive] = useState(false);
   const { toast } = useToast();
@@ -86,21 +86,26 @@ export function useChatMessaging({
         let temperature = 0.7;
         let maxTokens = 1500;
         let modelName = "gpt-4o-mini";
+        let taskMinQuality = minQualityScore;
         
         if (detectedTaskType === 'email') {
           temperature = 0.5;
           maxTokens = 2000;
+          taskMinQuality = Math.max(minQualityScore, 70);
         } else if (detectedTaskType === 'marketing') {
           temperature = 0.6;
           maxTokens = 2000;
           modelName = "gpt-4o";
+          taskMinQuality = Math.max(minQualityScore, 70);
         } else if (detectedTaskType === 'summary') {
           temperature = 0.3;
           maxTokens = 1800;
+          taskMinQuality = Math.max(minQualityScore, 65);
         } else if (detectedTaskType === 'research') {
           temperature = 0.4;
           maxTokens = 1800;
           modelName = "gpt-4o";
+          taskMinQuality = Math.max(minQualityScore, 75);
         }
         
         // When Think mode is active, disable memory to avoid vector search errors
@@ -116,11 +121,12 @@ export function useChatMessaging({
             temperature: temperature,
             maxTokens: maxTokens,
             modelName: modelName,
-            useMemory: shouldUseMemory, // Only use memory if authenticated and Think is not active
-            usePromptChain: usePromptChain || thinkActive, // Always use prompt chain if think is active
+            useMemory: shouldUseMemory,
+            usePromptChain: usePromptChain || thinkActive,
             qualityThreshold: qualityThreshold,
             maxIterations: maxIterations,
-            enableMultiStepReasoning: thinkActive // Enable multi-step reasoning when think is active
+            minQualityScore: taskMinQuality, // Pass the minimum quality score
+            enableMultiStepReasoning: thinkActive
           }
         );
         
@@ -184,7 +190,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, thinkActive]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, minQualityScore, thinkActive]
   );
 
   return {
@@ -200,6 +206,8 @@ export function useChatMessaging({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
+    minQualityScore, // Export the new state
+    setMinQualityScore, // Export the setter
     evaluation,
     thinkActive,
     setThinkActive,

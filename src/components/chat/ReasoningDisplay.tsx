@@ -1,122 +1,184 @@
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AgentStep } from '@/services/AgentService';
-import { Brain, ArrowUpRight, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Brain, Search, FileText, CheckCircle } from "lucide-react";
+import { AgentStep } from "@/services/AgentService";
+import { ChatEvaluation } from "@/hooks/use-chat-messaging";
+import { useChat } from "@/context/ChatContext";
 
 interface ReasoningDisplayProps {
   reasoning: AgentStep[];
   confidence?: number;
-  evaluation?: {
-    iterations: number;
-    quality: number;
-    evaluationHistory: Array<{
-      score: number;
-      feedback: string;
-    }>;
-  };
+  evaluation?: ChatEvaluation;
 }
 
 export function ReasoningDisplay({ reasoning, confidence, evaluation }: ReasoningDisplayProps) {
-  const [expanded, setExpanded] = useState(false);
-  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { lastSources } = useChat();
 
-  if (!reasoning.length) return null;
+  if (!reasoning || reasoning.length === 0) {
+    return null;
+  }
 
-  const getConfidenceColor = (score?: number) => {
-    if (!score && score !== 0) return "text-gray-400";
-    if (score >= 0.9) return "text-green-500";
-    if (score >= 0.7) return "text-yellow-500";
-    return "text-red-500";
+  const getStepIcon = (type: string) => {
+    switch (type) {
+      case 'search':
+        return <Search className="h-4 w-4" />;
+      case 'retrieval':
+        return <FileText className="h-4 w-4" />;
+      case 'reasoning':
+        return <Brain className="h-4 w-4" />;
+      case 'evaluation':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <Brain className="h-4 w-4" />;
+    }
   };
 
-  const getQualityColor = (score: number) => {
-    if (score >= 90) return "text-green-500";
-    if (score >= 70) return "text-yellow-500";
-    return "text-red-500";
+  const getStepColor = (type: string) => {
+    switch (type) {
+      case 'search':
+        return 'text-blue-600';
+      case 'retrieval':
+        return 'text-green-600';
+      case 'reasoning':
+        return 'text-purple-600';
+      case 'evaluation':
+        return 'text-orange-600';
+      default:
+        return 'text-gray-600';
+    }
   };
 
-  const confidencePercent = confidence !== undefined ? Math.round(confidence * 100) : undefined;
-  
   return (
-    <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-lg text-sm mt-4">
-      <div className="p-3 flex justify-between items-center cursor-pointer" onClick={() => setExpanded(!expanded)}>
-        <div className="flex items-center gap-2">
-          <Brain size={16} className="text-blue-400" />
-          <span className="font-medium text-white/80">AI Reasoning Process</span>
-          
-          {confidencePercent !== undefined && (
-            <span className={`ml-2 ${getConfidenceColor(confidence)}`}>
-              {confidencePercent}% confidence
-            </span>
-          )}
-          
-          {evaluation && (
-            <span className="ml-2 text-white/60">
-              • {evaluation.iterations} {evaluation.iterations === 1 ? 'iteration' : 'iterations'} 
-              • <span className={getQualityColor(evaluation.quality)}>
-                {Math.round(evaluation.quality)}% quality
-              </span>
-            </span>
-          )}
+    <Card className="mt-4 border-l-4 border-l-purple-500 bg-purple-50/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Brain className="h-4 w-4 text-purple-600" />
+            AI Reasoning Process
+            {confidence && (
+              <Badge variant="secondary" className="ml-2">
+                {(confidence * 100).toFixed(0)}% confident
+              </Badge>
+            )}
+            {evaluation && (
+              <Badge variant="outline" className="ml-2">
+                {evaluation.iterations} iteration{evaluation.iterations !== 1 ? 's' : ''} • {evaluation.quality.toFixed(0)}% quality
+              </Badge>
+            )}
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8 w-8 p-0"
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
-        <div>
-          {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </div>
-      </div>
+      </CardHeader>
       
-      {expanded && (
-        <div className="px-4 pb-4 text-white/70 space-y-3">
-          {reasoning.map((step, index) => (
-            <div key={index} className="bg-white/5 p-3 rounded-md">
-              <div className="font-medium text-xs uppercase tracking-wider text-blue-300 mb-1">
-                {step.type || "Analysis"} Step {index + 1}
-              </div>
-              <div className="whitespace-pre-wrap">{step.content}</div>
-              {step.toolName && (
-                <div className="mt-2 text-xs flex items-center gap-1 text-gray-400">
-                  <ArrowUpRight size={12} /> 
-                  Used tool: {step.toolName}
+      {isExpanded && (
+        <CardContent className="pt-0">
+          <div className="space-y-3">
+            {reasoning.map((step, index) => (
+              <div key={index} className="flex gap-3 text-sm">
+                <div className={`flex-shrink-0 mt-0.5 ${getStepColor(step.type)}`}>
+                  {getStepIcon(step.type)}
                 </div>
-              )}
-            </div>
-          ))}
-          
-          {evaluation && (
-            <div className="mt-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border-white/10"
-                onClick={() => setShowEvaluation(!showEvaluation)}
-              >
-                <BarChart2 size={16} />
-                {showEvaluation ? "Hide Evaluation Details" : "Show Evaluation Details"}
-              </Button>
-              
-              {showEvaluation && (
-                <div className="mt-3 space-y-3">
-                  {evaluation.evaluationHistory.map((evalItem, index) => (
-                    <div key={index} className="bg-black/30 p-3 rounded-md border border-white/10">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-medium text-xs uppercase tracking-wider text-blue-300">
-                          Evaluation {index + 1}
-                        </div>
-                        <div className={`text-sm font-medium ${getQualityColor(evalItem.score)}`}>
-                          Score: {Math.round(evalItem.score)}%
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 capitalize mb-1">
+                    {step.type.replace('_', ' ')}
+                  </div>
+                  <div className="text-gray-600">
+                    {step.content}
+                  </div>
+                  {step.toolName && (
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {step.toolName}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Display sources with quality information */}
+            {lastSources && lastSources.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <div className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Retrieved Sources ({lastSources.length})
+                </div>
+                <div className="space-y-2">
+                  {lastSources.map((source, index) => (
+                    <div key={index} className="p-2 bg-white rounded border text-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-gray-800">
+                          {source.source_info || source.metadata?.source || `Source ${index + 1}`}
+                        </span>
+                        <div className="flex gap-1">
+                          {source.source_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {source.source_type}
+                            </Badge>
+                          )}
+                          {source.similarity && (
+                            <Badge variant="secondary" className="text-xs">
+                              {(source.similarity * 100).toFixed(0)}% match
+                            </Badge>
+                          )}
+                          {source.quality_score && (
+                            <Badge 
+                              variant={source.quality_score >= 80 ? "default" : source.quality_score >= 60 ? "secondary" : "outline"}
+                              className="text-xs"
+                            >
+                              {source.quality_score.toFixed(0)}% quality
+                            </Badge>
+                          )}
+                          {source.weighted_score && (
+                            <Badge variant="outline" className="text-xs">
+                              {(source.weighted_score * 100).toFixed(0)}% score
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                      <div className="text-xs whitespace-pre-wrap text-white/70">
-                        {evalItem.feedback}
+                      <div className="text-gray-600 line-clamp-2">
+                        {source.content.substring(0, 150)}...
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+
+            {/* Display evaluation history if available */}
+            {evaluation && evaluation.evaluationHistory && evaluation.evaluationHistory.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <div className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Quality Evaluation History
+                </div>
+                <div className="space-y-2">
+                  {evaluation.evaluationHistory.map((eval, index) => (
+                    <div key={index} className="p-2 bg-white rounded border text-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium">Iteration {index + 1}</span>
+                        <Badge variant={eval.score >= 90 ? "default" : "secondary"}>
+                          {eval.score.toFixed(0)}% quality
+                        </Badge>
+                      </div>
+                      <div className="text-gray-600">{eval.feedback}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

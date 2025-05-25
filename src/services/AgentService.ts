@@ -26,6 +26,10 @@ export interface AgentSource {
   content: string;
   metadata: any;
   similarity: number;
+  quality_score?: number;
+  weighted_score?: number;
+  source_type?: string;
+  source_info?: string;
 }
 
 export interface AgentEvaluation {
@@ -61,6 +65,7 @@ export interface AgentRequestOptions {
   usePromptChain?: boolean;
   qualityThreshold?: number;
   maxIterations?: number;
+  minQualityScore?: number; // New option for minimum quality filtering
 }
 
 export class AgentService {
@@ -85,35 +90,40 @@ export class AgentService {
         modelName: "gpt-4o-mini",
         temperature: 0.7,
         maxTokens: 1500,
-        useMemory: true, // Enable memory by default
-        usePromptChain: true, // Enable prompt chain by default
-        qualityThreshold: 90, // 90% quality threshold
-        maxIterations: 3, // Max 3 iterations
+        useMemory: true,
+        usePromptChain: true,
+        qualityThreshold: 90,
+        maxIterations: 3,
+        minQualityScore: 60, // Default minimum quality score (60%)
       };
 
       // Special cases for different task types
       if (options.taskType === 'email') {
-        defaultOptions.temperature = 0.5; // Lower temperature for more consistent email generation
-        defaultOptions.maxTokens = 2000; // More tokens for emails
+        defaultOptions.temperature = 0.5;
+        defaultOptions.maxTokens = 2000;
+        defaultOptions.minQualityScore = 70; // Higher quality for emails
       } else if (options.taskType === 'summary') {
-        defaultOptions.temperature = 0.3; // Even lower temperature for summaries
-        defaultOptions.maxTokens = 1800; // More tokens for comprehensive summaries
+        defaultOptions.temperature = 0.3;
+        defaultOptions.maxTokens = 1800;
+        defaultOptions.minQualityScore = 65;
       } else if (options.taskType === 'research') {
-        defaultOptions.modelName = "gpt-4o"; // Use more powerful model for research
-        defaultOptions.enableTools = true; // Ensure tools are enabled for research
-        defaultOptions.temperature = 0.4; // Lower temperature for more factual responses
+        defaultOptions.modelName = "gpt-4o";
+        defaultOptions.enableTools = true;
+        defaultOptions.temperature = 0.4;
+        defaultOptions.minQualityScore = 75; // Higher quality for research
       } else if (options.taskType === 'marketing' || options.taskType === 'content') {
-        defaultOptions.modelName = "gpt-4o"; // Use more powerful model for marketing
-        defaultOptions.enableTools = true; // Ensure tools are enabled for marketing
-        defaultOptions.temperature = 0.6; // Balanced temperature for creative yet factual content
-        defaultOptions.maxTokens = 2000; // More tokens for comprehensive marketing guidance
+        defaultOptions.modelName = "gpt-4o";
+        defaultOptions.enableTools = true;
+        defaultOptions.temperature = 0.6;
+        defaultOptions.maxTokens = 2000;
+        defaultOptions.minQualityScore = 70; // Higher quality for marketing
       }
       
       // Merge with user options, with user options taking precedence
       const finalOptions = { ...defaultOptions, ...options };
       
       console.log(`Agent options: Task Type: ${finalOptions.taskType}, Model: ${finalOptions.modelName}`);
-      console.log(`Prompt Chain: ${finalOptions.usePromptChain}, Quality Threshold: ${finalOptions.qualityThreshold}%, Max Iterations: ${finalOptions.maxIterations}`);
+      console.log(`Quality settings: Min Quality: ${finalOptions.minQualityScore}%, Quality Threshold: ${finalOptions.qualityThreshold}%`);
 
       // Get relevant memories if memory is enabled and we have a project ID and the user is authenticated
       let memories = [];
@@ -128,14 +138,13 @@ export class AgentService {
               user.id,
               projectId,
               message,
-              3,  // Limit to 3 most relevant memories
-              0.6  // Similarity threshold
+              3,
+              0.6
             );
             console.log(`Found ${memories.length} relevant memories`);
           }
         } catch (memoryError) {
           console.error("Error fetching memories, continuing without them:", memoryError);
-          // Continue without memories if there's an error
         }
       }
 
@@ -152,10 +161,11 @@ export class AgentService {
           modelName: finalOptions.modelName,
           temperature: finalOptions.temperature,
           maxTokens: finalOptions.maxTokens,
-          memories: memories, // Pass memories to the agent
+          memories: memories,
           usePromptChain: finalOptions.usePromptChain,
           qualityThreshold: finalOptions.qualityThreshold,
-          maxIterations: finalOptions.maxIterations
+          maxIterations: finalOptions.maxIterations,
+          minQualityScore: finalOptions.minQualityScore // Pass minimum quality score
         }
       });
       

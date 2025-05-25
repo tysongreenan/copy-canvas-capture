@@ -220,6 +220,7 @@ export type Database = {
           id: string
           metadata: Json
           project_id: string | null
+          quality_score: number | null
         }
         Insert: {
           content: string
@@ -228,6 +229,7 @@ export type Database = {
           id?: string
           metadata?: Json
           project_id?: string | null
+          quality_score?: number | null
         }
         Update: {
           content?: string
@@ -236,6 +238,7 @@ export type Database = {
           id?: string
           metadata?: Json
           project_id?: string | null
+          quality_score?: number | null
         }
         Relationships: [
           {
@@ -518,6 +521,29 @@ export type Database = {
           similarity: number
           source_type: string
           source_info: string
+        }[]
+      }
+      match_documents_quality_weighted: {
+        Args: {
+          query_embedding: string
+          match_threshold?: number
+          match_count?: number
+          p_project_id?: string
+          content_type?: string
+          include_global?: boolean
+          marketing_domain?: string
+          complexity_level?: string
+          p_min_quality_score?: number
+        }
+        Returns: {
+          id: string
+          content: string
+          metadata: Json
+          similarity: number
+          source_type: string
+          source_info: string
+          quality_score: number
+          weighted_score: number
         }[]
       }
       search_agent_memories: {

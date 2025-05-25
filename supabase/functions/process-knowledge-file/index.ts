@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.1";
 
@@ -44,19 +43,18 @@ serve(async (req) => {
     
     console.log(`Processing file: ${fileName}, type: ${fileType}`);
     
-    // Handle different file types
+    // Handle different file types with improved extraction
     if (fileType === "application/pdf") {
-      // For PDFs, we'll just use the text content for now
-      // In a production environment, you'd want to use a proper PDF parser
-      fileContent = await file.text();
+      // For PDFs, extract text content
+      fileContent = await extractPdfContent(file);
     } 
     else if (fileType === "text/plain" || fileType === "text/markdown" || fileName.endsWith('.md')) {
       // For text and markdown files, just get the text
       fileContent = await file.text();
     }
     else if (fileType.includes("wordprocessingml.document") || fileName.endsWith('.docx')) {
-      // For DOCX files, extract text (simplified - in production use proper parser)
-      fileContent = await file.text();
+      // For DOCX files, extract structured content
+      fileContent = await extractDocxContent(file);
     }
     else {
       throw new Error(`Unsupported file type: ${fileType}`);
@@ -73,75 +71,242 @@ serve(async (req) => {
     
     // Process each chunk and add to the global_knowledge table
     let processedChunks = 0;
+    let failedChunks = 0;
+    const processedResults = [];
     
-    for (const chunk of chunks) {
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
       try {
-        // Generate an embedding for the chunk
-        const embeddingResponse = await supabase.functions.invoke("generate-embedding", {
-          body: { text: chunk },
-        });
+        // Generate an embedding for the chunk with retry logic
+        let embedding = null;
+        let embeddingError = null;
         
-        if (embeddingResponse.error) {
-          console.error(`Error generating embedding: ${embeddingResponse.error.message}`);
-          continue;
+        try {
+          embedding = await generateEmbeddingWithRetry(supabase, chunk);
+        } catch (error) {
+          embeddingError = error.message;
+          console.warn(`Failed to generate embedding for chunk ${i + 1}:`, error.message);
+          // Continue without embedding - we'll still store the content
         }
-        
-        const embedding = embeddingResponse.data.embedding;
         
         // Parse tags
         const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
         
+        // Calculate baseline quality score
+        const baselineQuality = calculateBaselineQuality(chunk, fileName, fileType);
+        
         // Insert the chunk into the global_knowledge table
-        const { error } = await supabase
+        const insertData = {
+          content: chunk,
+          title: `${fileName} - Part ${i + 1}`,
+          source: `Uploaded file: ${fileName}`,
+          content_type: contentType || 'guide',
+          marketing_domain: marketingDomain || 'general-marketing',
+          complexity_level: complexityLevel || 'beginner',
+          tags: tagsArray,
+          quality_score: baselineQuality,
+          metadata: {
+            source_file: fileName,
+            file_type: fileType,
+            upload_date: new Date().toISOString(),
+            chunk_index: i,
+            total_chunks: chunks.length,
+            embedding_status: embedding ? 'success' : 'failed',
+            embedding_error: embeddingError,
+            content_length: chunk.length,
+            baseline_quality_factors: getQualityFactors(chunk, fileName, fileType)
+          },
+        };
+
+        // Only add embedding if we successfully generated one
+        if (embedding) {
+          insertData.embedding = embedding;
+        }
+        
+        const { data, error } = await supabase
           .from("global_knowledge")
-          .insert({
-            content: chunk,
-            title: `${fileName} - Part ${processedChunks + 1}`,
-            source: `Uploaded file: ${fileName}`,
-            content_type: contentType || 'guide',
-            marketing_domain: marketingDomain || 'general-marketing',
-            complexity_level: complexityLevel || 'beginner',
-            tags: tagsArray,
-            embedding: embedding,
-            metadata: {
-              source_file: fileName,
-              file_type: fileType,
-              upload_date: new Date().toISOString(),
-              chunk_index: processedChunks,
-              total_chunks: chunks.length
-            },
-          });
+          .insert(insertData)
+          .select('id')
+          .single();
         
         if (error) {
-          console.error(`Error inserting chunk: ${error.message}`);
+          console.error(`Error inserting chunk ${i + 1}:`, error.message);
+          failedChunks++;
+          processedResults.push({
+            chunk_index: i + 1,
+            status: 'failed',
+            error: error.message
+          });
           continue;
         }
         
         processedChunks++;
+        processedResults.push({
+          chunk_index: i + 1,
+          status: 'success',
+          id: data.id,
+          has_embedding: !!embedding,
+          quality_score: baselineQuality
+        });
+        
       } catch (chunkError) {
-        console.error(`Error processing chunk: ${chunkError.message}`);
+        console.error(`Error processing chunk ${i + 1}:`, chunkError.message);
+        failedChunks++;
+        processedResults.push({
+          chunk_index: i + 1,
+          status: 'failed',
+          error: chunkError.message
+        });
         continue;
       }
     }
     
-    return new Response(JSON.stringify({ 
-      success: true, 
+    const processingResult = {
+      success: processedChunks > 0,
       chunks_processed: processedChunks,
+      chunks_failed: failedChunks,
       total_chunks: chunks.length,
-      filename: fileName
-    }), {
+      filename: fileName,
+      processing_details: processedResults,
+      overall_status: processedChunks === chunks.length ? 'complete' : 
+                     processedChunks > 0 ? 'partial' : 'failed'
+    };
+    
+    console.log('Processing complete:', processingResult);
+    
+    return new Response(JSON.stringify(processingResult), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     console.error("Error processing knowledge file:", error);
     
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message,
+      overall_status: 'failed'
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
   }
 });
+
+// Helper function to generate embeddings with retry logic
+async function generateEmbeddingWithRetry(supabase: any, text: string, maxRetries = 3): Promise<any> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-embedding", {
+        body: { text }
+      });
+      
+      if (error) throw new Error(error.message);
+      if (!data || !data.embedding) throw new Error("No embedding data returned");
+      
+      return data.embedding;
+    } catch (error) {
+      console.warn(`Embedding attempt ${attempt}/${maxRetries} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+}
+
+// Helper function to calculate baseline quality score
+function calculateBaselineQuality(chunk: string, fileName: string, fileType: string): number {
+  const factors = getQualityFactors(chunk, fileName, fileType);
+  
+  // Base score
+  let score = 0.7;
+  
+  // Length factor (optimal range 100-1500 characters)
+  const length = chunk.length;
+  if (length >= 100 && length <= 1500) {
+    score += 0.1;
+  } else if (length < 50) {
+    score -= 0.2;
+  }
+  
+  // Structure factor
+  if (factors.hasHeadings) score += 0.05;
+  if (factors.hasList) score += 0.05;
+  if (factors.hasCompleteStatements) score += 0.1;
+  
+  // Content quality factor
+  if (factors.readabilityScore > 0.7) score += 0.1;
+  if (factors.marketingTerms > 2) score += 0.05;
+  
+  // File type factor
+  if (fileType === 'application/pdf') score += 0.05;
+  if (fileName.toLowerCase().includes('guide') || fileName.toLowerCase().includes('manual')) score += 0.05;
+  
+  // Ensure score stays within bounds
+  return Math.max(0.1, Math.min(1.0, score));
+}
+
+// Helper function to analyze quality factors
+function getQualityFactors(chunk: string, fileName: string, fileType: string) {
+  const lines = chunk.split('\n');
+  const words = chunk.split(/\s+/).filter(w => w.length > 0);
+  const sentences = chunk.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  
+  // Check for structural elements
+  const hasHeadings = /^#|^\d+\.|^[A-Z][^.!?]*:/.test(chunk);
+  const hasList = /^[-*•]\s|^\d+\.\s/m.test(chunk);
+  const hasCompleteStatements = sentences.length > 0 && sentences.every(s => s.trim().length > 10);
+  
+  // Basic readability score (simplified)
+  const avgWordsPerSentence = sentences.length > 0 ? words.length / sentences.length : 0;
+  const readabilityScore = avgWordsPerSentence > 5 && avgWordsPerSentence < 25 ? 0.8 : 0.5;
+  
+  // Marketing terms detection
+  const marketingTerms = (chunk.toLowerCase().match(/\b(conversion|roi|cta|engagement|brand|customer|marketing|sales|lead|funnel|campaign|strategy|analytics|target|audience|content|copy|advertising|promotion|revenue|acquisition)\b/g) || []).length;
+  
+  return {
+    hasHeadings,
+    hasList,
+    hasCompleteStatements,
+    readabilityScore,
+    marketingTerms,
+    wordCount: words.length,
+    sentenceCount: sentences.length,
+    lineCount: lines.length
+  };
+}
+
+// Improved PDF content extraction
+async function extractPdfContent(file: File): Promise<string> {
+  // For now, use basic text extraction
+  // In production, you'd want to use a proper PDF parsing library
+  const text = await file.text();
+  
+  // Clean up common PDF artifacts
+  return text
+    .replace(/\f/g, '\n') // Form feeds to newlines
+    .replace(/\r\n/g, '\n') // Normalize line endings
+    .replace(/\n{3,}/g, '\n\n') // Reduce excessive newlines
+    .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters that might be artifacts
+    .trim();
+}
+
+// Improved DOCX content extraction
+async function extractDocxContent(file: File): Promise<string> {
+  // For now, use basic text extraction
+  // In production, you'd want to use a proper DOCX parsing library
+  const text = await file.text();
+  
+  // Clean up common DOCX artifacts
+  return text
+    .replace(/\r\n/g, '\n') // Normalize line endings
+    .replace(/\n{3,}/g, '\n\n') // Reduce excessive newlines
+    .replace(/\t/g, ' ') // Convert tabs to spaces
+    .trim();
+}
 
 // Helper function to split text into chunks
 function splitIntoChunks(text: string, chunkSize: number): string[] {

@@ -27,9 +27,19 @@ export interface KnowledgeSource {
   created_at: string;
 }
 
+export interface QualityAssessment {
+  clarity: number;
+  accuracy: number;
+  relevance: number;
+  completeness: number;
+  marketing_value: number;
+  overall_score: number;
+  reasoning: string;
+}
+
 export class GlobalKnowledgeService {
   /**
-   * Add a new piece of knowledge to the global knowledge base
+   * Add a new piece of knowledge to the global knowledge base with AI quality assessment
    */
   public static async addKnowledge(
     content: string,
@@ -39,12 +49,29 @@ export class GlobalKnowledgeService {
     marketingDomain: string,
     complexityLevel: string = 'beginner',
     tags: string[] = [],
-    metadata: any = {}
+    metadata: any = {},
+    useAIAssessment: boolean = true
   ): Promise<string | null> {
     try {
       console.log("Starting knowledge addition process...");
       
-      // Try to generate embedding, but don't fail if it doesn't work
+      // Step 1: Generate AI quality assessment if enabled
+      let qualityScore = 0.8; // Default fallback
+      let qualityAssessment: QualityAssessment | null = null;
+      
+      if (useAIAssessment && content.length > 50) {
+        try {
+          console.log("Generating AI quality assessment...");
+          qualityAssessment = await this.assessContentQuality(content, contentType, marketingDomain);
+          qualityScore = qualityAssessment.overall_score;
+          console.log("AI quality assessment completed:", qualityAssessment);
+        } catch (assessmentError) {
+          console.warn("AI quality assessment failed, using default score:", assessmentError);
+          // Continue with default score
+        }
+      }
+      
+      // Step 2: Try to generate embedding, but don't fail if it doesn't work
       let embeddingData = null;
       try {
         console.log("Attempting to generate embedding...");
@@ -57,6 +84,14 @@ export class GlobalKnowledgeService {
 
       console.log("Inserting knowledge into database...");
       
+      // Step 3: Prepare metadata with quality assessment details
+      const enhancedMetadata = {
+        ...metadata,
+        quality_assessment: qualityAssessment,
+        assessment_date: qualityAssessment ? new Date().toISOString() : null,
+        ai_assessed: useAIAssessment && !!qualityAssessment
+      };
+      
       // Insert the knowledge with or without embedding
       const insertData: any = {
         content,
@@ -66,8 +101,8 @@ export class GlobalKnowledgeService {
         marketing_domain: marketingDomain,
         complexity_level: complexityLevel,
         tags,
-        metadata,
-        quality_score: 0.8 // Default quality score for manual entries
+        metadata: enhancedMetadata,
+        quality_score: qualityScore
       };
 
       // Only add embedding if we successfully generated one
@@ -91,6 +126,40 @@ export class GlobalKnowledgeService {
     } catch (error) {
       console.error("Exception in addKnowledge:", error);
       throw error; // Re-throw to let the UI handle it
+    }
+  }
+
+  /**
+   * Assess content quality using AI
+   */
+  public static async assessContentQuality(
+    content: string,
+    contentType?: string,
+    marketingDomain?: string
+  ): Promise<QualityAssessment> {
+    try {
+      const { data, error } = await supabase.functions.invoke("assess-content-quality", {
+        body: { 
+          content,
+          contentType,
+          marketingDomain
+        }
+      });
+      
+      if (error) {
+        console.error("Error from assess-content-quality function:", error);
+        throw new Error(`Quality assessment error: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("No assessment data returned from function");
+      }
+      
+      console.log("Quality assessment data received:", data);
+      return data as QualityAssessment;
+    } catch (error) {
+      console.error("Exception in assessContentQuality:", error);
+      throw error;
     }
   }
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,12 +5,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, File, X } from "lucide-react";
+import { Upload, File, X, CheckCircle, AlertCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface FileUploadCardProps {
   onUploadComplete: () => void;
+}
+
+interface ProcessingResult {
+  success: boolean;
+  chunks_processed: number;
+  chunks_failed: number;
+  total_chunks: number;
+  filename: string;
+  processing_details?: Array<{
+    chunk_index: number;
+    status: string;
+    quality_score?: number;
+    has_embedding?: boolean;
+    error?: string;
+  }>;
+  overall_status: 'complete' | 'partial' | 'failed';
 }
 
 export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
@@ -21,6 +38,8 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
   const [marketingDomain, setMarketingDomain] = useState("general-marketing");
   const [complexityLevel, setComplexityLevel] = useState("beginner");
   const [tags, setTags] = useState("");
+  const [processingResults, setProcessingResults] = useState<ProcessingResult[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,6 +60,7 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
     }
 
     setFiles(prev => [...prev, ...validFiles]);
+    setProcessingResults([]); // Clear previous results
   };
 
   const removeFile = (index: number) => {
@@ -58,10 +78,11 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
     }
 
     setIsUploading(true);
-    let successCount = 0;
-    let errorCount = 0;
+    setUploadProgress(0);
+    const results: ProcessingResult[] = [];
 
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       try {
         const formData = new FormData();
         formData.append('file', file);
@@ -76,22 +97,47 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
 
         if (error) throw error;
         
-        successCount++;
+        const result = data as ProcessingResult;
+        results.push(result);
+        
+        // Update progress
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+        
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error);
-        errorCount++;
+        results.push({
+          success: false,
+          chunks_processed: 0,
+          chunks_failed: 0,
+          total_chunks: 0,
+          filename: file.name,
+          overall_status: 'failed'
+        });
       }
     }
 
+    setProcessingResults(results);
     setIsUploading(false);
-    setFiles([]);
+    setUploadProgress(100);
 
-    if (successCount > 0) {
+    // Show summary toast
+    const totalSuccess = results.reduce((sum, r) => sum + r.chunks_processed, 0);
+    const totalFailed = results.reduce((sum, r) => sum + r.chunks_failed, 0);
+    const fileSuccessCount = results.filter(r => r.success).length;
+
+    if (fileSuccessCount > 0) {
       toast({
         title: "Upload Complete",
-        description: `${successCount} file(s) processed successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`
+        description: `${fileSuccessCount} file(s) processed successfully. ${totalSuccess} chunks created${totalFailed > 0 ? `, ${totalFailed} chunks failed` : ''}`
       });
       onUploadComplete();
+      
+      // Clear files after successful upload
+      setTimeout(() => {
+        setFiles([]);
+        setProcessingResults([]);
+        setUploadProgress(0);
+      }, 5000);
     } else {
       toast({
         title: "Upload Failed",
@@ -109,6 +155,32 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'partial':
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return 'bg-green-100 text-green-800';
+      case 'partial':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -117,7 +189,7 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
           Upload Knowledge Files
         </CardTitle>
         <CardDescription>
-          Upload PDF, TXT, MD, or DOCX files to add to the knowledge base
+          Upload PDF, TXT, MD, or DOCX files to add to the knowledge base with automatic quality assessment
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -204,9 +276,74 @@ export function FileUploadCard({ onUploadComplete }: FileUploadCardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => removeFile(index)}
+                  disabled={isUploading}
                 >
                   <X className="h-4 w-4" />
                 </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="space-y-2">
+            <Label>Processing Files...</Label>
+            <Progress value={uploadProgress} />
+            <p className="text-xs text-gray-500">
+              This may take a few minutes depending on file size and content complexity.
+            </p>
+          </div>
+        )}
+
+        {processingResults.length > 0 && (
+          <div className="space-y-3">
+            <Label>Processing Results:</Label>
+            {processingResults.map((result, index) => (
+              <div key={index} className="p-3 border rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(result.overall_status)}
+                    <span className="font-medium text-sm">{result.filename}</span>
+                  </div>
+                  <Badge className={getStatusColor(result.overall_status)}>
+                    {result.overall_status}
+                  </Badge>
+                </div>
+                
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p>Chunks processed: {result.chunks_processed}/{result.total_chunks}</p>
+                  {result.chunks_failed > 0 && (
+                    <p className="text-red-600">Failed: {result.chunks_failed}</p>
+                  )}
+                  
+                  {result.processing_details && result.processing_details.length > 0 && (
+                    <div className="mt-2">
+                      <p className="font-medium">Chunk Details:</p>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {result.processing_details.map((detail, detailIndex) => (
+                          <div key={detailIndex} className="flex items-center justify-between text-xs">
+                            <span>Chunk {detail.chunk_index}</span>
+                            <div className="flex items-center gap-2">
+                              {detail.quality_score && (
+                                <Badge variant="outline" className="text-xs">
+                                  Quality: {(detail.quality_score * 100).toFixed(0)}%
+                                </Badge>
+                              )}
+                              {detail.has_embedding && (
+                                <Badge variant="outline" className="text-xs bg-blue-50">
+                                  Embedded
+                                </Badge>
+                              )}
+                              <Badge className={detail.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {detail.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

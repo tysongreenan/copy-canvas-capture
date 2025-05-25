@@ -529,10 +529,10 @@ export type Database = {
           match_threshold?: number
           match_count?: number
           p_project_id?: string
-          content_type?: string
+          p_content_type?: string
           include_global?: boolean
-          marketing_domain?: string
-          complexity_level?: string
+          p_marketing_domain?: string
+          p_complexity_level?: string
           p_min_quality_score?: number
         }
         Returns: {

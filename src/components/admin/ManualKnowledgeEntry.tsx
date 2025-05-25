@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalKnowledgeService } from "@/services/GlobalKnowledgeService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ManualKnowledgeEntryProps {
   onEntryComplete: () => void;
@@ -23,23 +23,52 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
   const [complexityLevel, setComplexityLevel] = useState("beginner");
   const [tags, setTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!title.trim()) {
+      errors.push("Title is required");
+    }
+    
+    if (!content.trim()) {
+      errors.push("Content is required");
+    }
+    
+    if (!source.trim()) {
+      errors.push("Source is required");
+    }
+    
+    if (content.trim().length < 10) {
+      errors.push("Content must be at least 10 characters long");
+    }
+    
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim() || !source.trim()) {
+    console.log("Form submitted");
+    
+    if (!validateForm()) {
       toast({
-        title: "Missing required fields",
-        description: "Please fill in title, content, and source",
+        title: "Validation Error",
+        description: "Please fix the errors above",
         variant: "destructive"
       });
       return;
     }
 
     setIsSubmitting(true);
+    setValidationErrors([]);
 
     try {
+      console.log("Submitting knowledge entry:", { title, contentType, marketingDomain });
+      
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
       
       const knowledgeId = await GlobalKnowledgeService.addKnowledge(
@@ -53,9 +82,11 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
       );
 
       if (knowledgeId) {
+        console.log("Knowledge entry created successfully:", knowledgeId);
+        
         toast({
-          title: "Knowledge Added",
-          description: "The knowledge entry has been successfully added to the database"
+          title: "Knowledge Added Successfully",
+          description: "The knowledge entry has been added to the database and is ready for use"
         });
         
         // Reset form
@@ -69,17 +100,17 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
         
         onEntryComplete();
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to add knowledge entry",
-          variant: "destructive"
-        });
+        throw new Error("Failed to create knowledge entry - no ID returned");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding knowledge:", error);
+      
+      // Show detailed error message
+      const errorMessage = error?.message || "An unexpected error occurred";
+      
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Failed to Add Knowledge",
+        description: `Error: ${errorMessage}. Please try again or contact support if the issue persists.`,
         variant: "destructive"
       });
     } finally {
@@ -99,6 +130,19 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {validationErrors.length > 0 && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <ul className="list-disc list-inside">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -109,6 +153,7 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                className={validationErrors.some(e => e.includes("Title")) ? "border-red-500" : ""}
               />
             </div>
 
@@ -120,6 +165,7 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
                 required
+                className={validationErrors.some(e => e.includes("Source")) ? "border-red-500" : ""}
               />
             </div>
           </div>
@@ -133,9 +179,14 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
               onChange={(e) => setContent(e.target.value)}
               rows={6}
               required
+              className={validationErrors.some(e => e.includes("Content")) ? "border-red-500" : ""}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              {content.length} characters (minimum 10 required)
+            </p>
           </div>
 
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="contentType">Content Type</Label>
@@ -194,7 +245,7 @@ export function ManualKnowledgeEntry({ onEntryComplete }: ManualKnowledgeEntryPr
           </div>
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "Adding..." : "Add Knowledge Entry"}
+            {isSubmitting ? "Adding Knowledge..." : "Add Knowledge Entry"}
           </Button>
         </form>
       </CardContent>

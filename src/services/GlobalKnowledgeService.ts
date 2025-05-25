@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface GlobalKnowledge {
@@ -43,40 +42,55 @@ export class GlobalKnowledgeService {
     metadata: any = {}
   ): Promise<string | null> {
     try {
-      // Generate embedding for the content
-      const embeddingData = await this.generateEmbedding(content);
+      console.log("Starting knowledge addition process...");
       
-      if (!embeddingData) {
-        console.error("Failed to generate embedding for knowledge content");
-        return null;
+      // Try to generate embedding, but don't fail if it doesn't work
+      let embeddingData = null;
+      try {
+        console.log("Attempting to generate embedding...");
+        embeddingData = await this.generateEmbedding(content);
+        console.log("Embedding generated successfully");
+      } catch (embeddingError) {
+        console.warn("Failed to generate embedding, proceeding without it:", embeddingError);
+        // Continue without embedding - it's not critical for manual entries
       }
 
-      // Insert the knowledge with its embedding
+      console.log("Inserting knowledge into database...");
+      
+      // Insert the knowledge with or without embedding
+      const insertData: any = {
+        content,
+        title,
+        source,
+        content_type: contentType,
+        marketing_domain: marketingDomain,
+        complexity_level: complexityLevel,
+        tags,
+        metadata,
+        quality_score: 0.8 // Default quality score for manual entries
+      };
+
+      // Only add embedding if we successfully generated one
+      if (embeddingData) {
+        insertData.embedding = embeddingData;
+      }
+
       const { data, error } = await supabase
         .from('global_knowledge')
-        .insert({
-          content,
-          title,
-          source,
-          content_type: contentType,
-          marketing_domain: marketingDomain,
-          complexity_level: complexityLevel,
-          tags,
-          metadata,
-          embedding: embeddingData
-        })
+        .insert(insertData)
         .select('id')
         .single();
 
       if (error) {
-        console.error("Error storing global knowledge:", error);
-        return null;
+        console.error("Database error storing global knowledge:", error);
+        throw new Error(`Database error: ${error.message}`);
       }
 
+      console.log("Knowledge successfully stored with ID:", data.id);
       return data.id;
     } catch (error) {
       console.error("Exception in addKnowledge:", error);
-      return null;
+      throw error; // Re-throw to let the UI handle it
     }
   }
 
@@ -206,19 +220,26 @@ export class GlobalKnowledgeService {
    */
   private static async generateEmbedding(text: string): Promise<any> {
     try {
+      console.log("Calling generate-embedding function...");
+      
       const { data, error } = await supabase.functions.invoke("generate-embedding", {
         body: { text }
       });
       
       if (error) {
-        console.error("Error generating embedding:", error);
-        return null;
+        console.error("Error from generate-embedding function:", error);
+        throw new Error(`Embedding function error: ${error.message}`);
       }
       
+      if (!data || !data.embedding) {
+        throw new Error("No embedding data returned from function");
+      }
+      
+      console.log("Embedding data received, length:", data.embedding.length);
       return data.embedding;
     } catch (error) {
       console.error("Exception in generateEmbedding:", error);
-      return null;
+      throw error;
     }
   }
 }

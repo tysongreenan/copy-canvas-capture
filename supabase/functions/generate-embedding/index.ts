@@ -25,7 +25,9 @@ serve(async (req) => {
       throw new Error("Missing text parameter");
     }
 
-    // Call OpenAI's embedding API
+    console.log(`Generating embedding for text of length: ${text.length}`);
+
+    // Call OpenAI's embedding API with the smaller model (1536 dimensions)
     const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -34,16 +36,19 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         input: text,
-        model: "text-embedding-3-large", // Use the appropriate embedding model
+        model: "text-embedding-3-small", // Use the smaller model for 1536 dimensions
       }),
     });
 
     if (!embeddingResponse.ok) {
       const error = await embeddingResponse.json();
+      console.error("OpenAI API error:", error);
       throw new Error(`OpenAI API error: ${JSON.stringify(error)}`);
     }
 
     const { data } = await embeddingResponse.json();
+    
+    console.log(`Successfully generated embedding with ${data[0].embedding.length} dimensions`);
     
     return new Response(JSON.stringify({ embedding: data[0].embedding }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

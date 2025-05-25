@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,11 +22,12 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect if already logged in - fix: moved this after hooks declaration
-  if (user) {
-    navigate("/chat");  // Changed from "/" to "/chat" to redirect to chat
-    return null;
-  }
+  // Fix: Move navigation logic to useEffect to prevent setState during render
+  useEffect(() => {
+    if (user) {
+      navigate("/chat");
+    }
+  }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ const Auth = () => {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate("/chat");  // Changed from "/" to "/chat"
+      navigate("/chat");
     } catch (error) {
       console.error("Login error:", error);
     } finally {
@@ -85,8 +85,14 @@ const Auth = () => {
     }
   };
 
+  // Don't render if user is already logged in (prevent flash)
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white relative">
+      
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-100 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-1/3 -right-20 w-80 h-80 bg-primary rounded-full opacity-10 blur-3xl"></div>

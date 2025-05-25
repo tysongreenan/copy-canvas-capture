@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { useChat } from "@/context/ChatContext";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
@@ -40,7 +41,7 @@ export function useChatMessaging({
   const [usePromptChain, setUsePromptChain] = useState(true);
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
-  const [minQualityScore, setMinQualityScore] = useState(60); // New state for minimum quality
+  const [minQualityScore, setMinQualityScore] = useState(60);
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const [thinkActive, setThinkActive] = useState(false);
   const { toast } = useToast();
@@ -109,7 +110,10 @@ export function useChatMessaging({
         }
         
         // When Think mode is active, disable memory to avoid vector search errors
+        // Also disable memory if user is not authenticated to prevent database errors
         const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
+        
+        console.log(`Memory settings: useMemory=${useMemory}, isAuthenticated=${isAuthenticated}, thinkActive=${thinkActive}, shouldUseMemory=${shouldUseMemory}`);
         
         // Send the message to the agent and get the response
         const response = await AgentService.sendMessage(
@@ -125,7 +129,7 @@ export function useChatMessaging({
             usePromptChain: usePromptChain || thinkActive,
             qualityThreshold: qualityThreshold,
             maxIterations: maxIterations,
-            minQualityScore: taskMinQuality, // Pass the minimum quality score
+            minQualityScore: taskMinQuality,
             enableMultiStepReasoning: thinkActive
           }
         );
@@ -176,7 +180,6 @@ export function useChatMessaging({
         
         // If this is a new conversation, call the callback with a new conversation ID
         if (!conversationId) {
-          // Call the callback to create a new conversation with the thread ID
           onConversationCreated(response.threadId);
         }
       } catch (error) {
@@ -206,8 +209,8 @@ export function useChatMessaging({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
-    minQualityScore, // Export the new state
-    setMinQualityScore, // Export the setter
+    minQualityScore,
+    setMinQualityScore,
     evaluation,
     thinkActive,
     setThinkActive,

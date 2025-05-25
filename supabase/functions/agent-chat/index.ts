@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -6,15 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Helper function to normalize text for better matching - (kept for reference, not directly modified)
-// function normalizeText(text: string): string {
-//   if (!text) return '';
-//   return text
-//     .toLowerCase()
-//     .replace(/\s+/g, ' ')
-//     .trim();
-// }
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, threadId, assistantId, projectId, useFineTunedModel, contentTypeFilter, history, memories } = await req.json(); // Added 'history' and 'memories' to destructuring
+    const { message, threadId, assistantId, projectId, useFineTunedModel, contentTypeFilter, history, memories } = await req.json();
 
     // --- START DEBUG LOGS ---
     console.log("--- AGENT CHAT DEBUG ---");
@@ -39,8 +31,8 @@ serve(async (req) => {
     console.log("Received projectId:", projectId);
     console.log("Received threadId:", threadId);
     console.log("Received contentTypeFilter:", contentTypeFilter);
-    console.log("Received history:", JSON.stringify(history)); // Log the raw history
-    console.log("Received memories:", JSON.stringify(memories)); // Log the raw memories
+    console.log("Received history:", JSON.stringify(history));
+    console.log("Received memories:", JSON.stringify(memories));
     // --- END DEBUG LOGS ---
 
     if (!message || !assistantId) {
@@ -73,7 +65,7 @@ serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
+          'OpenAI-Beta': 'assistants=v2'
         },
         body: JSON.stringify({})
       });
@@ -94,103 +86,100 @@ serve(async (req) => {
     let ragSources = [];
     
     if (projectId) {
-      // Generate embedding for the query
-      const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          input: message, // Use the current message for embedding
-          model: 'text-embedding-3-small',
-        }),
-      });
+      try {
+        // Generate embedding for the query
+        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: message,
+            model: 'text-embedding-3-small',
+          }),
+        });
 
-      if (embeddingResponse.ok) {
-        const embeddingData = await embeddingResponse.json();
-        const embedding = embeddingData.data[0].embedding;
+        if (embeddingResponse.ok) {
+          const embeddingData = await embeddingResponse.json();
+          const embedding = embeddingData.data[0].embedding;
 
-        // Use a lower similarity threshold for better fuzzy matching - reduced further to catch more potential matches
-        const similarityThreshold = 0.2; // Lowered from 0.3 to catch more potential matches
-        
-        // Prepare parameters for the match_documents_multilevel function
-        const matchParams: any = {
-          query_embedding: embedding,
-          match_threshold: similarityThreshold,
-          match_count: 10, // Retrieve more documents (increased from 5)
-          p_project_id: projectId
-        };
-        
-        // Add content type filter if provided
-        if (contentTypeFilter) {
-          matchParams.p_content_type = contentTypeFilter; // Use p_content_type as per migration
-        }
-        
-        // Add marketing domain and complexity level if provided (from AgentService)
-        if (marketingDomain) {
-            matchParams.p_marketing_domain = marketingDomain;
-        }
-        if (complexityLevel) {
-            matchParams.p_complexity_level = complexityLevel;
-        }
-
-        // --- START DEBUG LOGS ---
-        console.log("Match documents parameters:", JSON.stringify(matchParams));
-        // --- END DEBUG LOGS ---
-
-        // Perform vector similarity search with optional content type filter
-        const { data: similarDocs, error } = await supabase.rpc(
-          'match_documents_quality_weighted', // Using the new quality-weighted function
-          matchParams
-        );
-
-        if (!error && similarDocs && similarDocs.length > 0) {
-          // Separate project and global results
-          const projectResults = similarDocs.filter(doc => doc.source_type === 'project');
-          const globalResults = similarDocs.filter(doc => doc.source_type === 'global');
+          // Use a lower similarity threshold for better fuzzy matching
+          const similarityThreshold = 0.2;
           
-          let contextSections = [];
+          // Prepare parameters for the match_documents_multilevel function
+          const matchParams: any = {
+            query_embedding: embedding,
+            match_threshold: similarityThreshold,
+            match_count: 10,
+            p_project_id: projectId
+          };
           
-          if (projectResults.length > 0) {
-            contextSections.push(
-              "=== YOUR PROJECT CONTENT ===\n" + 
-              projectResults.map((doc, index) => 
-                `Project Content ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\n${doc.content}\n`
-              ).join("\n")
-            );
+          // Add content type filter if provided
+          if (contentTypeFilter) {
+            matchParams.p_content_type = contentTypeFilter;
           }
-          
-          if (globalResults.length > 0) {
-            contextSections.push(
-              "=== MARKETING KNOWLEDGE BASE ===\n" + 
-              globalResults.map((doc, index) => {
-                const metadata = doc.metadata || {};
-                return `Marketing Principle ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
-              }).join("\n")
-            );
+
+          // --- START DEBUG LOGS ---
+          console.log("Match documents parameters:", JSON.stringify(matchParams));
+          // --- END DEBUG LOGS ---
+
+          // Perform vector similarity search with optional content type filter
+          const { data: similarDocs, error } = await supabase.rpc(
+            'match_documents_quality_weighted',
+            matchParams
+          );
+
+          if (!error && similarDocs && similarDocs.length > 0) {
+            // Separate project and global results
+            const projectResults = similarDocs.filter(doc => doc.source_type === 'project');
+            const globalResults = similarDocs.filter(doc => doc.source_type === 'global');
             
-            // Track sources for attribution
-            ragSources = similarDocs.map(doc => ({ // Map all similar docs as sources
-              source: doc.source_info,
-              content: doc.content.substring(0, 200) + '...',
-              similarity: doc.similarity,
-              quality_score: doc.quality_score,
-              weighted_score: doc.weighted_score, // Include weighted score
-              metadata: doc.metadata,
-              contentType: doc.metadata?.type || doc.content_type || 'Unknown' // Ensure content type is captured
-            }));
+            let contextSections = [];
+            
+            if (projectResults.length > 0) {
+              contextSections.push(
+                "=== YOUR PROJECT CONTENT ===\n" + 
+                projectResults.map((doc, index) => 
+                  `Project Content ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\n${doc.content}\n`
+                ).join("\n")
+              );
+            }
+            
+            if (globalResults.length > 0) {
+              contextSections.push(
+                "=== MARKETING KNOWLEDGE BASE ===\n" + 
+                globalResults.map((doc, index) => {
+                  const metadata = doc.metadata || {};
+                  return `Marketing Principle ${index + 1} (Similarity: ${(doc.similarity * 100).toFixed(1)}%, Quality: ${doc.quality_score.toFixed(0)}%):\nSource: ${doc.source_info}\nType: ${metadata.content_type || 'Unknown'}\nDomain: ${metadata.marketing_domain || 'General'}\n\n${doc.content}\n`;
+                }).join("\n")
+              );
+              
+              // Track sources for attribution
+              ragSources = similarDocs.map(doc => ({
+                source: doc.source_info,
+                content: doc.content.substring(0, 200) + '...',
+                similarity: doc.similarity,
+                quality_score: doc.quality_score,
+                weighted_score: doc.weighted_score,
+                metadata: doc.metadata,
+                contentType: doc.metadata?.type || doc.content_type || 'Unknown'
+              }));
+            }
+            
+            relevantContexts = contextSections.join("\n");
+            
+            console.log(`Found ${projectResults.length} project documents and ${globalResults.length} marketing principles`);
+            hasRAGResults = true;
+          } else {
+            console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
           }
-          
-          relevantContexts = contextSections.join("\n");
-          
-          console.log(`Found ${projectResults.length} project documents and ${globalResults.length} marketing principles`);
-          hasRAGResults = true;
         } else {
-          console.log(`No relevant documents found with threshold ${similarityThreshold}${contentTypeFilter ? ` and content type '${contentTypeFilter}'` : ''}`);
+          console.error("Failed to generate embedding for RAG search");
         }
-      } else {
-        console.error("Failed to generate embedding for RAG search");
+      } catch (ragError) {
+        console.error("Error in RAG search:", ragError);
+        // Continue without RAG results
       }
     }
 
@@ -214,8 +203,7 @@ serve(async (req) => {
     // Create a system message with instructions for handling no-context situations
     let systemPrompt = "";
     
-    // Updated system prompt logic: if project ID is provided, the AI acts as a specialist
-    // Otherwise (no project ID or no RAG results), it uses general knowledge.
+    // Updated system prompt logic
     if (projectId && !hasRAGResults) {
       systemPrompt = contentTypeFilter 
         ? `You are an AI assistant specializing in marketing research and strategy.
@@ -233,14 +221,14 @@ IMPORTANT INSTRUCTIONS:
 3. Never say that you couldn't find information or refuse to answer. Instead, provide general marketing insights that might be helpful.
 4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
 `;
-    } else if (!projectId) { // If no project ID is provided at all, it's a general marketing assistant
+    } else if (!projectId) {
       systemPrompt = `You are a helpful AI assistant specializing in general marketing knowledge.
 IMPORTANT INSTRUCTIONS:
 1. Answer questions based on your general marketing knowledge.
 2. Clearly state that you are providing general marketing insights.
 3. If a question seems to imply specific project context, gently guide the user to either provide a project ID or clarify that you are drawing on general knowledge.
 `;
-    } else { // Project ID IS provided AND RAG results WERE found
+    } else {
       systemPrompt = `You are a senior marketing strategist and direct response copy chief with access to a comprehensive knowledge base of proven marketing principles, frameworks, and examples from industry legends like Claude Hopkins, David Ogilvy, Eugene Schwartz, and modern experts.
 Your expertise spans:
 - Classic direct response principles and scientific advertising methods
@@ -283,8 +271,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       content: systemPrompt
     });
 
-    // Add conversation history if available (excluding the last user message which is the current query)
-    // Filter out potential system notes from previous turns in history
+    // Add conversation history if available
     if (history && history.length > 0) {
       const cleanedHistory = history.filter(msg => !msg.content.startsWith('[System Note:') && msg.role !== 'system');
       messages.push(...cleanedHistory);
@@ -300,12 +287,12 @@ Your goal: Transform every user into a more strategic marketer while delivering 
     console.log("Final messages array sent to OpenAI:", JSON.stringify(messages));
     // --- END DEBUG LOGS ---
 
-    // Run the assistant on the thread with the specified model override for Marketing Research assistant
+    // Run the assistant on the thread with the specified model override
     const runPayload: any = {
       assistant_id: assistantId
     };
     
-    // Override the model with the fine-tuned model if it's the Marketing Research assistant
+    // Override the model with the fine-tuned model if requested
     if (useFineTunedModel) {
       runPayload.model = "ft:gpt-4o-mini-2024-07-18:personal::AzyZoigT";
     }
@@ -315,7 +302,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
+        'OpenAI-Beta': 'assistants=v2'
       },
       body: JSON.stringify(runPayload)
     });
@@ -331,16 +318,16 @@ Your goal: Transform every user into a more strategic marketer while delivering 
     // Poll for the run to complete
     let runStatus = runData.status;
     let attempts = 0;
-    const maxAttempts = 60; // Maximum 60 attempts with 1 second delay = 1 minute timeout
+    const maxAttempts = 60;
     
     while (runStatus !== 'completed' && runStatus !== 'failed' && runStatus !== 'expired' && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const runCheckResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/runs/${runId}`, {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
+          'OpenAI-Beta': 'assistants=v2'
         }
       });
 
@@ -365,7 +352,7 @@ Your goal: Transform every user into a more strategic marketer while delivering 
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
+        'OpenAI-Beta': 'assistants=v2'
       }
     });
 

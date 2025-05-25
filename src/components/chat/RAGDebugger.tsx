@@ -73,6 +73,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const runDebugSearch = async () => {
     setIsLoading(true);
     setResults([]);
+    setEmbeddingInfo(''); // Reset embedding info
     
     try {
       // Generate embedding
@@ -86,6 +87,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
+      // Set embedding info as string
       setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`);
 
       // Try different thresholds

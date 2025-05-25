@@ -8,7 +8,7 @@ import { useChatMessaging } from "@/hooks/use-chat-messaging";
 import { getPlaceholderText } from "@/utils/chatTaskDetection";
 import { AIChatInput } from "@/components/ui/ai-chat-input";
 import { Button } from "@/components/ui/button";
-import { Brain, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Brain, Settings, ChevronDown, ChevronUp, MessageSquare } from "lucide-react"; // Added MessageSquare for the button
 import { supabase } from "@/integrations/supabase/client";
 import { AgentService } from "@/services/AgentService";
 import { useToast } from "@/hooks/use-toast";
@@ -51,8 +51,6 @@ export function ChatInterface({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
-    minQualityScore,
-    setMinQualityScore,
     thinkActive,
     setThinkActive,
     handleSendMessage
@@ -77,14 +75,12 @@ export function ChatInterface({
       }
     }
   }, [messages]);
-  
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
-  
   const handleThinkToggle = (active: boolean) => {
     setThinkActive(active);
 
@@ -97,7 +93,6 @@ export function ChatInterface({
       });
     }
   };
-  
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
     setSavingMemory(true);
@@ -140,7 +135,58 @@ export function ChatInterface({
       setSavingMemory(false);
     }
   };
-  
+
+  // NEW CODE ADDITION FOR DEBUGGING: getEmbedding function and temporary button
+  const getEmbedding = async (text) => {
+    console.log(`Generating embedding for: "${text}"`);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-embedding", {
+        body: { text: text }
+      });
+
+      if (error) {
+        console.error("Error generating embedding:", error);
+        toast({
+          title: "Embedding Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      if (!data || !data.embedding) {
+        console.error("No embedding data returned.");
+        toast({
+          title: "Embedding Error",
+          description: "No embedding data returned for the text.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      // IMPORTANT: Copy this vector from your browser's console output
+      console.log("--- EMBEDDING VECTOR START ---");
+      console.log(JSON.stringify(data.embedding)); 
+      console.log("--- EMBEDDING VECTOR END ---");
+      
+      toast({
+        title: "Embedding Generated",
+        description: "Check your browser console for the embedding vector.",
+      });
+
+      return data.embedding;
+    } catch (err) {
+      console.error("Caught exception:", err);
+      toast({
+        title: "Embedding Error",
+        description: "An unexpected error occurred while generating embedding.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+  // END NEW CODE ADDITION
+
   return (
     <div className="flex flex-col h-full">
       {/* Header toolbar */}
@@ -159,6 +205,20 @@ export function ChatInterface({
           </Button>
         )}
         
+        {/* NEW DEBUGGING BUTTON: Get Embedding */}
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={() => getEmbedding("the junction")} 
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm"
+          title="Debug: Get Embedding for 'the junction'"
+        >
+          <MessageSquare size={16} /> {/* Using MessageSquare, you can change icon */}
+          Get 'junction' Embedding
+        </Button>
+        {/* END NEW DEBUGGING BUTTON */}
+
+
         {/* Settings Popover */}
         <div className={conversationId && messages.length > 2 ? "" : "ml-auto"}>
           <Popover>
@@ -189,26 +249,6 @@ export function ChatInterface({
                   </div>
                   <p className="text-xs text-white/60">
                     {thinkActive ? "Response evaluation is required when Think mode is active" : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="min-quality" className="text-sm">
-                      Minimum Content Quality: {minQualityScore}%
-                    </Label>
-                  </div>
-                  <Slider 
-                    id="min-quality" 
-                    min={40} 
-                    max={90} 
-                    step={5} 
-                    value={[minQualityScore]} 
-                    onValueChange={values => setMinQualityScore(values[0])} 
-                    className="py-4" 
-                  />
-                  <p className="text-xs text-white/60">
-                    Only retrieve knowledge content above this quality threshold
                   </p>
                 </div>
                 

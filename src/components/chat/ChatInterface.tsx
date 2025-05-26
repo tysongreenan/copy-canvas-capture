@@ -17,13 +17,11 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RAGDebugger } from "@/components/chat/RAGDebugger";
-
 interface ChatInterfaceProps {
   projectId: string;
   conversationId?: string;
   onConversationCreated: (id: string) => void;
 }
-
 export function ChatInterface({
   projectId,
   conversationId,
@@ -77,14 +75,12 @@ export function ChatInterface({
       }
     }
   }, [messages]);
-  
   const handleSend = () => {
     if (inputValue.trim() && !isLoading) {
       handleSendMessage(inputValue);
       setInputValue("");
     }
   };
-  
   const handleThinkToggle = (active: boolean) => {
     setThinkActive(active);
 
@@ -97,7 +93,6 @@ export function ChatInterface({
       });
     }
   };
-  
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
     setSavingMemory(true);
@@ -140,32 +135,17 @@ export function ChatInterface({
       setSavingMemory(false);
     }
   };
-
-  return (
-    <div className="flex flex-col h-full">
+  return <div className="flex flex-col h-full">
       {/* Header toolbar */}
       <div className="flex justify-between items-center px-4 pt-4 py-[10px]">
         {/* Memory button (if conversation exists) */}
-        {conversationId && messages.length > 2 && (
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={handleSaveMemory} 
-            disabled={savingMemory} 
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm"
-          >
+        {conversationId && messages.length > 2 && <Button size="sm" variant="outline" onClick={handleSaveMemory} disabled={savingMemory} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm">
             <Brain size={16} />
             {savingMemory ? "Saving Memory..." : "Save as Memory"}
-          </Button>
-        )}
+          </Button>}
 
         {/* Debug button */}
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => setShowDebugger(!showDebugger)} 
-          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm"
-        >
+        <Button size="sm" variant="outline" onClick={() => setShowDebugger(!showDebugger)} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-black py-0 px-[16px] mx-0 text-left font-normal text-sm">
           <Bug size={16} />
           {showDebugger ? "Hide Debugger" : "Show RAG Debugger"}
         </Button>
@@ -186,40 +166,26 @@ export function ChatInterface({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="prompt-chain" className="text-sm">Enable Response Evaluation</Label>
-                    <Switch 
-                      id="prompt-chain" 
-                      checked={usePromptChain || thinkActive} 
-                      onCheckedChange={checked => {
-                        setUsePromptChain(checked);
-                        if (!checked && thinkActive) {
-                          setThinkActive(false);
-                        }
-                      }} 
-                      disabled={thinkActive}
-                    />
+                    <Switch id="prompt-chain" checked={usePromptChain || thinkActive} onCheckedChange={checked => {
+                    setUsePromptChain(checked);
+                    if (!checked && thinkActive) {
+                      setThinkActive(false);
+                    }
+                  }} disabled={thinkActive} />
                   </div>
                   <p className="text-xs text-white/60">
                     {thinkActive ? "Response evaluation is required when Think mode is active" : "When enabled, responses will be evaluated and improved until they meet your quality threshold"}
                   </p>
                 </div>
                 
-                {(usePromptChain || thinkActive) && (
-                  <>
+                {(usePromptChain || thinkActive) && <>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="quality-threshold" className="text-sm">
                           Quality Threshold: {qualityThreshold}%
                         </Label>
                       </div>
-                      <Slider 
-                        id="quality-threshold" 
-                        min={70} 
-                        max={98} 
-                        step={1} 
-                        value={[qualityThreshold]} 
-                        onValueChange={values => setQualityThreshold(values[0])} 
-                        className="py-4" 
-                      />
+                      <Slider id="quality-threshold" min={70} max={98} step={1} value={[qualityThreshold]} onValueChange={values => setQualityThreshold(values[0])} className="py-4" />
                       <p className="text-xs text-white/60">
                         Higher values require more accurate responses but may take longer
                       </p>
@@ -231,21 +197,12 @@ export function ChatInterface({
                           Maximum Iterations: {maxIterations}
                         </Label>
                       </div>
-                      <Slider 
-                        id="max-iterations" 
-                        min={1} 
-                        max={5} 
-                        step={1} 
-                        value={[maxIterations]} 
-                        onValueChange={values => setMaxIterations(values[0])} 
-                        className="py-4" 
-                      />
+                      <Slider id="max-iterations" min={1} max={5} step={1} value={[maxIterations]} onValueChange={values => setMaxIterations(values[0])} className="py-4" />
                       <p className="text-xs text-white/60">
                         More iterations allow for better refinement but increase response time
                       </p>
                     </div>
-                  </>
-                )}
+                  </>}
               </div>
             </PopoverContent>
           </Popover>
@@ -253,34 +210,20 @@ export function ChatInterface({
       </div>
 
       {/* RAG Debugger */}
-      {showDebugger && (
-        <div className="px-4 pb-4">
+      {showDebugger && <div className="px-4 pb-4">
           <RAGDebugger projectId={projectId} />
-        </div>
-      )}
+        </div>}
       
       <div className="flex flex-col h-[85vh] pb-4">
         {/* Scrollable messages with centered container */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 h-full overflow-auto" ref={scrollAreaRef}>
             <div className="flex justify-center w-full">
-              <div className="w-full max-w-4xl px-4">
+              <div className="w-full max-w-4xl px-[48px]">
                 <div className="space-y-4 pb-4">
-                  {messages.map((message, index) => (
-                    <ChatMessage key={index} message={message} />
-                  ))}
-                  <ChatLoadingIndicator 
-                    isLoading={isLoading} 
-                    taskType={taskType} 
-                    isThinking={thinkActive} 
-                  />
-                  {reasoning.length > 0 && messages.length > 0 && !isLoading && (
-                    <ReasoningDisplay 
-                      reasoning={reasoning} 
-                      confidence={confidence} 
-                      evaluation={evaluation} 
-                    />
-                  )}
+                  {messages.map((message, index) => <ChatMessage key={index} message={message} />)}
+                  <ChatLoadingIndicator isLoading={isLoading} taskType={taskType} isThinking={thinkActive} />
+                  {reasoning.length > 0 && messages.length > 0 && !isLoading && <ReasoningDisplay reasoning={reasoning} confidence={confidence} evaluation={evaluation} />}
                 </div>
               </div>
             </div>
@@ -291,19 +234,10 @@ export function ChatInterface({
         <div className="w-full border-t border-gray-200 bg-white shadow-sm">
           <div className="flex justify-center w-full">
             <div className="w-full max-w-4xl px-6 py-4">
-              <AIChatInput 
-                value={inputValue} 
-                onChange={setInputValue} 
-                onSend={handleSend} 
-                isLoading={isLoading} 
-                placeholder={getPlaceholderText(taskType)} 
-                thinkActive={thinkActive} 
-                onThinkToggle={handleThinkToggle} 
-              />
+              <AIChatInput value={inputValue} onChange={setInputValue} onSend={handleSend} isLoading={isLoading} placeholder={getPlaceholderText(taskType)} thinkActive={thinkActive} onThinkToggle={handleThinkToggle} />
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

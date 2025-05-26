@@ -56,28 +56,28 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {isUser ? (
               <div className="whitespace-pre-wrap">{message.content}</div>
             ) : (
-              <div className="text-black">
+              <div className="text-white">
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-black">{children}</h1>,
-                    h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-black">{children}</h2>,
-                    h3: ({children}) => <h3 className="text-base font-medium mb-2 text-black">{children}</h3>,
-                    h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-black">{children}</h4>,
-                    p: ({children}) => <p className="mb-2 text-black/90 last:mb-0">{children}</p>,
-                    ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-black/90">{children}</ul>,
-                    ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-black/90">{children}</ol>,
-                    li: ({children}) => <li className="text-black/90">{children}</li>,
+                    h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-white">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-base font-medium mb-2 text-white">{children}</h3>,
+                    h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-white">{children}</h4>,
+                    p: ({children}) => <p className="mb-2 text-white/90 last:mb-0">{children}</p>,
+                    ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-white/90">{children}</ul>,
+                    ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-white/90">{children}</ol>,
+                    li: ({children}) => <li className="text-white/90">{children}</li>,
                     code: ({children, className}) => {
                       const isInline = !className;
                       return isInline ? 
-                        <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono text-black">{children}</code> :
-                        <code className="block bg-gray-50 p-3 rounded-md text-xs font-mono text-black/90 overflow-x-auto">{children}</code>
+                        <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono text-white">{children}</code> :
+                        <code className="block bg-white/5 p-3 rounded-md text-xs font-mono text-white/90 overflow-x-auto">{children}</code>
                     },
-                    pre: ({children}) => <pre className="bg-gray-50 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
-                    blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-black/80 mb-2">{children}</blockquote>,
-                    strong: ({children}) => <strong className="font-semibold text-black">{children}</strong>,
-                    em: ({children}) => <em className="italic text-black/90">{children}</em>,
+                    pre: ({children}) => <pre className="bg-white/5 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-white/20 pl-4 italic text-white/80 mb-2">{children}</blockquote>,
+                    strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
+                    em: ({children}) => <em className="italic text-white/90">{children}</em>,
                   }}
                 >
                   {message.content}
@@ -92,7 +92,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-black/10 hover:bg-black/20 text-black/60 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-white/10 hover:bg-white/20 text-white/60 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>

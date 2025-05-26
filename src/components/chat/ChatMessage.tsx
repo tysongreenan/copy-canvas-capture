@@ -56,32 +56,33 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {isUser ? (
               <div className="whitespace-pre-wrap">{message.content}</div>
             ) : (
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                className="markdown-content text-white"
-                components={{
-                  h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
-                  h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-white">{children}</h2>,
-                  h3: ({children}) => <h3 className="text-base font-medium mb-2 text-white">{children}</h3>,
-                  h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-white">{children}</h4>,
-                  p: ({children}) => <p className="mb-2 text-white/90 last:mb-0">{children}</p>,
-                  ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-white/90">{children}</ul>,
-                  ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-white/90">{children}</ol>,
-                  li: ({children}) => <li className="text-white/90">{children}</li>,
-                  code: ({children, className}) => {
-                    const isInline = !className;
-                    return isInline ? 
-                      <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono text-white">{children}</code> :
-                      <code className="block bg-white/5 p-3 rounded-md text-xs font-mono text-white/90 overflow-x-auto">{children}</code>
-                  },
-                  pre: ({children}) => <pre className="bg-white/5 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
-                  blockquote: ({children}) => <blockquote className="border-l-4 border-white/20 pl-4 italic text-white/80 mb-2">{children}</blockquote>,
-                  strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
-                  em: ({children}) => <em className="italic text-white/90">{children}</em>,
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
+              <div className="text-white">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-white">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-base font-medium mb-2 text-white">{children}</h3>,
+                    h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-white">{children}</h4>,
+                    p: ({children}) => <p className="mb-2 text-white/90 last:mb-0">{children}</p>,
+                    ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-white/90">{children}</ul>,
+                    ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-white/90">{children}</ol>,
+                    li: ({children}) => <li className="text-white/90">{children}</li>,
+                    code: ({children, className}) => {
+                      const isInline = !className;
+                      return isInline ? 
+                        <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono text-white">{children}</code> :
+                        <code className="block bg-white/5 p-3 rounded-md text-xs font-mono text-white/90 overflow-x-auto">{children}</code>
+                    },
+                    pre: ({children}) => <pre className="bg-white/5 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-white/20 pl-4 italic text-white/80 mb-2">{children}</blockquote>,
+                    strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
+                    em: ({children}) => <em className="italic text-white/90">{children}</em>,
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
             )}
           </div>
           

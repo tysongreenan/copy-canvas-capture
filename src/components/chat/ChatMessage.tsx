@@ -1,7 +1,12 @@
 
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { ChatMessage as ChatMessageType } from "@/services/ChatService";
 import { motion } from "framer-motion";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -9,6 +14,25 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const [showCopyButton, setShowCopyButton] = useState(false);
+  const { toast } = useToast();
+  
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      toast({
+        title: "Copied to clipboard",
+        description: "Message content copied with formatting preserved",
+      });
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast({
+        title: "Copy failed",
+        description: "Could not copy message content",
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <motion.div 
@@ -16,8 +40,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      onMouseEnter={() => setShowCopyButton(true)}
+      onMouseLeave={() => setShowCopyButton(false)}
     >
-      <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} max-w-2xl w-full gap-3`}>
+      <div className={`flex ${isUser ? 'flex-row-reverse' : 'flex-row'} max-w-2xl w-full gap-3 relative group`}>
         <Avatar className={`h-8 w-8 ${isUser ? 'bg-tan text-black' : 'bg-gray-100 text-gray-700'} flex-shrink-0 flex items-center justify-center`}>
           <span className={`text-xs font-medium`}>
             {isUser ? 'You' : 'AI'}
@@ -25,10 +51,54 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </Avatar>
         
         <div className={`${isUser ? 'bg-tan text-black px-4 py-3 rounded-lg' : ''} 
-                        flex-1 min-w-0`}>
-          <div className="whitespace-pre-wrap text-sm break-words">
-            {message.content}
+                        flex-1 min-w-0 relative`}>
+          <div className="text-sm break-words text-left">
+            {isUser ? (
+              <div className="whitespace-pre-wrap">{message.content}</div>
+            ) : (
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                className="markdown-content text-white"
+                components={{
+                  h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
+                  h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-white">{children}</h2>,
+                  h3: ({children}) => <h3 className="text-base font-medium mb-2 text-white">{children}</h3>,
+                  h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-white">{children}</h4>,
+                  p: ({children}) => <p className="mb-2 text-white/90 last:mb-0">{children}</p>,
+                  ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-white/90">{children}</ul>,
+                  ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-white/90">{children}</ol>,
+                  li: ({children}) => <li className="text-white/90">{children}</li>,
+                  code: ({children, className}) => {
+                    const isInline = !className;
+                    return isInline ? 
+                      <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono text-white">{children}</code> :
+                      <code className="block bg-white/5 p-3 rounded-md text-xs font-mono text-white/90 overflow-x-auto">{children}</code>
+                  },
+                  pre: ({children}) => <pre className="bg-white/5 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
+                  blockquote: ({children}) => <blockquote className="border-l-4 border-white/20 pl-4 italic text-white/80 mb-2">{children}</blockquote>,
+                  strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
+                  em: ({children}) => <em className="italic text-white/90">{children}</em>,
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            )}
           </div>
+          
+          {/* Copy button */}
+          {showCopyButton && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopy}
+              className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-white/10 hover:bg-white/20 text-white/60 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+              </svg>
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

@@ -87,7 +87,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
       }
       
       // Format embedding info as string
-      setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map(v => v.toFixed(4)).join(', ')}...]`);
+      setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`);
 
       // Try different thresholds
       const thresholds = [0.3, 0.2, 0.1, 0.05];

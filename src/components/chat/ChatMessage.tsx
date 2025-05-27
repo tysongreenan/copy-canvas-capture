@@ -56,26 +56,26 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {isUser ? (
               <div className="whitespace-pre-wrap">{message.content}</div>
             ) : (
-              <div className="text-black">
+              <div className="text-black text-left w-full">
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-black">{children}</h1>,
-                    h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-black">{children}</h2>,
-                    h3: ({children}) => <h3 className="text-base font-medium mb-2 text-black">{children}</h3>,
-                    h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-black">{children}</h4>,
-                    p: ({children}) => <p className="mb-2 text-black/90 last:mb-0">{children}</p>,
-                    ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-black/90">{children}</ul>,
-                    ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-black/90">{children}</ol>,
-                    li: ({children}) => <li className="text-black/90">{children}</li>,
+                    h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-black text-left">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-black text-left">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-base font-medium mb-2 text-black text-left">{children}</h3>,
+                    h4: ({children}) => <h4 className="text-sm font-medium mb-1 text-black text-left">{children}</h4>,
+                    p: ({children}) => <p className="mb-2 text-black/90 last:mb-0 text-left">{children}</p>,
+                    ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 text-black/90 text-left">{children}</ul>,
+                    ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 text-black/90 text-left">{children}</ol>,
+                    li: ({children}) => <li className="text-black/90 text-left">{children}</li>,
                     code: ({children, className}) => {
                       const isInline = !className;
                       return isInline ? 
                         <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono text-black">{children}</code> :
-                        <code className="block bg-gray-50 p-3 rounded-md text-xs font-mono text-black/90 overflow-x-auto">{children}</code>
+                        <code className="block bg-gray-50 p-3 rounded-md text-xs font-mono text-black/90 overflow-x-auto text-left">{children}</code>
                     },
-                    pre: ({children}) => <pre className="bg-gray-50 p-3 rounded-md mb-2 overflow-x-auto">{children}</pre>,
-                    blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-black/80 mb-2">{children}</blockquote>,
+                    pre: ({children}) => <pre className="bg-gray-50 p-3 rounded-md mb-2 overflow-x-auto text-left">{children}</pre>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-black/80 mb-2 text-left">{children}</blockquote>,
                     strong: ({children}) => <strong className="font-semibold text-black">{children}</strong>,
                     em: ({children}) => <em className="italic text-black/90">{children}</em>,
                   }}

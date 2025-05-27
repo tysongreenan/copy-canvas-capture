@@ -1,45 +1,35 @@
 
 import { useState, useEffect } from "react";
-import { useParams, Navigate, Link } from "react-router-dom";
+import { useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { Header } from "@/components/Header";
 import { BrandingService, BrandVoice } from "@/services/BrandingService";
 import { ContentService } from "@/services/ContentService";
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormDescription, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Brush, Globe, Edit, Save, Wand2, Search, SlidersHorizontal, RotateCcw } from "lucide-react";
-import { SEOContentSummary } from "@/components/project/SEOContentSummary";
-import { BrandVoiceDashboard } from "@/components/branding/BrandVoiceDashboard";
-import { BrandVoiceProfiler } from "@/components/branding/BrandVoiceProfiler";
+import { Save, Wand2, SlidersHorizontal } from "lucide-react";
+import { BrandingDashboard } from "@/components/branding/BrandingDashboard";
+import { BrandingSection } from "@/components/branding/sections/BrandingSection";
+import { SEOSection } from "@/components/branding/sections/SEOSection";
+import { ContentSection } from "@/components/branding/sections/ContentSection";
+import { EmailSection } from "@/components/branding/sections/EmailSection";
+import { BlogSection } from "@/components/branding/sections/BlogSection";
 import { GuidedSetupWizard } from "@/components/branding/GuidedSetupWizard";
-import { VisualTerminologyManager } from "@/components/branding/VisualTerminologyManager";
-import { ContentPreview } from "@/components/branding/ContentPreview";
-import { RescanTab } from "@/components/project/RescanTab";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [wizardMode, setWizardMode] = useState(false);
+  
+  const activeSection = searchParams.get('section') || 'branding';
   
   const form = useForm<Partial<BrandVoice>>({
     defaultValues: {
@@ -123,7 +113,6 @@ const BrandingDetails = () => {
       // Exit wizard mode after saving
       if (wizardMode) {
         setWizardMode(false);
-        setActiveTab("dashboard");
       }
     } catch (error: any) {
       console.error("Error saving brand voice:", error);
@@ -179,10 +168,6 @@ const BrandingDetails = () => {
     }
   };
   
-  const handleSectionEdit = (section: string) => {
-    setActiveTab(section);
-  };
-  
   const handleStartWizard = () => {
     setWizardMode(true);
   };
@@ -197,6 +182,23 @@ const BrandingDetails = () => {
       ...data
     });
   };
+
+  const renderActiveSection = () => {
+    if (!id) return null;
+
+    switch (activeSection) {
+      case 'seo':
+        return <SEOSection projectId={id} />;
+      case 'content':
+        return <ContentSection projectId={id} brandVoice={form.getValues()} project={project} />;
+      case 'emails':
+        return <EmailSection />;
+      case 'blog':
+        return <BlogSection />;
+      default:
+        return <BrandingSection form={form} />;
+    }
+  };
   
   // Redirect if not logged in
   if (!user) {
@@ -207,390 +209,88 @@ const BrandingDetails = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1 container max-w-5xl px-6 py-8">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-6">
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      ) : wizardMode ? (
+        <div className="container max-w-5xl px-6 py-8">
+          <GuidedSetupWizard
+            initialData={form.getValues()}
+            onComplete={handleCompleteWizard}
+            onGenerate={generateFromContent}
+            isGenerating={generating}
+          />
+        </div>
+      ) : (
+        <BrandingDashboard projectId={id || ''} activeSection={activeSection}>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold flex items-center">
-                  <Brush className="h-6 w-6 mr-2 text-indigo-600" />
-                  Brand Voice Settings
-                </h1>
+                <h1 className="text-2xl font-bold">Brand Voice Settings</h1>
                 {project && (
-                  <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Globe className="h-4 w-4 mr-1" />
+                  <p className="text-sm text-gray-500 mt-1">
                     {project.title || "Untitled Project"}
-                    <Link to={`/project/${id}`} className="ml-3 text-indigo-600 hover:text-indigo-800">
-                      Back to Project
-                    </Link>
-                  </div>
+                  </p>
                 )}
               </div>
               
               <div className="flex gap-2">
-                {!wizardMode && (
-                  <>
-                    <Button 
-                      onClick={handleStartWizard} 
-                      variant="outline"
-                      className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
-                    >
-                      <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      Setup Wizard
-                    </Button>
-                    
-                    <Button 
-                      onClick={generateFromContent} 
-                      variant="outline" 
-                      className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
-                      disabled={generating || saving}
-                    >
-                      {generating ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
-                          Generating...
-                        </div>
-                      ) : (
-                        <>
-                          <Wand2 className="h-4 w-4 mr-2" />
-                          Auto-Generate
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button 
-                      onClick={form.handleSubmit(onSubmit)} 
-                      disabled={saving}
-                    >
-                      {saving ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
-                        </div>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save Settings
-                        </>
-                      )}
-                    </Button>
-                  </>
-                )}
+                <Button 
+                  onClick={handleStartWizard} 
+                  variant="outline"
+                  className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  Setup Wizard
+                </Button>
+                
+                <Button 
+                  onClick={generateFromContent} 
+                  variant="outline" 
+                  className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50"
+                  disabled={generating || saving}
+                >
+                  {generating ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+                      Generating...
+                    </div>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Auto-Generate
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={form.handleSubmit(onSubmit)} 
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Settings
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
-            
-            {!wizardMode ? (
-              <>
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle>Brand Voice Configuration</CardTitle>
-                    <CardDescription>
-                      Define how the AI should communicate on behalf of this brand. These settings will be used to customize AI outputs.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-                
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="mb-6">
-                        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                        <TabsTrigger value="tone">Tone & Style</TabsTrigger>
-                        <TabsTrigger value="audience">Audience</TabsTrigger>
-                        <TabsTrigger value="content">Content Guidelines</TabsTrigger>
-                        <TabsTrigger value="language">Language</TabsTrigger>
-                        <TabsTrigger value="preview">
-                          Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="seo">
-                          <Search className="h-4 w-4 mr-2" />
-                          SEO Content
-                        </TabsTrigger>
-                        <TabsTrigger value="rescan">
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Content Update
-                        </TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="dashboard" className="space-y-6">
-                        <BrandVoiceDashboard 
-                          brandVoice={form.getValues()} 
-                          onEditSection={handleSectionEdit} 
-                        />
-                      </TabsContent>
-                      
-                      <TabsContent value="tone" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Brand Tone & Style</CardTitle>
-                            <CardDescription>
-                              Define how your brand should sound to your audience
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <FormField
-                              control={form.control}
-                              name="tone"
-                              render={({ field }) => (
-                                <FormItem className="mb-6">
-                                  <FormLabel>Brand Tone</FormLabel>
-                                  <FormControl>
-                                    <BrandVoiceProfiler 
-                                      initialTone={field.value} 
-                                      onToneChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="style"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Writing Style</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      placeholder="e.g., Concise with short paragraphs, data-driven, storytelling approach..." 
-                                      {...field} 
-                                      className="min-h-20"
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    Describe the writing style in terms of structure, sentence length, and stylistic choices.
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="audience" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Target Audience</CardTitle>
-                            <CardDescription>
-                              Define who your content is being created for
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <FormField
-                              control={form.control}
-                              name="audience"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Target Audience</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      placeholder="e.g., Technical professionals, small business owners, parents of young children..." 
-                                      {...field} 
-                                      className="min-h-20"
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    Describe who the content is primarily created for to help the AI adjust accordingly.
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="content" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Content Guidelines</CardTitle>
-                            <CardDescription>
-                              Define key messages and content to avoid
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <FormField
-                              control={form.control}
-                              name="key_messages"
-                              render={({ field }) => (
-                                <FormItem className="mb-6">
-                                  <FormLabel>Key Messages</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      placeholder="Enter key messages or brand points (one per line)" 
-                                      {...field}
-                                      value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                                      onChange={(e) => field.onChange(e.target.value)}
-                                      className="min-h-32"
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    List important messages or value propositions the brand wants to emphasize (one per line).
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="avoid_phrases"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Phrases to Avoid</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      placeholder="Enter phrases to avoid (one per line)" 
-                                      {...field}
-                                      value={Array.isArray(field.value) ? field.value.join('\n') : field.value}
-                                      onChange={(e) => field.onChange(e.target.value)}
-                                      className="min-h-24"
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    List words, phrases or topics to avoid in brand communications (one per line).
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="language" className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-lg">Language Preferences</CardTitle>
-                            <CardDescription>
-                              Define language preferences and terminology
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <FormField
-                              control={form.control}
-                              name="language"
-                              render={({ field }) => (
-                                <FormItem className="mb-6">
-                                  <FormLabel>Language Preferences</FormLabel>
-                                  <FormControl>
-                                    <Textarea 
-                                      placeholder="e.g., American English, British English, simple language avoiding jargon..." 
-                                      {...field} 
-                                      className="min-h-24"
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    Specify language preferences including regional variations and complexity level.
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            <FormField
-                              control={form.control}
-                              name="terminology"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Brand Terminology</FormLabel>
-                                  <FormControl>
-                                    <VisualTerminologyManager
-                                      initialTerminology={field.value as Record<string, string>}
-                                      onTerminologyChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                  <FormDescription className="mt-4">
-                                    Define key terms and their preferred descriptions to maintain consistent brand language.
-                                  </FormDescription>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="preview">
-                        <ContentPreview brandVoice={form.getValues()} />
-                      </TabsContent>
-                      
-                      <TabsContent value="seo">
-                        <div className="mb-4">
-                          <Card>
-                            <CardHeader className="pb-3">
-                              <CardTitle className="text-lg">
-                                Scraped SEO Content
-                              </CardTitle>
-                              <CardDescription>
-                                Analysis of your website's SEO content and structure from the scraped data. Use this information to improve your brand voice settings.
-                              </CardDescription>
-                            </CardHeader>
-                          </Card>
-                        </div>
-                        {id && <SEOContentSummary projectId={id} />}
-                      </TabsContent>
-                      
-                      <TabsContent value="rescan">
-                        <div className="mb-4">
-                          <Card>
-                            <CardHeader className="pb-3">
-                              <CardTitle className="text-lg">
-                                Content Update
-                              </CardTitle>
-                              <CardDescription>
-                                Rescan your website to check for new or updated content and keep your AI embeddings up to date.
-                              </CardDescription>
-                            </CardHeader>
-                          </Card>
-                        </div>
-                        {project && <RescanTab project={project} />}
-                      </TabsContent>
-                    </Tabs>
-                    
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={saving}>
-                        {saving ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Saving...
-                          </div>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 mr-2" />
-                            Save Settings
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </>
-            ) : (
-              <div className="mt-4">
-                <GuidedSetupWizard
-                  initialData={form.getValues()}
-                  onComplete={handleCompleteWizard}
-                  onGenerate={generateFromContent}
-                  isGenerating={generating}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </main>
-      
-      <footer className="py-6 text-center text-sm text-gray-500 border-t">
-        <div className="container">
-          <p>Lumen © {new Date().getFullYear()} • Designed for web professionals</p>
-        </div>
-      </footer>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {renderActiveSection()}
+              </form>
+            </Form>
+          </div>
+        </BrandingDashboard>
+      )}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,6 +86,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
+      // Format embedding info as string
       setEmbeddingInfo(`Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map(v => v.toFixed(4)).join(', ')}...]`);
 
       // Try different thresholds

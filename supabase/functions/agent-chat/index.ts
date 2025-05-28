@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -75,7 +74,7 @@ serve(async (req) => {
     const requestBody = await req.json();
     const {
       message,
-      threadId,
+      threadId, // Note: threadId from frontend corresponds to conversation_id in database
       projectId,
       taskType = 'general',
       enableTools = true,
@@ -244,23 +243,76 @@ serve(async (req) => {
     }
 
     // Enhanced system prompt with project awareness
-    const systemPrompt = `You are an AI assistant with access to specific project information and knowledge base content. 
+    const systemPrompt = `You are a helpful, knowledgeable, and conversational AI assistant. Your goal is to provide clear, accurate, and engaging responses that are easy to understand and actionable.
 
-${context ? `Context Information:\n${context}\n\n` : ''}
+${context ? `## Available Context
+${context}
 
-Instructions:
-- If you have relevant context information above, use it to provide accurate, specific answers
-- When discussing project-specific topics (like "The Junction"), prioritize the context information over general knowledge
-- If the context mentions specific details about projects, developments, or businesses, reference those details in your response
-- Be conversational and helpful while staying factually accurate to the provided context
-- If you don't have enough context to answer accurately, say so rather than guessing
+` : ''}## Core Instructions
+- **Be conversational and friendly**: Write in a natural, engaging tone like you're talking to a colleague
+- **Structure your responses clearly**: Use headings, bullet points, and formatting to make information easy to scan
+- **Be comprehensive but concise**: Provide thorough answers without being verbose
+- **Show your reasoning**: When making recommendations or drawing conclusions, briefly explain your thinking
+- **Use examples**: Include practical examples or use cases when helpful
+- **Ask clarifying questions**: If the request is ambiguous, ask specific questions to better help
 
-Current task type: ${taskType}`;
+## Response Formatting
+- Use **bold text** for key concepts and important points
+- Use bullet points or numbered lists for multiple items
+- Use code blocks for technical content, file paths, or commands
+- Use > quotes for important notes or warnings
+- Break up long responses with clear section headers
+
+## Context Guidelines
+- If you have relevant context above, prioritize it over general knowledge
+- Always cite specific details from the context when referencing project information
+- If context is incomplete or unclear, acknowledge limitations and suggest next steps
+- For project-specific topics, focus on the specific context rather than general information
+
+## Quality Standards
+- Ensure accuracy over speed - if you're unsure, say so
+- Provide actionable advice when possible
+- Consider the user's likely intent and provide proactive suggestions
+- Maintain consistency with previous responses in the conversation
+
+Current task type: ${taskType}
+Current expertise focus: ${taskType === 'research' ? 'Deep analysis and fact-finding' : taskType === 'marketing' ? 'Persuasive and engaging content' : taskType === 'email' ? 'Professional and clear communication' : taskType === 'summary' ? 'Concise and comprehensive overviews' : taskType === 'content' ? 'Creative and informative writing' : 'General assistance and problem-solving'}`;
 
     console.log('OpenAI response received');
 
+    // Get recent conversation history for better context
+    let conversationHistory: any[] = [];
+    if (threadId) {
+      try {
+        const { data: recentMessages } = await supabase
+          .from('chat_messages')
+          .select('role, content, created_at')
+          .eq('conversation_id', threadId)
+          .order('created_at', { ascending: false })
+          .limit(6); // Get last 6 messages (3 exchanges)
+        
+        if (recentMessages && recentMessages.length > 0) {
+          // Reverse to chronological order and exclude the current message
+          conversationHistory = recentMessages
+            .reverse()
+            .filter(msg => msg.content !== message)
+            .slice(-4); // Keep only last 4 messages for context
+          
+          console.log(`Found ${conversationHistory.length} previous messages for context`);
+        }
+      } catch (error) {
+        console.log('Could not fetch conversation history:', error);
+      }
+    }
+
+    // Build messages array with conversation history
     const openAIMessages = [
       { role: 'system', content: systemPrompt },
+      // Add recent conversation history
+      ...conversationHistory.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content
+      })),
       { role: 'user', content: message }
     ];
 
@@ -397,9 +449,31 @@ Current task type: ${taskType}`;
 
   } catch (error) {
     console.error('Error in agent-chat function:', error);
+    
+    // Provide more helpful error messages based on error type
+    let userMessage = "I'm sorry, I encountered an issue while processing your request.";
+    
+    if (error.message?.includes('API key')) {
+      userMessage = "I'm experiencing authentication issues. Please try again in a moment.";
+    } else if (error.message?.includes('rate limit') || error.message?.includes('quota')) {
+      userMessage = "I'm currently experiencing high demand. Please try again in a few moments.";
+    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      userMessage = "I'm having trouble connecting to my services. Please check your connection and try again.";
+    } else if (error.message?.includes('timeout')) {
+      userMessage = "Your request is taking longer than usual. Please try again, and consider breaking complex requests into smaller parts.";
+    } else {
+      userMessage = "I encountered an unexpected issue. Please try rephrasing your question or try again in a moment.";
+    }
+    
     return new Response(JSON.stringify({
       error: error.message,
-      message: "I'm sorry, I encountered an error while processing your request. Please try again."
+      message: userMessage,
+      suggestions: [
+        "Try rephrasing your question",
+        "Check your internet connection", 
+        "Try again in a few moments",
+        "Break complex requests into smaller parts"
+      ]
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { MemoryService } from "./MemoryService";
 
@@ -89,19 +88,19 @@ export class AgentService {
         enableMultiStepReasoning: true,
         modelName: "gpt-4o-mini",
         temperature: 0.7,
-        maxTokens: 1500,
+        maxTokens: 1800,
         useMemory: true,
-        usePromptChain: true,
-        qualityThreshold: 90,
-        maxIterations: 3,
-        minQualityScore: 60, // Default minimum quality score (60%)
+        usePromptChain: false,
+        qualityThreshold: 85,
+        maxIterations: 2,
+        minQualityScore: 60,
       };
 
       // Special cases for different task types
       if (options.taskType === 'email') {
         defaultOptions.temperature = 0.5;
         defaultOptions.maxTokens = 2000;
-        defaultOptions.minQualityScore = 70; // Higher quality for emails
+        defaultOptions.minQualityScore = 70;
       } else if (options.taskType === 'summary') {
         defaultOptions.temperature = 0.3;
         defaultOptions.maxTokens = 1800;
@@ -110,13 +109,14 @@ export class AgentService {
         defaultOptions.modelName = "gpt-4o";
         defaultOptions.enableTools = true;
         defaultOptions.temperature = 0.4;
-        defaultOptions.minQualityScore = 75; // Higher quality for research
+        defaultOptions.maxTokens = 2500;
+        defaultOptions.minQualityScore = 75;
       } else if (options.taskType === 'marketing' || options.taskType === 'content') {
-        defaultOptions.modelName = "gpt-4o";
+        defaultOptions.modelName = "gpt-4o-mini";
         defaultOptions.enableTools = true;
-        defaultOptions.temperature = 0.6;
+        defaultOptions.temperature = 0.8;
         defaultOptions.maxTokens = 2000;
-        defaultOptions.minQualityScore = 70; // Higher quality for marketing
+        defaultOptions.minQualityScore = 70;
       }
       
       // Merge with user options, with user options taking precedence

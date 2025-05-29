@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/chat/FileUpload";
 import { ContentService } from "@/services/ContentService";
+import { YouTubeService } from "@/services/YouTubeService";
+import { ResearchService } from "@/services/ResearchService";
+import { ScraperService } from "@/services/ScraperService";
 import { toast } from "@/hooks/use-toast";
 import { 
   FileText, 
@@ -17,7 +23,11 @@ import {
   BookOpen,
   Database,
   Eye,
-  ExternalLink
+  ExternalLink,
+  Plus,
+  Users,
+  Type,
+  Link as LinkIcon
 } from "lucide-react";
 
 interface OverviewSectionProps {
@@ -49,6 +59,14 @@ export function OverviewSection({ projectId, project }: OverviewSectionProps) {
     researchReports: 0,
     totalWordCount: 0
   });
+
+  // Import form states
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [researchKeyword, setResearchKeyword] = useState('');
+  const [competitorName, setCompetitorName] = useState('');
+  const [textContent, setTextContent] = useState('');
+  const [processingState, setProcessingState] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
     fetchProjectDocuments();
@@ -159,8 +177,207 @@ export function OverviewSection({ projectId, project }: OverviewSectionProps) {
     fetchProjectDocuments(); // Refresh the documents list
     toast({
       title: "Import successful",
-      description: "Your document has been imported and embedded",
+      description: "Your content has been imported and embedded",
     });
+  };
+
+  // YouTube video processing
+  const handleYouTubeImport = async () => {
+    if (!youtubeUrl.trim()) {
+      toast({
+        title: "Missing URL",
+        description: "Please enter a YouTube URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessingState(prev => ({ ...prev, youtube: true }));
+    try {
+      const result = await YouTubeService.processVideo(youtubeUrl, projectId);
+      if (result.success) {
+        toast({
+          title: "YouTube Video Processed",
+          description: `Successfully processed video with ${result.embeddingsGenerated} embeddings`,
+        });
+        setYoutubeUrl('');
+        handleImportSuccess();
+      } else {
+        toast({
+          title: "Processing Failed",
+          description: result.message || "Failed to process YouTube video",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process YouTube video",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingState(prev => ({ ...prev, youtube: false }));
+    }
+  };
+
+  // Website scraping
+  const handleWebsiteImport = async () => {
+    if (!websiteUrl.trim()) {
+      toast({
+        title: "Missing URL",
+        description: "Please enter a website URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessingState(prev => ({ ...prev, website: true }));
+    try {
+      const result = await ScraperService.scrapeWebsite(websiteUrl, {
+        crawlEntireSite: false,
+        maxPages: 1,
+        generateEmbeddings: true,
+        useExistingProjectId: projectId
+      });
+
+      if (result) {
+        toast({
+          title: "Website Scraped",
+          description: "Successfully scraped and embedded website content",
+        });
+        setWebsiteUrl('');
+        handleImportSuccess();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to scrape website",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingState(prev => ({ ...prev, website: false }));
+    }
+  };
+
+  // Research processing
+  const handleResearchImport = async () => {
+    if (!researchKeyword.trim()) {
+      toast({
+        title: "Missing Keyword",
+        description: "Please enter a research keyword",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessingState(prev => ({ ...prev, research: true }));
+    try {
+      const result = await ResearchService.conductResearch(researchKeyword, projectId);
+      if (result.success) {
+        toast({
+          title: "Research Completed",
+          description: `Successfully researched "${researchKeyword}" with ${result.embeddingsGenerated} embeddings`,
+        });
+        setResearchKeyword('');
+        handleImportSuccess();
+      } else {
+        toast({
+          title: "Research Failed",
+          description: result.message || "Failed to conduct research",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to conduct research",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingState(prev => ({ ...prev, research: false }));
+    }
+  };
+
+  // Competitor analysis
+  const handleCompetitorImport = async () => {
+    if (!competitorName.trim()) {
+      toast({
+        title: "Missing Competitor",
+        description: "Please enter a competitor name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessingState(prev => ({ ...prev, competitor: true }));
+    try {
+      const result = await ResearchService.researchCompetitor(competitorName, projectId);
+      if (result.success) {
+        toast({
+          title: "Competitor Analysis Complete",
+          description: `Successfully analyzed "${competitorName}" with ${result.embeddingsGenerated} embeddings`,
+        });
+        setCompetitorName('');
+        handleImportSuccess();
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: result.message || "Failed to analyze competitor",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to analyze competitor",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingState(prev => ({ ...prev, competitor: false }));
+    }
+  };
+
+  // Text content import
+  const handleTextImport = async () => {
+    if (!textContent.trim()) {
+      toast({
+        title: "Missing Content",
+        description: "Please enter some text content",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessingState(prev => ({ ...prev, text: true }));
+    try {
+      const textContentObj = {
+        url: `text://${new Date().getTime()}`,
+        title: `Pasted Text ${new Date().toLocaleDateString()}`,
+        headings: [],
+        paragraphs: textContent.split(/\n+/).filter(p => p.trim().length > 0),
+        links: [],
+        listItems: [],
+        metaDescription: null,
+        metaKeywords: null,
+        projectId: projectId
+      };
+
+      await ContentService.saveContent(textContentObj);
+      toast({
+        title: "Text Imported",
+        description: "Your text has been added to the knowledge base",
+      });
+      setTextContent('');
+      handleImportSuccess();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to import text content",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessingState(prev => ({ ...prev, text: false }));
+    }
   };
 
   if (loading) {
@@ -320,22 +537,191 @@ export function OverviewSection({ projectId, project }: OverviewSectionProps) {
             <TabsContent value="import" className="mt-6">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Import Documents</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Upload files to add them to your knowledge base. Supported formats: PDF, DOCX, TXT, MD
+                  <h3 className="text-lg font-medium mb-2">Add Knowledge to Vector Database</h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Choose from multiple ways to expand your AI knowledge base. All content is automatically processed and embedded.
                   </p>
                 </div>
                 
-                <FileUpload 
-                  projectId={projectId} 
-                  onSuccess={handleImportSuccess}
-                />
-                
-                <div className="border-t pt-4">
-                  <p className="text-xs text-gray-500">
-                    <strong>Note:</strong> All uploaded documents are automatically processed and embedded for AI search. 
-                    You can also import content from the project's Import tab for more options.
-                  </p>
+                {/* Import Options Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* File Upload */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-green-600" />
+                        <CardTitle className="text-base">Upload Files</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        PDF, DOCX, TXT, MD files
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <FileUpload 
+                        projectId={projectId} 
+                        onSuccess={handleImportSuccess}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* YouTube Videos */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <Youtube className="h-5 w-5 text-red-600" />
+                        <CardTitle className="text-base">YouTube Videos</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        Extract transcripts from videos
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Input
+                        placeholder="https://youtube.com/watch?v=..."
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleYouTubeImport()}
+                      />
+                      <Button 
+                        onClick={handleYouTubeImport}
+                        disabled={processingState.youtube}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processingState.youtube ? "Processing..." : "Process Video"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Website Scraping */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="h-5 w-5 text-blue-600" />
+                        <CardTitle className="text-base">Website Pages</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        Scrape content from any website
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Input
+                        placeholder="https://example.com"
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleWebsiteImport()}
+                      />
+                      <Button 
+                        onClick={handleWebsiteImport}
+                        disabled={processingState.website}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processingState.website ? "Scraping..." : "Scrape Page"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Research Keywords */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-5 w-5 text-green-600" />
+                        <CardTitle className="text-base">Research Topics</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        AI-powered deep research reports
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Input
+                        placeholder="e.g., email marketing best practices"
+                        value={researchKeyword}
+                        onChange={(e) => setResearchKeyword(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleResearchImport()}
+                      />
+                      <Button 
+                        onClick={handleResearchImport}
+                        disabled={processingState.research}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processingState.research ? "Researching..." : "Conduct Research"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Competitor Analysis */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <CardTitle className="text-base">Competitor Analysis</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        Analyze competitor strategies
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Input
+                        placeholder="e.g., Mailchimp or competitor.com"
+                        value={competitorName}
+                        onChange={(e) => setCompetitorName(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleCompetitorImport()}
+                      />
+                      <Button 
+                        onClick={handleCompetitorImport}
+                        disabled={processingState.competitor}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processingState.competitor ? "Analyzing..." : "Analyze Competitor"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Text Content */}
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-2">
+                        <Type className="h-5 w-5 text-orange-600" />
+                        <CardTitle className="text-base">Paste Text</CardTitle>
+                      </div>
+                      <CardDescription className="text-sm">
+                        Add text content directly
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Textarea
+                        placeholder="Paste your text content here..."
+                        value={textContent}
+                        onChange={(e) => setTextContent(e.target.value)}
+                        className="min-h-[80px]"
+                      />
+                      <Button 
+                        onClick={handleTextImport}
+                        disabled={processingState.text}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processingState.text ? "Importing..." : "Import Text"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="border-t pt-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2">💡 Pro Tips</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• All content is automatically chunked and embedded for AI search</li>
+                      <li>• YouTube videos extract transcripts for searchable content</li>
+                      <li>• Research generates comprehensive reports with current insights</li>
+                      <li>• Competitor analysis provides strategic intelligence</li>
+                      <li>• Use the project's Import tab for bulk operations</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </TabsContent>

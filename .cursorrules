@@ -1,0 +1,386 @@
+# AI Marketing Assistant - Cursor Development Rules
+
+## 🎯 Project Overview
+Building an AI-powered marketing assistant SaaS for small businesses (1-10 employees) that provides knowledge base creation, brand voice consistency, and marketing task automation.
+
+## ⚡ IMPORTANT: Lovable.dev Project
+**This project was initially built on Lovable.dev and development continues both here and on Lovable.**
+
+### Lovable Integration Guidelines
+1. **Preserve Lovable patterns** - Don't refactor code just because it looks AI-generated
+2. **Maintain compatibility** - Changes must work when synced back to Lovable
+3. **Use lovable-tagger** - It's already in devDependencies for a reason
+4. **Respect the structure** - Lovable has specific expectations for file organization
+5. **Keep components modular** - Lovable works better with smaller, focused components
+
+### When Working with Lovable-Generated Code
+- **DO**: Extend and enhance existing patterns
+- **DO**: Add new features that follow the same structure
+- **DO**: Comment complex logic for clarity
+- **DON'T**: Refactor working code without a strong reason
+- **DON'T**: Change file structures that Lovable created
+- **DON'T**: Remove seemingly redundant code without understanding its purpose
+
+## 🏢 SaaS Architecture
+
+### User Flow
+1. **Unauthenticated Users**
+   - Land on marketing page (`/` - Index.tsx)
+   - Can try free tools (`/scrapcopy`)
+   - Sign up/Login at `/auth`
+
+2. **Authenticated Users**
+   - Redirect to `/chat` after login (chat-first interface)
+   - Access projects/workspaces
+   - Use AI marketing assistant features
+
+### Key Routes
+- `/` - Marketing landing page (public)
+- `/auth` - Authentication (login/register)
+- `/chat` - Main chat interface (authenticated)
+- `/chat/:id` - Specific conversation (authenticated)
+- `/project/:id` - Project/workspace details (authenticated)
+- `/project/new` - Create new project wizard (authenticated)
+- `/branding/:id` - Brand profile details (authenticated)
+- `/sitemap` - Sitemap generator tool (authenticated)
+- `/scrapcopy` - Free tool demo (public)
+- `/admin/knowledge` - Admin knowledge management (authenticated)
+- `/dashboard` - Legacy route, redirects to `/chat`
+
+## 🛠️ Tech Stack (DO NOT DEVIATE)
+
+### Core Framework
+- **React 18.3.1** with TypeScript 5.5.3
+- **Vite** as build tool (Lovable default)
+- **React Router DOM** for routing (v6.26.2)
+
+### Backend & Database
+- **Supabase** for all backend needs:
+  - Authentication (Supabase Auth) ✅
+  - Database (PostgreSQL)
+  - Vector embeddings (pgvector extension)
+  - Realtime subscriptions
+  - Storage for file uploads
+  - Edge Functions for API calls
+
+### Styling & UI
+- **Tailwind CSS** for styling
+- **shadcn/ui** components (Lovable's preferred UI library)
+- **Framer Motion** for animations
+- **Lucide React** for icons
+
+### State Management & Data Fetching
+- **React Query (TanStack Query)** for server state
+- **React Context** for global UI state (AuthContext exists)
+- **React Hook Form** with **Zod** for forms
+
+### AI & Processing
+- **OpenAI API** via Supabase Edge Functions:
+  - Chat completions (GPT-4)
+  - Embeddings (text-embedding-3-small)
+  - Web search (via tools parameter)
+- **LangChain** (already installed) for complex AI workflows
+
+### Additional Libraries (Already Available)
+- **axios** for HTTP requests
+- **react-markdown** for rendering markdown
+- **recharts** for data visualization
+- **react-dropzone** for file uploads
+- **date-fns** for date formatting
+- **uuid** for unique identifiers
+- **lovable-tagger** for Lovable compatibility
+
+## 🚫 DO NOT ADD
+
+1. **No new state management** (No Redux, MobX, Zustand, etc.)
+2. **No new UI libraries** (No Material-UI, Ant Design, Chakra, etc.)
+3. **No new CSS frameworks** (No Bootstrap, Bulma, etc.)
+4. **No new backend services** (No Firebase, AWS Amplify, etc.)
+5. **No SSR frameworks** (No Next.js, Remix, etc.)
+6. **No new build tools** (No Webpack configs, Parcel, etc.)
+
+## 📁 Project Structure (Lovable Standard)
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # shadcn/ui components (Lovable managed)
+│   ├── marketing/      # Marketing-specific components
+│   ├── chat/           # Chat interface components ✅
+│   ├── auth/           # Authentication components
+│   └── workspace/      # Workspace management components
+├── pages/              # Route components
+│   ├── Index.tsx       # Marketing landing (public)
+│   ├── Auth.tsx        # Login/Register
+│   └── [others]        # Feature pages
+├── hooks/              # Custom React hooks
+├── services/           # API and external service calls
+├── lib/               # Utility functions and helpers
+├── integrations/      # Supabase client and configs
+├── context/           # React Context providers
+│   └── AuthContext.tsx # Authentication state ✅
+├── types/             # TypeScript type definitions
+└── styles/            # Global styles and Tailwind config
+```
+
+## 🔐 Authentication & Authorization
+
+### Auth Flow (Already Implemented)
+1. **Supabase Auth** handles all authentication
+2. **AuthContext** provides user state globally
+3. **Protected routes** check authentication status
+4. **Auto-redirect** to `/chat` after login
+
+### Authentication Rules
+```typescript
+// All sensitive backend functions must check auth
+const { data: { user }, error } = await supabase.auth.getUser(token);
+if (!user) throw new Error('Unauthorized');
+```
+
+### Role-Based Access Control
+- **Admin/Master Admin**: Access to `/admin/knowledge`, global knowledge management
+- **Project Owners**: Only `user_id` associated with project can modify
+- **Authenticated Users**: Access to chat, projects, and AI features
+- **Public Users**: Limited to marketing pages and free tools
+
+### Implementation Pattern
+```typescript
+// Use RoleService for role checks
+import { hasRole } from '@/services/RoleService';
+
+if (await hasRole(userId, 'admin')) {
+  // Admin-only functionality
+}
+```
+
+## 📊 Data Validation & Integrity
+
+### Frontend Validation
+```typescript
+// Use Zod schemas for form validation
+const schema = z.object({
+  url: z.string().url('Valid URL required'),
+  name: z.string().min(1, 'Name required'),
+  content: z.string().min(10, 'Content too short')
+});
+```
+
+### Backend Validation (Edge Functions)
+```typescript
+// Always validate in Edge Functions
+if (!projectId || !content) {
+  return new Response(
+    JSON.stringify({ error: 'Missing required fields' }),
+    { status: 400 }
+  );
+}
+```
+
+### Content Processing Rules
+1. **Clean text** before embeddings (remove extra whitespace, normalize)
+2. **Validate file types** (PDF, DOCX, TXT only)
+3. **Check content length** (min 10 chars for embeddings)
+4. **Sanitize HTML** when displaying scraped content
+
+## 🚀 Task Management
+
+### Asynchronous Processing
+- **Long-running tasks** use Supabase Edge Functions
+- **Web scraping** should be interruptible
+- **Embedding generation** processed in batches
+- **Progress indicators** for all async operations
+
+### Batch Processing Pattern
+```typescript
+// Process embeddings in batches of 10
+const BATCH_SIZE = 10;
+for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+  const batch = chunks.slice(i, i + BATCH_SIZE);
+  await processEmbeddingBatch(batch);
+}
+```
+
+### Rate Limiting
+- **OpenAI API**: Max 3 requests per second
+- **Web scraping**: 1 second delay between pages
+- **Embedding generation**: Batch to avoid limits
+
+## 🤖 AI-Specific Rules
+
+### RAG (Retrieval Augmented Generation)
+1. **Always use project context** when available
+2. **Filter by content type** (headings, paragraphs, etc.)
+3. **Relevance scoring** for retrieved chunks
+4. **Fallback to general knowledge** if no relevant context
+
+### Quality Control
+```typescript
+// Implement iterative refinement
+const response = await generateResponse(prompt);
+if (response.quality < threshold) {
+  // Refine with additional prompts
+  const refined = await refineResponse(response);
+}
+```
+
+### Memory Management
+- **Save conversation summaries** as memories
+- **Retrieve relevant memories** for context
+- **Limit memory context** to avoid token limits
+- **Clean old memories** periodically
+
+### AI Response Pattern
+```typescript
+// Standard AI response flow
+1. Retrieve relevant context (RAG)
+2. Generate initial response
+3. Assess quality (if enabled)
+4. Refine if needed
+5. Save to conversation history
+```
+
+## 🔧 Error Handling
+
+### Graceful Degradation
+```typescript
+try {
+  // Try primary operation
+  const embeddings = await generateEmbeddings(text);
+} catch (error) {
+  // Fallback to basic functionality
+  console.error('Embedding failed, using basic search', error);
+  return basicTextSearch(text);
+}
+```
+
+### User Feedback
+```typescript
+// Consistent toast patterns
+toast({
+  title: "Operation Failed",
+  description: "Please try again or contact support",
+  variant: "destructive"
+});
+```
+
+### Logging Standards
+```typescript
+// Log at appropriate levels
+console.log('Info: Starting operation', { projectId });
+console.error('Error: Operation failed', { error, context });
+console.warn('Warning: Rate limit approaching');
+```
+
+## 📈 Scalability Considerations
+
+### Performance Optimization
+1. **Cache frequently accessed data** (React Query)
+2. **Lazy load heavy components**
+3. **Implement virtual scrolling** for long lists
+4. **Optimize bundle size** (analyze regularly)
+
+### Database Optimization
+- **Index frequently queried columns**
+- **Use database views** for complex queries
+- **Implement soft deletes** for data recovery
+- **Archive old data** periodically
+
+### Cost Management
+- **Monitor API usage** (OpenAI, Supabase)
+- **Implement usage quotas** per user/project
+- **Cache AI responses** when appropriate
+- **Use smaller models** for simple tasks
+
+## 🤝 Lovable Compatibility Rules
+
+### 1. Component Patterns
+```typescript
+// Follow Lovable's component structure
+import { Component } from "@/components/ui/component";
+import { useToast } from "@/components/ui/use-toast";
+
+// Use Lovable's import aliases (@/)
+// Don't change to relative imports
+```
+
+### 2. Supabase Integration
+```typescript
+// Always use the Lovable-generated Supabase client
+import { supabase } from "@/integrations/supabase/client";
+
+// Don't create new Supabase instances
+// Don't modify the client configuration
+```
+
+### 3. Git Workflow
+```bash
+# When switching between Cursor and Lovable:
+git add .
+git commit -m "Changes from Cursor"
+git push
+
+# Lovable will auto-pull changes
+# Always pull before starting work in Cursor
+```
+
+## 💾 Database Schema Conventions
+
+### Supabase Tables (Lovable Compatible)
+- Use `snake_case` for table and column names
+- Always include `id` (UUID), `created_at`, and `updated_at`
+- Include `user_id` for user-owned resources
+- Use foreign keys with `ON DELETE CASCADE` where appropriate
+- Enable Row Level Security (RLS) on all tables
+
+### RLS Policy Pattern
+```sql
+-- Standard user data isolation
+CREATE POLICY "Users can manage own data" ON table_name
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Admin access
+CREATE POLICY "Admins can manage all" ON table_name
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_app_roles
+      WHERE user_id = auth.uid() 
+      AND app_role IN ('admin', 'master_admin')
+    )
+  );
+```
+
+## 🎯 Current Sprint Focus
+
+When implementing features:
+1. Build on top of Lovable's foundation
+2. Enhance existing features (chat, projects, etc.)
+3. Keep Lovable's patterns intact
+4. Document significant changes
+
+### Priority Features
+1. **YouTube video processing** - Extract transcripts
+2. **Deep research with web search** - OpenAI tools
+3. **Customer profile management** - CRM features
+4. **Marketing task automation** - Email, SEO, content
+
+## ⚠️ Common Pitfalls
+
+1. **Don't bypass authentication** - Always check user auth
+2. **Don't ignore rate limits** - Implement proper throttling
+3. **Don't store sensitive data in frontend** - Use Edge Functions
+4. **Don't skip validation** - Validate both frontend and backend
+5. **Don't forget error handling** - Always have fallbacks
+6. **Don't change Lovable patterns** - Extend, don't replace
+
+## 📚 Resources
+
+- [Lovable Docs](https://docs.lovable.dev)
+- [Supabase Docs](https://supabase.com/docs)
+- [shadcn/ui Docs](https://ui.shadcn.com)
+- [React Query Docs](https://tanstack.com/query/latest)
+- [OpenAI API Docs](https://platform.openai.com/docs)
+
+---
+
+Remember: This is a production SaaS application. Security, scalability, and user experience are paramount. Always follow authentication rules, validate data, handle errors gracefully, and maintain compatibility with Lovable. When in doubt, check existing patterns and the DEVELOPMENT_PLAN.md. 

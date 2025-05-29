@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -7,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectWizardBasicInfo } from "@/components/wizard/ProjectWizardBasicInfo";
+import { ProjectWizardDataIngestion } from "@/components/wizard/ProjectWizardDataIngestion";
 import { ProjectWizardScrapingConfig } from "@/components/wizard/ProjectWizardScrapingConfig";
 import { ProjectWizardSeoSettings } from "@/components/wizard/ProjectWizardSeoSettings";
 import { ProjectWizardIntegrations } from "@/components/wizard/ProjectWizardIntegrations";
@@ -14,9 +14,11 @@ import { ProjectWizardReview } from "@/components/wizard/ProjectWizardReview";
 import { toast } from "@/hooks/use-toast";
 import { ContentService } from "@/services/ContentService";
 import { ProjectSettingsService } from "@/services/ProjectSettingsService";
+import { YouTubeService } from "@/services/YouTubeService";
+import { ResearchService } from "@/services/ResearchService";
 
 // Wizard step type definition
-type WizardStep = "basic-info" | "scraping-config" | "seo-settings" | "integrations" | "review";
+type WizardStep = "basic-info" | "data-ingestion" | "scraping-config" | "seo-settings" | "integrations" | "review";
 
 // Default project settings
 export interface ProjectSettings {
@@ -33,6 +35,11 @@ export interface ProjectSettings {
     includePatterns: string[];
     excludePatterns: string[];
     generateEmbeddings: boolean;
+  };
+  dataIngestion: {
+    youtubeVideos: string[];
+    researchKeywords: string[];
+    competitors: string[];
   };
   seoSettings: {
     targetSearchEngines: string[];
@@ -76,6 +83,11 @@ const ProjectWizard = () => {
       includePatterns: [],
       excludePatterns: [],
       generateEmbeddings: true,
+    },
+    dataIngestion: {
+      youtubeVideos: [],
+      researchKeywords: [],
+      competitors: [],
     },
     seoSettings: {
       targetSearchEngines: ["google"],
@@ -125,6 +137,9 @@ const ProjectWizard = () => {
           });
           return;
         }
+        setActiveStep("data-ingestion");
+        break;
+      case "data-ingestion":
         setActiveStep("scraping-config");
         break;
       case "scraping-config":
@@ -143,8 +158,11 @@ const ProjectWizard = () => {
   
   const goToPreviousStep = () => {
     switch (activeStep) {
-      case "scraping-config":
+      case "data-ingestion":
         setActiveStep("basic-info");
+        break;
+      case "scraping-config":
+        setActiveStep("data-ingestion");
         break;
       case "seo-settings":
         setActiveStep("scraping-config");
@@ -192,6 +210,58 @@ const ProjectWizard = () => {
       // Save the additional project settings
       await ProjectSettingsService.saveProjectSettings(savedProject.id, projectSettings);
       
+      // Process YouTube videos if any
+      if (projectSettings.dataIngestion.youtubeVideos.length > 0) {
+        toast({
+          title: "Processing YouTube Videos",
+          description: `Processing ${projectSettings.dataIngestion.youtubeVideos.length} videos...`,
+        });
+        
+        const youtubeResult = await YouTubeService.processMultipleVideos(
+          projectSettings.dataIngestion.youtubeVideos,
+          savedProject.id
+        );
+        
+        if (youtubeResult.successful > 0) {
+          toast({
+            title: "YouTube Videos Processed",
+            description: `Successfully processed ${youtubeResult.successful} videos`,
+          });
+        }
+      }
+      
+      // Conduct research if keywords provided
+      if (projectSettings.dataIngestion.researchKeywords.length > 0) {
+        toast({
+          title: "Conducting Research",
+          description: `Researching ${projectSettings.dataIngestion.researchKeywords.length} topics...`,
+        });
+        
+        const researchResult = await ResearchService.conductMultipleResearch(
+          projectSettings.dataIngestion.researchKeywords,
+          savedProject.id
+        );
+        
+        if (researchResult.successful > 0) {
+          toast({
+            title: "Research Completed",
+            description: `Successfully researched ${researchResult.successful} topics`,
+          });
+        }
+      }
+      
+      // Research competitors if any
+      if (projectSettings.dataIngestion.competitors.length > 0) {
+        toast({
+          title: "Analyzing Competitors",
+          description: `Analyzing ${projectSettings.dataIngestion.competitors.length} competitors...`,
+        });
+        
+        for (const competitor of projectSettings.dataIngestion.competitors) {
+          await ResearchService.researchCompetitor(competitor, savedProject.id);
+        }
+      }
+      
       toast({
         title: "Project Created",
         description: "Your new project has been created successfully.",
@@ -233,32 +303,39 @@ const ProjectWizard = () => {
                   1. Basic Info
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="data-ingestion" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-indigo-700 font-medium py-3"
+                  disabled
+                >
+                  2. Data Ingestion
+                </TabsTrigger>
+                <TabsTrigger 
                   value="scraping-config" 
                   className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-indigo-700 font-medium py-3"
                   disabled
                 >
-                  2. Scraping
+                  3. Scraping
                 </TabsTrigger>
                 <TabsTrigger 
                   value="seo-settings" 
                   className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-indigo-700 font-medium py-3"
                   disabled
                 >
-                  3. SEO
+                  4. SEO
                 </TabsTrigger>
                 <TabsTrigger 
                   value="integrations" 
                   className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-indigo-700 font-medium py-3"
                   disabled
                 >
-                  4. Integrations
+                  5. Integrations
                 </TabsTrigger>
                 <TabsTrigger 
                   value="review" 
                   className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-indigo-700 font-medium py-3"
                   disabled
                 >
-                  5. Review
+                  6. Review
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -268,6 +345,13 @@ const ProjectWizard = () => {
                 <ProjectWizardBasicInfo 
                   settings={projectSettings.basicInfo} 
                   updateSettings={(data) => updateSettings("basicInfo", data)} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="data-ingestion" className="mt-0">
+                <ProjectWizardDataIngestion 
+                  settings={projectSettings.dataIngestion} 
+                  updateSettings={(data) => updateSettings("dataIngestion", data)} 
                 />
               </TabsContent>
               

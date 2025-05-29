@@ -1,4 +1,3 @@
-
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProjectSettings } from "@/pages/ProjectWizard";
@@ -44,6 +43,56 @@ export function ProjectWizardReview({ settings, onCreateProject, isCreating = fa
             )}
           </div>
         </div>
+        
+        {/* Data Ingestion Section */}
+        {(settings.dataIngestion.youtubeVideos.length > 0 || 
+          settings.dataIngestion.researchKeywords.length > 0 || 
+          settings.dataIngestion.competitors.length > 0) && (
+          <div className="border border-gray-200 rounded-md">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <h3 className="font-medium">Data Ingestion</h3>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              {settings.dataIngestion.youtubeVideos.length > 0 && (
+                <div>
+                  <span className="text-gray-500 block mb-1">YouTube Videos ({settings.dataIngestion.youtubeVideos.length}):</span>
+                  <div className="space-y-1">
+                    {settings.dataIngestion.youtubeVideos.map((video, i) => (
+                      <div key={i} className="text-sm font-medium truncate">{video}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {settings.dataIngestion.researchKeywords.length > 0 && (
+                <div>
+                  <span className="text-gray-500 block mb-1">Research Keywords ({settings.dataIngestion.researchKeywords.length}):</span>
+                  <div className="flex flex-wrap gap-2">
+                    {settings.dataIngestion.researchKeywords.map((keyword, i) => (
+                      <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {settings.dataIngestion.competitors.length > 0 && (
+                <div>
+                  <span className="text-gray-500 block mb-1">Competitors ({settings.dataIngestion.competitors.length}):</span>
+                  <div className="flex flex-wrap gap-2">
+                    {settings.dataIngestion.competitors.map((competitor, i) => (
+                      <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium">
+                        {competitor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         <div className="border border-gray-200 rounded-md">
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">

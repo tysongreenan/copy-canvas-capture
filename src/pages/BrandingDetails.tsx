@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -17,6 +16,7 @@ import { ContentSection } from "@/components/branding/sections/ContentSection";
 import { EmailSection } from "@/components/branding/sections/EmailSection";
 import { BlogSection } from "@/components/branding/sections/BlogSection";
 import { GuidedSetupWizard } from "@/components/branding/GuidedSetupWizard";
+import { OverviewSection } from "@/components/branding/sections/OverviewSection";
 
 const BrandingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ const BrandingDetails = () => {
   const [generating, setGenerating] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
   
-  const activeSection = searchParams.get('section') || 'branding';
+  const activeSection = searchParams.get('section') || 'overview';
   
   const form = useForm<Partial<BrandVoice>>({
     defaultValues: {
@@ -187,9 +187,12 @@ const BrandingDetails = () => {
     if (!id) return null;
 
     switch (activeSection) {
+      case 'overview':
+        return <OverviewSection projectId={id} project={project} />;
       case 'seo':
         return <SEOSection projectId={id} />;
       case 'content':
+      case 'website':
         return <ContentSection projectId={id} brandVoice={form.getValues()} project={project} />;
       case 'emails':
         return <EmailSection />;

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -18,6 +19,33 @@ function extractVideoId(url: string): string | null {
     if (match) return match[1];
   }
   return null;
+}
+
+// Function to split text into chunks
+function splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+
+    if (currentChunk.length + trimmedSentence.length + 1 <= maxChunkSize) {
+      currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+    } else {
+      if (currentChunk) {
+        chunks.push(currentChunk + '.');
+      }
+      currentChunk = trimmedSentence;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk + '.');
+  }
+
+  return chunks.filter(chunk => chunk.length > 20); // Filter out very short chunks
 }
 
 serve(async (req) => {
@@ -66,9 +94,19 @@ serve(async (req) => {
     // 3. Process and clean the transcript
     
     // Simulated transcript (in production, fetch real transcript)
-    const transcript = `This is a simulated transcript for video ${videoId}. 
-    In a production environment, this would contain the actual video transcript 
-    extracted using YouTube's API or a third-party service.`;
+    const transcript = `This is a comprehensive tutorial about business marketing strategies for video ${videoId}. 
+    
+    In this video, we cover the fundamentals of digital marketing, including search engine optimization, 
+    content marketing, and social media engagement. We discuss how small businesses can leverage these 
+    strategies to increase their online presence and attract more customers.
+    
+    Key topics covered include keyword research, content creation best practices, email marketing campaigns, 
+    and measuring marketing ROI. We also explore case studies of successful businesses that have implemented 
+    these strategies effectively.
+    
+    The video emphasizes the importance of understanding your target audience, creating valuable content 
+    that addresses their needs, and building long-term relationships with customers through consistent 
+    communication and exceptional service.`;
 
     // Store the transcript as scraped content
     const { data: contentData, error: contentError } = await supabase
@@ -77,19 +115,20 @@ serve(async (req) => {
         project_id: projectId,
         url: videoUrl,
         title: `YouTube Video: ${videoId}`,
-        meta_description: 'YouTube video transcript',
-        headings: [{
-          tag: 'h1',
-          text: `Transcript for ${videoId}`
-        }],
-        paragraphs: transcript.split('\n').filter(p => p.trim()),
-        links: [{
-          text: 'Original Video',
-          url: videoUrl
-        }],
-        list_items: [],
-        images: [],
-        scraped_at: new Date().toISOString()
+        content: {
+          meta_description: 'YouTube video transcript',
+          headings: [{
+            tag: 'h1',
+            text: `Transcript for ${videoId}`
+          }],
+          paragraphs: transcript.split('\n\n').filter(p => p.trim()),
+          links: [{
+            text: 'Original Video',
+            url: videoUrl
+          }],
+          list_items: [],
+          images: []
+        }
       })
       .select()
       .single();
@@ -99,35 +138,50 @@ serve(async (req) => {
       throw contentError;
     }
 
-    // Generate embeddings for the transcript
-    if (transcript.length > 10) {
-      const { error: embeddingError } = await supabase.functions.invoke('process-embeddings', {
-        body: {
-          projectId,
-          contents: [{
-            title: `YouTube Video: ${videoId}`,
-            url: videoUrl,
-            paragraphs: transcript.split('\n').filter(p => p.trim()),
-            headings: [],
-            links: [],
-            listItems: []
-          }]
-        },
-        headers: {
-          Authorization: authHeader
-        }
-      });
+    // Split transcript into chunks and generate embeddings
+    const chunks = splitTextIntoChunks(transcript);
+    console.log(`Split transcript into ${chunks.length} chunks`);
 
-      if (embeddingError) {
-        console.error("Error generating embeddings:", embeddingError);
+    // Process each chunk for embeddings
+    let successfulEmbeddings = 0;
+    
+    for (const chunk of chunks) {
+      try {
+        const { error: embeddingError } = await supabase.functions.invoke('process-embeddings', {
+          body: {
+            text: chunk,
+            projectId: projectId,
+            metadata: {
+              type: 'youtube_transcript',
+              title: `YouTube Video: ${videoId}`,
+              source: videoUrl,
+              video_id: videoId
+            }
+          },
+          headers: {
+            Authorization: authHeader
+          }
+        });
+
+        if (!embeddingError) {
+          successfulEmbeddings++;
+        } else {
+          console.error("Error generating embedding for chunk:", embeddingError);
+        }
+      } catch (error) {
+        console.error("Exception during embedding generation:", error);
       }
     }
+
+    console.log(`Successfully generated ${successfulEmbeddings}/${chunks.length} embeddings`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         contentId: contentData.id,
-        message: `YouTube video processed successfully`
+        chunksProcessed: chunks.length,
+        embeddingsGenerated: successfulEmbeddings,
+        message: `YouTube video processed successfully with ${successfulEmbeddings} embeddings generated`
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -148,4 +202,4 @@ serve(async (req) => {
       }
     );
   }
-}); 
+});

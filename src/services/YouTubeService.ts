@@ -1,10 +1,17 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export class YouTubeService {
   /**
    * Process a YouTube video by extracting its transcript
    */
-  public static async processVideo(videoUrl: string, projectId: string): Promise<boolean> {
+  public static async processVideo(videoUrl: string, projectId: string): Promise<{
+    success: boolean;
+    contentId?: string;
+    chunksProcessed?: number;
+    embeddingsGenerated?: number;
+    message?: string;
+  }> {
     try {
       console.log(`Processing YouTube video: ${videoUrl} for project: ${projectId}`);
       
@@ -12,7 +19,7 @@ export class YouTubeService {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         console.error("No active session");
-        return false;
+        return { success: false, message: "No active session" };
       }
 
       // Call the Edge Function
@@ -28,14 +35,20 @@ export class YouTubeService {
       
       if (error) {
         console.error("Error processing YouTube video:", error);
-        return false;
+        return { success: false, message: error.message };
       }
       
       console.log("YouTube processing result:", data);
-      return data?.success === true;
+      return {
+        success: data?.success === true,
+        contentId: data?.contentId,
+        chunksProcessed: data?.chunksProcessed,
+        embeddingsGenerated: data?.embeddingsGenerated,
+        message: data?.message
+      };
     } catch (error) {
       console.error("Exception in processVideo:", error);
-      return false;
+      return { success: false, message: "Exception occurred during processing" };
     }
   }
 
@@ -45,24 +58,34 @@ export class YouTubeService {
   public static async processMultipleVideos(
     videoUrls: string[], 
     projectId: string,
-    onProgress?: (current: number, total: number) => void
-  ): Promise<{ successful: number; failed: number }> {
+    onProgress?: (current: number, total: number, result?: any) => void
+  ): Promise<{ 
+    successful: number; 
+    failed: number; 
+    results: any[];
+    totalEmbeddings: number;
+  }> {
     let successful = 0;
     let failed = 0;
+    let totalEmbeddings = 0;
+    const results: any[] = [];
 
     for (let i = 0; i < videoUrls.length; i++) {
       const videoUrl = videoUrls[i];
       
-      // Update progress
-      if (onProgress) {
-        onProgress(i + 1, videoUrls.length);
-      }
-
-      const success = await this.processVideo(videoUrl, projectId);
-      if (success) {
+      const result = await this.processVideo(videoUrl, projectId);
+      results.push(result);
+      
+      if (result.success) {
         successful++;
+        totalEmbeddings += result.embeddingsGenerated || 0;
       } else {
         failed++;
+      }
+
+      // Update progress
+      if (onProgress) {
+        onProgress(i + 1, videoUrls.length, result);
       }
 
       // Add delay to avoid rate limiting
@@ -71,7 +94,7 @@ export class YouTubeService {
       }
     }
 
-    return { successful, failed };
+    return { successful, failed, results, totalEmbeddings };
   }
 
   /**
@@ -103,4 +126,4 @@ export class YouTubeService {
     }
     return null;
   }
-} 
+}

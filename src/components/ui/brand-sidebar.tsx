@@ -1,189 +1,223 @@
 
-"use client";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { 
+  Menu, 
+  X, 
+  Home,
+  Palette,
+  Search,
+  Globe,
+  Mail,
+  FileText,
+  ChevronRight
+} from 'lucide-react';
 
-import { cn } from "@/lib/utils";
-import { Link, LinkProps } from "react-router-dom";
-import React, { useState, createContext, useContext } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
-
-interface Links {
+interface SidebarItem {
+  id: string;
   label: string;
-  href: string;
-  icon: React.JSX.Element | React.ReactNode;
+  icon: React.ReactNode;
+  description?: string;
 }
 
-interface SidebarContextProps {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  animate: boolean;
-}
-
-const SidebarContext = createContext<SidebarContextProps | undefined>(
-  undefined
-);
-
-export const useSidebar = () => {
-  const context = useContext(SidebarContext);
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
-  }
-  return context;
-};
-
-export const SidebarProvider = ({
-  children,
-  open: openProp,
-  setOpen: setOpenProp,
-  animate = true,
-}: {
-  children: React.ReactNode;
-  open?: boolean;
-  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-  animate?: boolean;
-}) => {
-  const [openState, setOpenState] = useState(false);
-
-  const open = openProp !== undefined ? openProp : openState;
-  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
-
-  return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
-      {children}
-    </SidebarContext.Provider>
-  );
-};
-
-export const BrandSidebar = ({
-  children,
-  open,
-  setOpen,
-  animate,
-}: {
-  children: React.ReactNode;
-  open?: boolean;
-  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-  animate?: boolean;
-}) => {
-  return (
-    <SidebarProvider open={open} setOpen={setOpen} animate={animate}>
-      {children}
-    </SidebarProvider>
-  );
-};
-
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
-  return (
-    <>
-      <DesktopSidebar {...props} />
-      <MobileSidebar {...props} />
-    </>
-  );
-};
-
-export const DesktopSidebar = ({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof motion.div>) => {
-  const { open, setOpen, animate } = useSidebar();
-  return (
-    <motion.div
-      className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] flex-shrink-0",
-        className
-      )}
-      animate={{
-        width: animate ? (open ? "300px" : "60px") : "300px",
-      }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-export const MobileSidebar = ({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof motion.div>) => {
-  const { open, setOpen } = useSidebar();
-  return (
-    <>
-      <div
-        className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
-        )}
-      >
-        <div className="flex justify-end z-20 w-full">
-          <Menu
-            className="text-neutral-800 dark:text-neutral-200 cursor-pointer"
-            onClick={() => setOpen(!open)}
-          />
-        </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn(
-                "fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
-                className
-              )}
-              {...props}
-            >
-              <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200 cursor-pointer"
-                onClick={() => setOpen(!open)}
-              >
-                <X />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
-  );
-};
-
-export const SidebarLink = ({
-  link,
-  className,
-  ...props
-}: {
-  link: Links;
+interface BrandSidebarProps {
+  activeSection: string;
+  onSectionChange: (section: string) => void;
   className?: string;
-  props?: LinkProps;
-}) => {
-  const { open, animate } = useSidebar();
+}
+
+const sidebarItems: SidebarItem[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: <Home size={18} />,
+    description: 'Project summary and key metrics'
+  },
+  {
+    id: 'branding',
+    label: 'Branding',
+    icon: <Palette size={18} />,
+    description: 'Voice, tone, and brand guidelines'
+  },
+  {
+    id: 'seo',
+    label: 'SEO Strategy',
+    icon: <Search size={18} />,
+    description: 'Search optimization insights'
+  },
+  {
+    id: 'website',
+    label: 'Website Content',
+    icon: <Globe size={18} />,
+    description: 'Page content and structure'
+  },
+  {
+    id: 'emails',
+    label: 'Email Templates',
+    icon: <Mail size={18} />,
+    description: 'Email marketing content'
+  },
+  {
+    id: 'blog',
+    label: 'Blog Posts',
+    icon: <FileText size={18} />,
+    description: 'Content marketing articles'
+  }
+];
+
+export function BrandSidebar({ activeSection, onSectionChange, className }: BrandSidebarProps) {
   return (
-    <Link
-      to={link.href}
-      className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2",
-        className
-      )}
-      {...props}
-    >
-      {link.icon}
-      <motion.span
-        animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
-          opacity: animate ? (open ? 1 : 0) : 1,
-        }}
-        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
-      >
-        {link.label}
-      </motion.span>
-    </Link>
+    <aside className={cn(
+      "w-64 bg-white border-r border-gray-200 h-full flex flex-col",
+      className
+    )}>
+      <div className="p-6 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Brand Dashboard
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Manage your brand assets and content
+        </p>
+      </div>
+      
+      <nav className="flex-1 p-4 space-y-2">
+        {sidebarItems.map((item) => (
+          <SidebarItem
+            key={item.id}
+            item={item}
+            isActive={activeSection === item.id}
+            onClick={() => onSectionChange(item.id)}
+          />
+        ))}
+      </nav>
+    </aside>
   );
-};
+}
+
+interface SidebarItemProps {
+  item: SidebarItem;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function SidebarItem({ item, isActive, onClick }: SidebarItemProps) {
+  return (
+    <motion.button
+      onClick={onClick}
+      className={cn(
+        "w-full text-left p-3 rounded-lg transition-all duration-200 group",
+        "hover:bg-gray-50 hover:shadow-sm",
+        isActive 
+          ? "bg-blue-50 border border-blue-200 shadow-sm" 
+          : "border border-transparent"
+      )}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className={cn(
+            "transition-colors duration-200",
+            isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+          )}>
+            {item.icon}
+          </div>
+          <div>
+            <div className={cn(
+              "font-medium transition-colors duration-200",
+              isActive ? "text-blue-900" : "text-gray-900"
+            )}>
+              {item.label}
+            </div>
+            {item.description && (
+              <div className="text-xs text-gray-500 mt-0.5">
+                {item.description}
+              </div>
+            )}
+          </div>
+        </div>
+        <ChevronRight 
+          size={14} 
+          className={cn(
+            "transition-all duration-200",
+            isActive 
+              ? "text-blue-600 transform rotate-90" 
+              : "text-gray-400 group-hover:text-gray-600"
+          )}
+        />
+      </div>
+    </motion.button>
+  );
+}
+
+interface MobileSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  activeSection: string;
+  onSectionChange: (section: string) => void;
+}
+
+export function MobileSidebar({ isOpen, onClose, activeSection, onSectionChange }: MobileSidebarProps) {
+  const handleSectionChange = (section: string) => {
+    onSectionChange(section);
+    onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 20 }}
+            className="fixed top-0 left-0 h-full w-64 bg-white z-50 lg:hidden shadow-xl"
+          >
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Brand Dashboard
+              </h2>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X size={18} />
+              </Button>
+            </div>
+            
+            <nav className="p-4 space-y-2">
+              {sidebarItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  isActive={activeSection === item.id}
+                  onClick={() => handleSectionChange(item.id)}
+                />
+              ))}
+            </nav>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function MobileSidebarTrigger({ onOpen }: { onOpen: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onOpen}
+      className="lg:hidden"
+    >
+      <Menu size={18} />
+    </Button>
+  );
+}

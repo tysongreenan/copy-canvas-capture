@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export class ResearchService {
@@ -8,6 +9,9 @@ export class ResearchService {
     success: boolean; 
     contentId?: string;
     research?: string;
+    chunksProcessed?: number;
+    embeddingsGenerated?: number;
+    message?: string;
   }> {
     try {
       console.log(`Conducting research on: "${keyword}" for project: ${projectId}`);
@@ -16,7 +20,7 @@ export class ResearchService {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         console.error("No active session");
-        return { success: false };
+        return { success: false, message: "No active session" };
       }
 
       // Call the Edge Function
@@ -32,18 +36,21 @@ export class ResearchService {
       
       if (error) {
         console.error("Error conducting research:", error);
-        return { success: false };
+        return { success: false, message: error.message };
       }
       
       console.log("Research result:", data);
       return {
         success: data?.success === true,
         contentId: data?.contentId,
-        research: data?.research
+        research: data?.research,
+        chunksProcessed: data?.chunksProcessed,
+        embeddingsGenerated: data?.embeddingsGenerated,
+        message: data?.message
       };
     } catch (error) {
       console.error("Exception in conductResearch:", error);
-      return { success: false };
+      return { success: false, message: "Exception occurred during research" };
     }
   }
 
@@ -53,24 +60,34 @@ export class ResearchService {
   public static async conductMultipleResearch(
     keywords: string[], 
     projectId: string,
-    onProgress?: (current: number, total: number) => void
-  ): Promise<{ successful: number; failed: number }> {
+    onProgress?: (current: number, total: number, result?: any) => void
+  ): Promise<{ 
+    successful: number; 
+    failed: number; 
+    results: any[];
+    totalEmbeddings: number;
+  }> {
     let successful = 0;
     let failed = 0;
+    let totalEmbeddings = 0;
+    const results: any[] = [];
 
     for (let i = 0; i < keywords.length; i++) {
       const keyword = keywords[i];
       
-      // Update progress
-      if (onProgress) {
-        onProgress(i + 1, keywords.length);
-      }
-
       const result = await this.conductResearch(keyword, projectId);
+      results.push(result);
+      
       if (result.success) {
         successful++;
+        totalEmbeddings += result.embeddingsGenerated || 0;
       } else {
         failed++;
+      }
+      
+      // Update progress
+      if (onProgress) {
+        onProgress(i + 1, keywords.length, result);
       }
 
       // Add delay to avoid rate limiting
@@ -79,7 +96,7 @@ export class ResearchService {
       }
     }
 
-    return { successful, failed };
+    return { successful, failed, results, totalEmbeddings };
   }
 
   /**
@@ -92,6 +109,9 @@ export class ResearchService {
     success: boolean; 
     contentId?: string;
     research?: string;
+    chunksProcessed?: number;
+    embeddingsGenerated?: number;
+    message?: string;
   }> {
     // Add specific competitor research context
     const competitorKeyword = `${competitorName} marketing strategy analysis competitor research`;
@@ -115,4 +135,4 @@ export class ResearchService {
 
     return baseTopics;
   }
-} 
+}

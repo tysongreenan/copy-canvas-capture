@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -5,6 +6,33 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Function to split text into chunks
+function splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+
+    if (currentChunk.length + trimmedSentence.length + 1 <= maxChunkSize) {
+      currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+    } else {
+      if (currentChunk) {
+        chunks.push(currentChunk + '.');
+      }
+      currentChunk = trimmedSentence;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk + '.');
+  }
+
+  return chunks.filter(chunk => chunk.length > 20); // Filter out very short chunks
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -70,7 +98,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -96,16 +124,17 @@ serve(async (req) => {
         project_id: projectId,
         url: `research://${keyword.replace(/\s+/g, '-').toLowerCase()}`,
         title: `Research: ${keyword}`,
-        meta_description: `Deep research report on ${keyword}`,
-        headings: [{
-          tag: 'h1',
-          text: `Research Report: ${keyword}`
-        }],
-        paragraphs: researchContent.split('\n').filter(p => p.trim()),
-        links: [],
-        list_items: [],
-        images: [],
-        scraped_at: new Date().toISOString()
+        content: {
+          meta_description: `Deep research report on ${keyword}`,
+          headings: [{
+            tag: 'h1',
+            text: `Research Report: ${keyword}`
+          }],
+          paragraphs: researchContent.split('\n\n').filter(p => p.trim()),
+          links: [],
+          list_items: [],
+          images: []
+        }
       })
       .select()
       .single();
@@ -115,34 +144,51 @@ serve(async (req) => {
       throw contentError;
     }
 
-    // Generate embeddings for the research
-    const { error: embeddingError } = await supabase.functions.invoke('process-embeddings', {
-      body: {
-        projectId,
-        contents: [{
-          title: `Research: ${keyword}`,
-          url: `research://${keyword.replace(/\s+/g, '-').toLowerCase()}`,
-          paragraphs: researchContent.split('\n').filter(p => p.trim()),
-          headings: [],
-          links: [],
-          listItems: []
-        }]
-      },
-      headers: {
-        Authorization: authHeader
-      }
-    });
+    // Split research content into chunks and generate embeddings
+    const chunks = splitTextIntoChunks(researchContent);
+    console.log(`Split research into ${chunks.length} chunks`);
 
-    if (embeddingError) {
-      console.error("Error generating embeddings:", embeddingError);
+    // Process each chunk for embeddings
+    let successfulEmbeddings = 0;
+    
+    for (const chunk of chunks) {
+      try {
+        const { error: embeddingError } = await supabase.functions.invoke('process-embeddings', {
+          body: {
+            text: chunk,
+            projectId: projectId,
+            metadata: {
+              type: 'research',
+              title: `Research: ${keyword}`,
+              source: `research://${keyword.replace(/\s+/g, '-').toLowerCase()}`,
+              keyword: keyword
+            }
+          },
+          headers: {
+            Authorization: authHeader
+          }
+        });
+
+        if (!embeddingError) {
+          successfulEmbeddings++;
+        } else {
+          console.error("Error generating embedding for chunk:", embeddingError);
+        }
+      } catch (error) {
+        console.error("Exception during embedding generation:", error);
+      }
     }
+
+    console.log(`Successfully generated ${successfulEmbeddings}/${chunks.length} embeddings`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         contentId: contentData.id,
         research: researchContent,
-        message: `Research completed successfully`
+        chunksProcessed: chunks.length,
+        embeddingsGenerated: successfulEmbeddings,
+        message: `Research completed successfully with ${successfulEmbeddings} embeddings generated`
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -163,4 +209,4 @@ serve(async (req) => {
       }
     );
   }
-}); 
+});

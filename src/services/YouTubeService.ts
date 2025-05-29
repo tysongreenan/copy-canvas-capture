@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export class YouTubeService {
@@ -10,6 +9,8 @@ export class YouTubeService {
     contentId?: string;
     chunksProcessed?: number;
     embeddingsGenerated?: number;
+    hasTranscript?: boolean;
+    title?: string;
     message?: string;
   }> {
     try {
@@ -44,6 +45,8 @@ export class YouTubeService {
         contentId: data?.contentId,
         chunksProcessed: data?.chunksProcessed,
         embeddingsGenerated: data?.embeddingsGenerated,
+        hasTranscript: data?.hasTranscript,
+        title: data?.title,
         message: data?.message
       };
     } catch (error) {
@@ -64,10 +67,12 @@ export class YouTubeService {
     failed: number; 
     results: any[];
     totalEmbeddings: number;
+    videosWithTranscripts: number;
   }> {
     let successful = 0;
     let failed = 0;
     let totalEmbeddings = 0;
+    let videosWithTranscripts = 0;
     const results: any[] = [];
 
     for (let i = 0; i < videoUrls.length; i++) {
@@ -79,6 +84,9 @@ export class YouTubeService {
       if (result.success) {
         successful++;
         totalEmbeddings += result.embeddingsGenerated || 0;
+        if (result.hasTranscript) {
+          videosWithTranscripts++;
+        }
       } else {
         failed++;
       }
@@ -88,36 +96,39 @@ export class YouTubeService {
         onProgress(i + 1, videoUrls.length, result);
       }
 
-      // Add delay to avoid rate limiting
+      // Add delay to avoid rate limiting (YouTube API rate limits)
       if (i < videoUrls.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
-    return { successful, failed, results, totalEmbeddings };
+    return { successful, failed, results, totalEmbeddings, videosWithTranscripts };
   }
 
   /**
-   * Validate YouTube URL
+   * Validate YouTube URL (updated to support more formats)
    */
   public static isValidYouTubeUrl(url: string): boolean {
     const patterns = [
       /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/,
       /youtube\.com\/watch\?v=[\w-]+/,
       /youtu\.be\/[\w-]+/,
-      /youtube\.com\/embed\/[\w-]+/
+      /youtube\.com\/embed\/[\w-]+/,
+      /youtube\.com\/shorts\/[\w-]+/, // Added support for YouTube Shorts
+      /youtube\.com\/v\/[\w-]+/
     ];
     
     return patterns.some(pattern => pattern.test(url));
   }
 
   /**
-   * Extract video ID from YouTube URL
+   * Extract video ID from YouTube URL (updated for Shorts support)
    */
   public static extractVideoId(url: string): string | null {
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
       /youtube\.com\/v\/([^&\n?#]+)/,
+      /youtube\.com\/shorts\/([^&\n?#]+)/, // Added support for YouTube Shorts
     ];
     
     for (const pattern of patterns) {
@@ -125,5 +136,25 @@ export class YouTubeService {
       if (match) return match[1];
     }
     return null;
+  }
+
+  /**
+   * Get video type from URL
+   */
+  public static getVideoType(url: string): 'video' | 'short' | 'unknown' {
+    if (url.includes('/shorts/')) return 'short';
+    if (url.includes('/watch?v=') || url.includes('youtu.be/') || url.includes('/embed/')) return 'video';
+    return 'unknown';
+  }
+
+  /**
+   * Format video URL for consistent processing
+   */
+  public static formatVideoUrl(url: string): string {
+    const videoId = this.extractVideoId(url);
+    if (!videoId) return url;
+    
+    // Convert all URLs to standard watch format for consistent processing
+    return `https://www.youtube.com/watch?v=${videoId}`;
   }
 }

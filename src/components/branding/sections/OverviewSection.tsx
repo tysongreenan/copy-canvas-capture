@@ -192,13 +192,27 @@ export function OverviewSection({ projectId, project }: OverviewSectionProps) {
       return;
     }
 
+    // Validate YouTube URL
+    if (!YouTubeService.isValidYouTubeUrl(youtubeUrl)) {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid YouTube URL (videos, shorts, or embedded)",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setProcessingState(prev => ({ ...prev, youtube: true }));
     try {
       const result = await YouTubeService.processVideo(youtubeUrl, projectId);
       if (result.success) {
+        const transcriptStatus = result.hasTranscript 
+          ? "with full transcript" 
+          : "with video metadata (no transcript available)";
+        
         toast({
           title: "YouTube Video Processed",
-          description: `Successfully processed video with ${result.embeddingsGenerated} embeddings`,
+          description: `Successfully processed "${result.title || 'video'}" ${transcriptStatus}. Generated ${result.embeddingsGenerated} embeddings.`,
         });
         setYoutubeUrl('');
         handleImportSuccess();

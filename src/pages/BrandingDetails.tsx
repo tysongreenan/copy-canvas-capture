@@ -9,7 +9,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Wand2, SlidersHorizontal } from "lucide-react";
-import { BrandingDashboard } from "@/components/branding/BrandingDashboard";
+import { ModernBrandingDashboard } from "@/components/branding/ModernBrandingDashboard";
 import { BrandingSection } from "@/components/branding/sections/BrandingSection";
 import { SEOSection } from "@/components/branding/sections/SEOSection";
 import { ContentSection } from "@/components/branding/sections/ContentSection";
@@ -209,9 +209,7 @@ const BrandingDetails = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
-      
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-neutral-900">
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -226,7 +224,7 @@ const BrandingDetails = () => {
           />
         </div>
       ) : (
-        <BrandingDashboard projectId={id || ''} activeSection={activeSection}>
+        <ModernBrandingDashboard projectId={id || ''} activeSection={activeSection}>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -292,7 +290,7 @@ const BrandingDetails = () => {
               </form>
             </Form>
           </div>
-        </BrandingDashboard>
+        </ModernBrandingDashboard>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { SessionNavBar } from "@/components/ui/sidebar"
+import { SessionNavBar } from "@/components/ui/SessionNavBar"
 import { AnimatedAIChat } from "@/components/ui/animated-ai-chat";
 import { useState } from "react";
 

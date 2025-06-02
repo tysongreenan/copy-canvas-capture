@@ -86,7 +86,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Create embedding info string - fix the TypeScript error
+      // Fix: Convert embedding array to string properly
       const embeddingInfoString = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
       setEmbeddingInfo(embeddingInfoString);
 

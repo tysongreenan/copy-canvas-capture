@@ -1,3 +1,4 @@
+
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -78,8 +79,12 @@ export const SidebarBody = ({
 }: React.ComponentProps<typeof motion.div>) => {
   return (
     <>
-      <DesktopSidebar className={className} children={children} {...props} />
-      <MobileSidebar className={className} children={children} />
+      <DesktopSidebar className={className} {...props}>
+        {children}
+      </DesktopSidebar>
+      <MobileSidebar className={className}>
+        {children}
+      </MobileSidebar>
     </>
   );
 };

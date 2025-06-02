@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +86,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Create embedding info string - properly format the array as string
+      // Create embedding info string - fix the TypeScript error
       const embeddingInfoString = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
       setEmbeddingInfo(embeddingInfoString);
 

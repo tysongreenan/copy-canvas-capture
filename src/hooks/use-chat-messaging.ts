@@ -40,12 +40,13 @@ export function useChatMessaging({
   const [usePromptChain, setUsePromptChain] = useState(true);
   const [qualityThreshold, setQualityThreshold] = useState(90);
   const [maxIterations, setMaxIterations] = useState(3);
-  const [minQualityScore, setMinQualityScore] = useState(60); // New state for minimum quality
+  const [minQualityScore, setMinQualityScore] = useState(60);
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const [thinkActive, setThinkActive] = useState(false);
+  const [useMultiAgent, setUseMultiAgent] = useState(true); // New state for multi-agent toggle
   const { toast } = useToast();
   
-  // Send message function
+  // Send message function with multi-agent integration
   const handleSendMessage = useCallback(
     async (message: string) => {
       if (!message.trim()) return;
@@ -82,53 +83,93 @@ export function useChatMessaging({
         const { data: { user } } = await supabase.auth.getUser();
         const isAuthenticated = !!user;
         
-        // Determine appropriate settings based on task type
-        let temperature = 0.7;
-        let maxTokens = 1500;
-        let modelName = "gpt-4o-mini";
-        let taskMinQuality = minQualityScore;
+        let response;
         
-        if (detectedTaskType === 'email') {
-          temperature = 0.5;
-          maxTokens = 2000;
-          taskMinQuality = Math.max(minQualityScore, 70);
-        } else if (detectedTaskType === 'marketing') {
-          temperature = 0.6;
-          maxTokens = 2000;
-          modelName = "gpt-4o";
-          taskMinQuality = Math.max(minQualityScore, 70);
-        } else if (detectedTaskType === 'summary') {
-          temperature = 0.3;
-          maxTokens = 1800;
-          taskMinQuality = Math.max(minQualityScore, 65);
-        } else if (detectedTaskType === 'research') {
-          temperature = 0.4;
-          maxTokens = 1800;
-          modelName = "gpt-4o";
-          taskMinQuality = Math.max(minQualityScore, 75);
-        }
-        
-        // When Think mode is active, disable memory to avoid vector search errors
-        const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
-        
-        // Send the message to the agent and get the response
-        const response = await AgentService.sendMessage(
-          message,
-          threadId,
-          projectId,
-          {
-            taskType: detectedTaskType,
-            temperature: temperature,
-            maxTokens: maxTokens,
-            modelName: modelName,
-            useMemory: shouldUseMemory,
-            usePromptChain: usePromptChain || thinkActive,
-            qualityThreshold: qualityThreshold,
-            maxIterations: maxIterations,
-            minQualityScore: taskMinQuality, // Pass the minimum quality score
-            enableMultiStepReasoning: thinkActive
+        // Use multi-agent system for marketing-related queries
+        if (useMultiAgent && (detectedTaskType === 'marketing' || detectedTaskType === 'email' || detectedTaskType === 'content')) {
+          console.log('Using multi-agent system for enhanced marketing response');
+          
+          // Import and use multi-agent service
+          const { MultiAgentService } = await import('@/services/MultiAgentService');
+          
+          const multiAgentResult = await MultiAgentService.processQuery(
+            message,
+            projectId,
+            detectedTaskType,
+            { isAuthenticated, thinkActive }
+          );
+          
+          if (multiAgentResult.success) {
+            // Transform multi-agent response to match expected format
+            response = {
+              message: multiAgentResult.response,
+              threadId: threadId || crypto.randomUUID(),
+              sources: multiAgentResult.sources,
+              reasoning: multiAgentResult.reasoning.map(step => ({
+                type: 'multi-agent',
+                content: step
+              })),
+              confidence: multiAgentResult.confidence,
+              evaluation: {
+                iterations: 1,
+                quality: multiAgentResult.quality.score * 100,
+                evaluationHistory: [{
+                  score: multiAgentResult.quality.score * 100,
+                  feedback: multiAgentResult.quality.approved ? 'Quality approved by multi-agent system' : 'Quality improvements suggested'
+                }]
+              }
+            };
+            
+            // Show quality improvements if not approved
+            if (!multiAgentResult.quality.approved && multiAgentResult.quality.improvements.length > 0) {
+              toast({
+                title: "Quality Improvements Available",
+                description: `${multiAgentResult.quality.improvements.length} suggestions for enhancing this response`,
+              });
+            }
+          } else {
+            // Fallback to regular agent service
+            console.log('Multi-agent system failed, falling back to regular agent');
+            response = await AgentService.sendMessage(
+              message,
+              threadId,
+              projectId,
+              {
+                taskType: detectedTaskType,
+                temperature: 0.7,
+                maxTokens: 1500,
+                modelName: "gpt-4o-mini",
+                useMemory: isAuthenticated && !thinkActive,
+                usePromptChain: usePromptChain || thinkActive,
+                qualityThreshold: qualityThreshold,
+                maxIterations: maxIterations,
+                minQualityScore: minQualityScore,
+                enableMultiStepReasoning: thinkActive
+              }
+            );
           }
-        );
+        } else {
+          // Use regular agent service for non-marketing queries or when multi-agent is disabled
+          const shouldUseMemory = useMemory && isAuthenticated && !thinkActive;
+          
+          response = await AgentService.sendMessage(
+            message,
+            threadId,
+            projectId,
+            {
+              taskType: detectedTaskType,
+              temperature: 0.7,
+              maxTokens: 1500,
+              modelName: "gpt-4o-mini",
+              useMemory: shouldUseMemory,
+              usePromptChain: usePromptChain || thinkActive,
+              qualityThreshold: qualityThreshold,
+              maxIterations: maxIterations,
+              minQualityScore: minQualityScore,
+              enableMultiStepReasoning: thinkActive
+            }
+          );
+        }
         
         // Save the thread ID for future messages
         if (response.threadId) {
@@ -176,7 +217,6 @@ export function useChatMessaging({
         
         // If this is a new conversation, call the callback with a new conversation ID
         if (!conversationId) {
-          // Call the callback to create a new conversation with the thread ID
           onConversationCreated(response.threadId);
         }
       } catch (error) {
@@ -190,7 +230,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, minQualityScore, thinkActive]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, minQualityScore, thinkActive, useMultiAgent]
   );
 
   return {
@@ -206,11 +246,13 @@ export function useChatMessaging({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
-    minQualityScore, // Export the new state
-    setMinQualityScore, // Export the setter
+    minQualityScore,
+    setMinQualityScore,
     evaluation,
     thinkActive,
     setThinkActive,
+    useMultiAgent, // Export the new state
+    setUseMultiAgent, // Export the setter
     handleSendMessage
   };
 }

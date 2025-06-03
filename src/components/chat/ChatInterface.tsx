@@ -53,6 +53,8 @@ export function ChatInterface({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
+    useMultiAgent,
+    setUseMultiAgent,
     thinkActive,
     setThinkActive,
     handleSendMessage
@@ -181,7 +183,21 @@ export function ChatInterface({
             </PopoverTrigger>
             <PopoverContent className="w-80 bg-gray-900 border border-white/10 text-white p-4">
               <div className="space-y-4">
-                <h3 className="font-medium text-lg">Response Quality Settings</h3>
+                <h3 className="font-medium text-lg">AI System Settings</h3>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="multi-agent" className="text-sm">Multi-Agent System</Label>
+                    <Switch 
+                      id="multi-agent" 
+                      checked={useMultiAgent} 
+                      onCheckedChange={setUseMultiAgent} 
+                    />
+                  </div>
+                  <p className="text-xs text-white/60">
+                    {useMultiAgent ? "Using specialized agents for better marketing advice (RAG + Marketing Expert + Quality Control)" : "Using single AI agent system"}
+                  </p>
+                </div>
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -245,6 +261,18 @@ export function ChatInterface({
                       </p>
                     </div>
                   </>
+                )}
+                
+                {useMultiAgent && (
+                  <div className="p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+                    <h4 className="text-sm font-medium mb-2">Multi-Agent System Active</h4>
+                    <div className="text-xs text-white/70 space-y-1">
+                      <div>• RAG Specialist: Optimizes knowledge retrieval</div>
+                      <div>• Marketing Expert: Provides specialized marketing insights</div>
+                      <div>• Quality Control: Validates ethics and best practices</div>
+                      <div>• Orchestrator: Coordinates and synthesizes responses</div>
+                    </div>
+                  </div>
                 )}
               </div>
             </PopoverContent>

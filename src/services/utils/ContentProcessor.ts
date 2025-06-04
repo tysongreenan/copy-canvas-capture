@@ -7,7 +7,7 @@ export interface ProcessingResult {
   title?: string;
   message?: string;
   hasTranscript?: boolean;
-  research?: any; // Add missing research property
+  research?: any;
 }
 
 export class ContentProcessor {
@@ -186,8 +186,10 @@ export class ContentProcessor {
       let successful = 0;
       let failed = 0;
 
-      for (let i = 0; i < contentWithoutEmbeddings.length; i++) {
-        const content = contentWithoutEmbeddings[i];
+      // Fix: Use simpler iteration to avoid deep type issues
+      const contentArray = contentWithoutEmbeddings;
+      for (let i = 0; i < contentArray.length; i++) {
+        const content = contentArray[i];
         
         try {
           // Check if embeddings already exist for this content
@@ -229,7 +231,7 @@ export class ContentProcessor {
           }
 
           if (onProgress) {
-            onProgress(i + 1, contentWithoutEmbeddings.length);
+            onProgress(i + 1, contentArray.length);
           }
 
         } catch (error) {

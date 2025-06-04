@@ -1,4 +1,3 @@
-
 import { BaseAgent, AgentContext, AgentResponse } from './BaseAgent';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -102,6 +101,7 @@ export class RAGSpecialistAgent extends BaseAgent {
 
   private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
     try {
+      // Fix: Pass embedding array directly, not as string
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
         match_threshold: 0.25,
@@ -119,6 +119,7 @@ export class RAGSpecialistAgent extends BaseAgent {
 
   private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
     try {
+      // Fix: Pass embedding array directly, not as string
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
         match_threshold: 0.3,

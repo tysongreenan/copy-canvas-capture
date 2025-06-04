@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const [embeddingInfo, setEmbeddingInfo] = useState<string>('');
   const { toast } = useToast();
 
-  const generateEmbedding = async (text: string) => {
+  const generateEmbedding = async (text: string): Promise<number[] | null> => {
     console.log(`Generating embedding for: "${text}"`);
     try {
       const { data, error } = await supabase.functions.invoke("generate-embedding", {
@@ -86,9 +85,9 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Fix: Convert embedding array to string properly
-      const embeddingInfoString = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
-      setEmbeddingInfo(embeddingInfoString);
+      // Fix: Create embedding info string properly
+      const embeddingInfoText = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
+      setEmbeddingInfo(embeddingInfoText);
 
       // Try different thresholds
       const thresholds = [0.3, 0.2, 0.1, 0.05];

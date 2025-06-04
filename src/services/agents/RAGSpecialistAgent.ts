@@ -99,7 +99,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: embedding as any,
         match_threshold: 0.25,
         match_count: 8,
         p_project_id: projectId,
@@ -116,7 +116,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: embedding as any,
         match_threshold: 0.3,
         match_count: 5,
         include_global: true,

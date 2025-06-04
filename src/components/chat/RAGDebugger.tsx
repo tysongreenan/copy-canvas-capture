@@ -47,7 +47,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const searchWithEmbedding = async (queryEmbedding: number[], threshold: number = 0.3) => {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: queryEmbedding,
+        query_embedding: queryEmbedding as any,
         match_threshold: threshold,
         match_count: 10,
         p_project_id: projectId,

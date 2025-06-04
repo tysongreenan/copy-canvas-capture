@@ -1,4 +1,3 @@
-
 export interface ProcessingResult {
   success: boolean;
   contentId?: string;
@@ -165,7 +164,8 @@ export class ContentProcessor {
       let successful = 0;
       let failed = 0;
 
-      const processContent = async (content: any, index: number) => {
+      for (let i = 0; i < contentData.length; i++) {
+        const content = contentData[i];
         try {
           const { count: existingCount } = await supabase
             .from('document_chunks')
@@ -175,7 +175,7 @@ export class ContentProcessor {
 
           if ((existingCount || 0) > 0) {
             successful++;
-            return;
+            continue;
           }
 
           const contentText = this.extractTextFromContent(content.content);
@@ -203,15 +203,11 @@ export class ContentProcessor {
             }
           }
 
-          onProgress?.(index + 1, contentData.length);
+          onProgress?.(i + 1, contentData.length);
         } catch (error) {
           console.error(`Error processing content ${content.id}:`, error);
           failed++;
         }
-      };
-
-      for (let i = 0; i < contentData.length; i++) {
-        await processContent(contentData[i], i);
       }
 
       return {

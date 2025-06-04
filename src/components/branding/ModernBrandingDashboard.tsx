@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import { 
+  Sidebar, 
+  SidebarBody, 
+  SidebarLink,
+  SidebarProvider 
+} from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -75,40 +80,42 @@ export function ModernBrandingDashboard({
   ];
 
   return (
-    <div
-      className={cn(
-        "flex flex-col md:flex-row bg-gray-50 dark:bg-neutral-900 w-full flex-1 min-h-screen overflow-hidden"
-      )}
-    >
-      <Sidebar open={open} setOpen={setOpen}>
-        <SidebarBody className="justify-between gap-10">
-          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {open ? <Logo /> : <LogoIcon />}
-            <div className="mt-8 flex flex-col gap-2">
-              {links.map((link, idx) => (
-                <SidebarLink key={idx} link={link} />
-              ))}
+    <SidebarProvider open={open} onOpenChange={setOpen}>
+      <div
+        className={cn(
+          "flex flex-col md:flex-row bg-gray-50 dark:bg-neutral-900 w-full flex-1 min-h-screen overflow-hidden"
+        )}
+      >
+        <Sidebar>
+          <SidebarBody className="justify-between gap-10">
+            <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+              {open ? <Logo /> : <LogoIcon />}
+              <div className="mt-8 flex flex-col gap-2">
+                {links.map((link, idx) => (
+                  <SidebarLink key={idx} link={link} />
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <SidebarLink
-              link={{
-                label: user?.email?.split('@')[0] || "User",
-                href: "/profile",
-                icon: (
-                  <Avatar className="h-7 w-7 flex-shrink-0">
-                    <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs">
-                      {user?.email?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                ),
-              }}
-            />
-          </div>
-        </SidebarBody>
-      </Sidebar>
-      <Dashboard>{children}</Dashboard>
-    </div>
+            <div>
+              <SidebarLink
+                link={{
+                  label: user?.email?.split('@')[0] || "User",
+                  href: "/profile",
+                  icon: (
+                    <Avatar className="h-7 w-7 flex-shrink-0">
+                      <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs">
+                        {user?.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  ),
+                }}
+              />
+            </div>
+          </SidebarBody>
+        </Sidebar>
+        <Dashboard>{children}</Dashboard>
+      </div>
+    </SidebarProvider>
   );
 }
 
@@ -144,4 +151,4 @@ const Dashboard = ({ children }: { children: React.ReactNode }) => {
       </div>
     </div>
   );
-}; 
+};

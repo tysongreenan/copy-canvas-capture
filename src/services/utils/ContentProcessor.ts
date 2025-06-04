@@ -165,8 +165,7 @@ export class ContentProcessor {
       let successful = 0;
       let failed = 0;
 
-      for (let index = 0; index < contentData.length; index++) {
-        const content = contentData[index];
+      const processContent = async (content: any, index: number) => {
         try {
           const { count: existingCount } = await supabase
             .from('document_chunks')
@@ -176,7 +175,7 @@ export class ContentProcessor {
 
           if ((existingCount || 0) > 0) {
             successful++;
-            continue;
+            return;
           }
 
           const contentText = this.extractTextFromContent(content.content);
@@ -209,6 +208,10 @@ export class ContentProcessor {
           console.error(`Error processing content ${content.id}:`, error);
           failed++;
         }
+      };
+
+      for (let i = 0; i < contentData.length; i++) {
+        await processContent(contentData[i], i);
       }
 
       return {

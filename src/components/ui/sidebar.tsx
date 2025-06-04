@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -136,7 +137,7 @@ const SidebarProvider = React.forwardRef<
             ref={ref}
             {...props}
           >
-            {children as React.ReactNode}
+            {children}
           </div>
         </TooltipProvider>
       </SidebarContext.Provider>
@@ -173,6 +174,50 @@ const Sidebar = React.forwardRef<
   )
 })
 Sidebar.displayName = "Sidebar"
+
+const SidebarBody = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div">
+>(({ className, ...props }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn("flex flex-1 flex-col gap-2 p-2", className)}
+      {...props}
+    />
+  )
+})
+SidebarBody.displayName = "SidebarBody"
+
+const SidebarLink = React.forwardRef<
+  HTMLAnchorElement,
+  React.ComponentProps<"a"> & {
+    link: {
+      label: string
+      href: string
+      icon: React.ReactNode
+    }
+  }
+>(({ className, link, ...props }, ref) => {
+  const { open } = useSidebar()
+
+  return (
+    <a
+      ref={ref}
+      href={link.href}
+      className={cn(
+        "flex items-center gap-2 rounded-md p-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+        !open && "justify-center",
+        className
+      )}
+      {...props}
+    >
+      {link.icon}
+      {open && <span>{link.label}</span>}
+    </a>
+  )
+})
+SidebarLink.displayName = "SidebarLink"
 
 const SidebarTrigger = React.forwardRef<
   HTMLButtonElement,
@@ -632,6 +677,8 @@ SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton"
 
 export {
   Sidebar,
+  SidebarBody,
+  SidebarLink,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,

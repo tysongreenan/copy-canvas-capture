@@ -1,3 +1,4 @@
+
 import { BaseAgent, AgentContext, AgentResponse } from './BaseAgent';
 import { RAGSpecialistAgent } from './RAGSpecialistAgent';
 import { MarketingExpertAgent } from './MarketingExpertAgent';
@@ -34,39 +35,51 @@ export class OrchestratorAgent extends BaseAgent {
 
   async process(context: AgentContext): Promise<AgentResponse> {
     const reasoning: string[] = [];
-    reasoning.push('Initiating enhanced multi-agent workflow with RAG and memory integration');
+    reasoning.push('Initiating enhanced multi-agent workflow with improved error handling');
 
     try {
       const agentResults: Record<string, AgentResponse> = {};
 
-      // Phase 1: Thinking Agent with RAG integration (primary knowledge source)
-      reasoning.push('Phase 1: Deep thinking analysis with integrated RAG knowledge retrieval');
-      const thinkingResult = await this.thinkingAgent.process(context);
-      agentResults.thinkingAgent = thinkingResult;
-      
-      let primarySources: any[] = [];
-      if (thinkingResult.success && thinkingResult.data?.sources) {
-        primarySources = thinkingResult.data.sources;
-        reasoning.push(`Thinking agent retrieved ${primarySources.length} knowledge sources`);
-      }
-
-      // Phase 2: RAG Specialist for supplementary context (if needed)
-      reasoning.push('Phase 2: Supplementary knowledge retrieval for additional context');
+      // Phase 1: RAG Specialist (primary knowledge source with fallbacks)
+      reasoning.push('Phase 1: Knowledge retrieval with fallback mechanisms');
       const ragResult = await this.ragAgent.process(context);
       agentResults.ragSpecialist = ragResult;
       
-      let supplementarySources: any[] = [];
+      let allSources: any[] = [];
       if (ragResult.success && ragResult.data?.sources) {
-        supplementarySources = ragResult.data.sources;
-        reasoning.push(`RAG specialist retrieved ${supplementarySources.length} additional sources`);
+        allSources = ragResult.data.sources;
+        reasoning.push(`RAG specialist retrieved ${allSources.length} knowledge sources`);
+      } else {
+        reasoning.push('RAG specialist failed, proceeding with fallback strategies');
       }
 
-      // Combine and deduplicate sources
-      const allSources = this.deduplicateSources([...primarySources, ...supplementarySources]);
-      reasoning.push(`Combined knowledge base: ${allSources.length} unique sources`);
+      // Phase 2: Thinking Agent with RAG integration (if possible)
+      reasoning.push('Phase 2: Deep thinking analysis with available knowledge');
+      let thinkingResult: AgentResponse;
+      
+      try {
+        thinkingResult = await this.thinkingAgent.process(context);
+        agentResults.thinkingAgent = thinkingResult;
+        
+        if (thinkingResult.success && thinkingResult.data?.sources) {
+          // Merge sources from thinking agent
+          const thinkingSources = thinkingResult.data.sources;
+          allSources = this.deduplicateSources([...allSources, ...thinkingSources]);
+          reasoning.push(`Thinking agent added ${thinkingSources.length} additional sources`);
+        }
+      } catch (thinkingError) {
+        reasoning.push(`Thinking agent failed: ${thinkingError.message}, continuing without deep analysis`);
+        thinkingResult = {
+          success: false,
+          confidence: 0,
+          data: null,
+          reasoning: [`Failed: ${thinkingError.message}`]
+        };
+        agentResults.thinkingAgent = thinkingResult;
+      }
 
       // Phase 3: Marketing Expert with enhanced context
-      reasoning.push('Phase 3: Marketing expertise analysis with comprehensive knowledge context');
+      reasoning.push('Phase 3: Marketing expertise analysis with available context');
       const enhancedMarketingContext = {
         ...context,
         previousAgentResults: agentResults,
@@ -77,7 +90,7 @@ export class OrchestratorAgent extends BaseAgent {
       agentResults.marketingExpert = marketingResult;
 
       // Phase 4: Quality Control validation
-      reasoning.push('Phase 4: Quality control and ethics validation');
+      reasoning.push('Phase 4: Quality control and response validation');
       const qualityContext = {
         ...context,
         previousAgentResults: agentResults
@@ -86,9 +99,9 @@ export class OrchestratorAgent extends BaseAgent {
       const qualityResult = await this.qualityAgent.process(qualityContext);
       agentResults.qualityControl = qualityResult;
 
-      // Phase 5: Enhanced response synthesis with prominent RAG content
-      reasoning.push('Phase 5: Response synthesis with prominent knowledge integration');
-      const synthesizedResponse = await this.synthesizeEnhancedResponse(agentResults, context, allSources);
+      // Phase 5: Enhanced response synthesis with graceful degradation
+      reasoning.push('Phase 5: Response synthesis with graceful degradation');
+      const synthesizedResponse = await this.synthesizeRobustResponse(agentResults, context, allSources);
       
       const overallConfidence = this.calculateOverallConfidence(agentResults);
       reasoning.push(`Overall system confidence: ${Math.round(overallConfidence * 100)}%`);
@@ -104,22 +117,95 @@ export class OrchestratorAgent extends BaseAgent {
           qualityApproved: qualityResult.data?.approved || false,
           knowledgeSourceCount: allSources.length,
           hasThinkingSteps: thinkingResult.success && thinkingResult.data?.thinkingSession?.steps?.length > 0,
-          memoryContextUsed: !!context.userContext?.memoryContext
+          memoryContextUsed: !!context.userContext?.memoryContext,
+          fallbacksUsed: this.countFallbacks(agentResults)
         }
       };
     } catch (error) {
-      reasoning.push(`Error in enhanced orchestration: ${error.message}`);
-      return {
-        success: false,
-        confidence: 0,
-        data: null,
-        reasoning
-      };
+      reasoning.push(`Critical error in orchestration: ${error.message}`);
+      return this.createEmergencyResponse(context, reasoning);
     }
   }
 
+  private createEmergencyResponse(context: AgentContext, reasoning: string[]): AgentResponse {
+    reasoning.push('Creating emergency response with basic marketing guidance');
+    
+    const emergencyResponse: OrchestratedResponse = {
+      finalAnswer: this.generateEmergencyAnswer(context.query),
+      confidence: 0.3,
+      sources: [],
+      agentResults: {},
+      reasoning,
+      quality: {
+        score: 0.3,
+        approved: false,
+        improvements: ['System experienced technical difficulties']
+      },
+      thinkingSteps: []
+    };
+
+    return {
+      success: true,
+      confidence: 0.3,
+      data: emergencyResponse,
+      reasoning,
+      metadata: {
+        emergencyMode: true
+      }
+    };
+  }
+
+  private generateEmergencyAnswer(query: string): string {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('campaign') || lowerQuery.includes('advertising')) {
+      return `For your advertising campaign question: "${query}", here are some general recommendations:
+
+🎯 **Key Campaign Considerations:**
+1. **Define Your Target Audience** - Know who you're trying to reach
+2. **Set Clear Objectives** - What specific outcomes do you want?
+3. **Choose the Right Channels** - Where does your audience spend time?
+4. **Create Compelling Content** - Focus on benefits, not just features
+5. **Test and Optimize** - Start small, measure results, and improve
+
+📊 **Essential Metrics to Track:**
+- Reach and impressions
+- Click-through rates
+- Conversion rates
+- Cost per acquisition
+- Return on ad spend (ROAS)
+
+I apologize that our advanced AI system is temporarily experiencing technical difficulties. For more personalized advice, please try your question again in a few moments.`;
+    }
+
+    return `I understand you're asking about: "${query}"
+
+While our advanced AI system is experiencing temporary technical difficulties, here are some general marketing principles that might help:
+
+✅ **Universal Marketing Best Practices:**
+1. **Know Your Audience** - Research demographics, preferences, and pain points
+2. **Value Proposition** - Clearly communicate what makes you unique
+3. **Multi-Channel Approach** - Use various touchpoints to reach customers
+4. **Consistent Messaging** - Maintain brand voice across all platforms
+5. **Data-Driven Decisions** - Track metrics and adjust based on performance
+
+Please try your question again in a few moments when our system is fully operational.`;
+  }
+
+  private countFallbacks(agentResults: Record<string, AgentResponse>): number {
+    let count = 0;
+    Object.values(agentResults).forEach(result => {
+      if (result.metadata?.retrievalMethod === 'keyword-fallback' || !result.success) {
+        count++;
+      }
+    });
+    return count;
+  }
+
   private buildConsolidatedKnowledge(sources: any[], context: AgentContext): string {
-    if (!sources.length) return '';
+    if (!sources.length) {
+      return `Query: ${context.query}\n\nNo specific knowledge sources available. Proceeding with general marketing principles.`;
+    }
 
     let knowledge = `Query: ${context.query}\n\n`;
     
@@ -147,7 +233,7 @@ export class OrchestratorAgent extends BaseAgent {
     return knowledge;
   }
 
-  private async synthesizeEnhancedResponse(
+  private async synthesizeRobustResponse(
     agentResults: Record<string, AgentResponse>, 
     context: AgentContext, 
     allSources: any[]
@@ -157,16 +243,23 @@ export class OrchestratorAgent extends BaseAgent {
     const marketingData = agentResults.marketingExpert?.data;
     const qualityData = agentResults.qualityControl?.data;
 
-    // Start with thinking agent's answer, enhanced with marketing insights
-    let finalAnswer = thinkingData?.finalAnswer || 
-                     marketingData?.insights?.analysis || 
-                     'I apologize, but I encountered issues generating insights for your query.';
+    // Build response with multiple fallback strategies
+    let finalAnswer = '';
+    
+    if (thinkingData?.finalAnswer && !thinkingData.finalAnswer.includes('encountered an issue')) {
+      finalAnswer = thinkingData.finalAnswer;
+    } else if (marketingData?.insights?.analysis) {
+      finalAnswer = marketingData.insights.analysis;
+    } else if (allSources.length > 0) {
+      finalAnswer = this.synthesizeFromSources(allSources, context.query);
+    } else {
+      finalAnswer = this.generateEmergencyAnswer(context.query);
+    }
 
-    // If we have sources, prominently feature them in the response
+    // Enhanced source integration
     if (allSources.length > 0) {
-      finalAnswer += '\n\n**📋 This analysis is based on the following knowledge from your project:**\n';
+      finalAnswer += '\n\n**📋 Knowledge Sources Used:**\n';
       
-      // Feature top 3 most relevant sources
       const topSources = allSources
         .sort((a, b) => (b.weighted_score || b.similarity || 0) - (a.weighted_score || a.similarity || 0))
         .slice(0, 3);
@@ -179,12 +272,14 @@ export class OrchestratorAgent extends BaseAgent {
       });
     }
 
-    // Add thinking process if available
+    // Add thinking process if available and successful
     if (thinkingData?.thinkingSession?.steps?.length > 0) {
-      finalAnswer += '\n\n**🧠 My Analysis Process:**\n';
+      finalAnswer += '\n\n**🧠 Analysis Process:**\n';
       thinkingData.thinkingSession.steps.slice(0, 3).forEach((step: any, index: number) => {
-        finalAnswer += `${index + 1}. ${step.question}\n`;
-        finalAnswer += `   ${step.conclusion}\n\n`;
+        if (step.conclusion && !step.conclusion.includes('Unable to reach conclusion')) {
+          finalAnswer += `${index + 1}. ${step.question}\n`;
+          finalAnswer += `   ${step.conclusion}\n\n`;
+        }
       });
     }
 
@@ -209,11 +304,31 @@ export class OrchestratorAgent extends BaseAgent {
       reasoning: this.combineReasoning(agentResults),
       quality: {
         score: qualityData?.qualityScore || 0.7,
-        approved: qualityData?.approved || true,
+        approved: qualityData?.approved !== false, // Default to true unless explicitly false
         improvements: qualityData?.improvements || []
       },
       thinkingSteps: thinkingData?.thinkingSession?.steps || []
     };
+  }
+
+  private synthesizeFromSources(sources: any[], query: string): string {
+    const relevantContent = sources
+      .filter(s => (s.similarity || 0) > 0.3)
+      .slice(0, 5)
+      .map(s => s.content)
+      .join('\n\n');
+
+    return `Based on the available knowledge sources, here's what I can tell you about "${query}":
+
+${relevantContent}
+
+**Key Takeaways:**
+• Focus on understanding your target audience
+• Ensure your messaging is clear and compelling
+• Test different approaches to find what works best
+• Monitor performance metrics to optimize results
+
+This response is synthesized from your project's knowledge base and marketing best practices.`;
   }
 
   private deduplicateSources(sources: any[]): any[] {
@@ -229,7 +344,7 @@ export class OrchestratorAgent extends BaseAgent {
   private calculateOverallConfidence(agentResults: Record<string, AgentResponse>): number {
     const successfulAgents = Object.values(agentResults).filter(result => result.success);
     
-    if (successfulAgents.length === 0) return 0;
+    if (successfulAgents.length === 0) return 0.3; // Minimum confidence for emergency responses
 
     const weights = {
       thinkingAgent: 0.3,
@@ -249,7 +364,7 @@ export class OrchestratorAgent extends BaseAgent {
       }
     });
 
-    return totalWeight > 0 ? weightedSum / totalWeight : 0;
+    return totalWeight > 0 ? Math.max(weightedSum / totalWeight, 0.3) : 0.3;
   }
 
   private combineReasoning(agentResults: Record<string, AgentResponse>): string[] {

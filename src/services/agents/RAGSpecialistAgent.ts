@@ -14,23 +14,23 @@ export class RAGSpecialistAgent extends BaseAgent {
     try {
       const embeddingResponse = await this.generateEmbedding(context.query);
       if (!embeddingResponse) {
-        return {
-          success: false,
-          confidence: 0,
-          data: null,
-          reasoning: [...reasoning, 'Failed to generate query embedding']
-        };
+        reasoning.push('Failed to generate query embedding, using keyword-based fallback');
+        return this.fallbackResponse(context, reasoning);
       }
 
       reasoning.push('Generated query embedding successfully');
 
-      const retrievalStrategies = await Promise.all([
+      const retrievalStrategies = await Promise.allSettled([
         this.retrieveProjectContent(embeddingResponse, context.projectId),
         this.retrieveGlobalKnowledge(embeddingResponse, context.taskType),
         this.retrieveSemanticClusters(embeddingResponse, context.projectId)
       ]);
 
-      const [projectContent, globalKnowledge, semanticClusters] = retrievalStrategies;
+      const [projectContentResult, globalKnowledgeResult, semanticClustersResult] = retrievalStrategies;
+      
+      const projectContent = projectContentResult.status === 'fulfilled' ? projectContentResult.value : [];
+      const globalKnowledge = globalKnowledgeResult.status === 'fulfilled' ? globalKnowledgeResult.value : [];
+      const semanticClusters = semanticClustersResult.status === 'fulfilled' ? semanticClustersResult.value : [];
       
       reasoning.push(`Retrieved ${projectContent.length} project documents`);
       reasoning.push(`Retrieved ${globalKnowledge.length} global knowledge items`);
@@ -70,12 +70,77 @@ export class RAGSpecialistAgent extends BaseAgent {
       };
     } catch (error) {
       reasoning.push(`Error during retrieval: ${error.message}`);
+      return this.fallbackResponse(context, reasoning);
+    }
+  }
+
+  private async fallbackResponse(context: AgentContext, reasoning: string[]): Promise<AgentResponse> {
+    reasoning.push('Using keyword-based fallback retrieval');
+    
+    try {
+      const keywordSources = await this.keywordBasedRetrieval(context.query, context.projectId);
+      reasoning.push(`Fallback retrieved ${keywordSources.length} sources`);
+      
+      return {
+        success: true,
+        confidence: 0.4, // Lower confidence for fallback
+        data: {
+          sources: keywordSources,
+          optimizedContext: this.optimizeContext(keywordSources, context.query),
+          retrievalStats: {
+            projectSources: keywordSources.length,
+            globalSources: 0,
+            semanticClusters: 0,
+            qualityFiltered: keywordSources.length
+          }
+        },
+        reasoning,
+        metadata: {
+          retrievalMethod: 'keyword-fallback'
+        }
+      };
+    } catch (fallbackError) {
+      reasoning.push(`Fallback also failed: ${fallbackError.message}`);
       return {
         success: false,
         confidence: 0,
-        data: null,
+        data: {
+          sources: [],
+          optimizedContext: '',
+          retrievalStats: {
+            projectSources: 0,
+            globalSources: 0,
+            semanticClusters: 0,
+            qualityFiltered: 0
+          }
+        },
         reasoning
       };
+    }
+  }
+
+  private async keywordBasedRetrieval(query: string, projectId: string): Promise<any[]> {
+    try {
+      const keywords = query.toLowerCase().split(' ').filter(word => word.length > 3);
+      
+      const { data, error } = await supabase
+        .from('document_chunks')
+        .select('*')
+        .eq('project_id', projectId)
+        .textSearch('content', keywords.join(' | '))
+        .limit(5);
+
+      if (error) throw error;
+      
+      return (data || []).map(item => ({
+        ...item,
+        similarity: 0.3, // Assign moderate similarity for keyword matches
+        source_type: 'project',
+        source_info: item.metadata?.source || 'Project Content'
+      }));
+    } catch (error) {
+      console.error('Keyword-based retrieval failed:', error);
+      return [];
     }
   }
 
@@ -86,6 +151,7 @@ export class RAGSpecialistAgent extends BaseAgent {
       });
 
       if (error || !data?.embedding) {
+        console.error('Embedding generation failed:', error);
         return null;
       }
 
@@ -99,7 +165,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding as any,
+        query_embedding: embedding,
         match_threshold: 0.25,
         match_count: 8,
         p_project_id: projectId,
@@ -116,7 +182,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding as any,
+        query_embedding: embedding,
         match_threshold: 0.3,
         match_count: 5,
         include_global: true,
@@ -132,6 +198,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   }
 
   private async retrieveSemanticClusters(embedding: number[], projectId: string): Promise<any[]> {
+    // For now, return empty array - can be enhanced later
     return [];
   }
 

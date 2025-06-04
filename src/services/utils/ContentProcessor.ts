@@ -166,33 +166,33 @@ export class ContentProcessor {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const { data: contentData } = await supabase
+      const { data: contentArray } = await supabase
         .from('scraped_content')
         .select('id, url, title, content')
         .eq('project_id', projectId);
 
-      if (!contentData || contentData.length === 0) {
+      if (!contentArray || contentArray.length === 0) {
         return { successful: 0, failed: 0, message: 'No content found to process' };
       }
 
       let successful = 0;
       let failed = 0;
 
-      for (let i = 0; i < contentData.length; i++) {
-        const content: ContentData = contentData[i];
+      for (let i = 0; i < contentArray.length; i++) {
+        const contentItem = contentArray[i];
         try {
           const { count: existingCount } = await supabase
             .from('document_chunks')
             .select('*', { count: 'exact', head: true })
             .eq('project_id', projectId)
-            .eq('metadata->source', content.url);
+            .eq('metadata->source', contentItem.url);
 
           if ((existingCount || 0) > 0) {
             successful++;
             continue;
           }
 
-          const contentText = this.extractTextFromContent(content.content);
+          const contentText = this.extractTextFromContent(contentItem.content);
           const chunks = this.splitTextIntoChunks(contentText);
 
           for (const chunk of chunks) {
@@ -202,9 +202,9 @@ export class ContentProcessor {
                 projectId: projectId,
                 metadata: {
                   type: 'scraped_content',
-                  title: content.title,
-                  source: content.url,
-                  contentId: content.id
+                  title: contentItem.title,
+                  source: contentItem.url,
+                  contentId: contentItem.id
                 }
               }
             });
@@ -218,10 +218,10 @@ export class ContentProcessor {
           }
 
           if (onProgress) {
-            onProgress(i + 1, contentData.length);
+            onProgress(i + 1, contentArray.length);
           }
         } catch (error) {
-          console.error(`Error processing content ${content.id}:`, error);
+          console.error(`Error processing content ${contentItem.id}:`, error);
           failed++;
         }
       }

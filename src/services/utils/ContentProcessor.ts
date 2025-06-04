@@ -1,3 +1,4 @@
+
 export interface ProcessingResult {
   success: boolean;
   contentId?: string;
@@ -7,6 +8,27 @@ export interface ProcessingResult {
   message?: string;
   hasTranscript?: boolean;
   research?: any;
+}
+
+interface ContentData {
+  id: string;
+  url: string;
+  title: string;
+  content: any;
+}
+
+interface EmbeddingHealthResult {
+  hasContent: boolean; 
+  hasEmbeddings: boolean; 
+  contentCount: number; 
+  embeddingCount: number;
+  healthScore: number;
+}
+
+interface ProcessingStats {
+  successful: number;
+  failed: number;
+  message: string;
 }
 
 export class ContentProcessor {
@@ -95,15 +117,7 @@ export class ContentProcessor {
     return 'An unexpected error occurred. Please try again.';
   }
 
-  public static async checkEmbeddingHealth(
-    projectId: string
-  ): Promise<{ 
-    hasContent: boolean; 
-    hasEmbeddings: boolean; 
-    contentCount: number; 
-    embeddingCount: number;
-    healthScore: number;
-  }> {
+  public static async checkEmbeddingHealth(projectId: string): Promise<EmbeddingHealthResult> {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
@@ -148,7 +162,7 @@ export class ContentProcessor {
   public static async processMissingEmbeddings(
     projectId: string,
     onProgress?: (processed: number, total: number) => void
-  ): Promise<{ successful: number; failed: number; message: string }> {
+  ): Promise<ProcessingStats> {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
@@ -165,7 +179,7 @@ export class ContentProcessor {
       let failed = 0;
 
       for (let i = 0; i < contentData.length; i++) {
-        const content = contentData[i];
+        const content: ContentData = contentData[i];
         try {
           const { count: existingCount } = await supabase
             .from('document_chunks')
@@ -203,7 +217,9 @@ export class ContentProcessor {
             }
           }
 
-          onProgress?.(i + 1, contentData.length);
+          if (onProgress) {
+            onProgress(i + 1, contentData.length);
+          }
         } catch (error) {
           console.error(`Error processing content ${content.id}:`, error);
           failed++;

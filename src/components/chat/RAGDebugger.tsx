@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const searchWithEmbedding = async (queryEmbedding: number[], threshold: number = 0.3) => {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: queryEmbedding,
+        query_embedding: JSON.stringify(queryEmbedding),
         match_threshold: threshold,
         match_count: 10,
         p_project_id: projectId,
@@ -74,7 +75,6 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
     setResults([]);
     
     try {
-      // Generate embedding
       const queryEmbedding = await generateEmbedding(query);
       if (!queryEmbedding) {
         toast({
@@ -85,11 +85,9 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Create embedding info string properly
       const embeddingInfoText = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
       setEmbeddingInfo(embeddingInfoText);
 
-      // Try different thresholds
       const thresholds = [0.3, 0.2, 0.1, 0.05];
       const allResults = [];
 

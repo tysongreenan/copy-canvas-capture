@@ -98,7 +98,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: JSON.stringify(embedding),
         match_threshold: 0.25,
         match_count: 8,
         p_project_id: projectId,
@@ -115,7 +115,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: JSON.stringify(embedding),
         match_threshold: 0.3,
         match_count: 5,
         include_global: true,
@@ -131,15 +131,12 @@ export class RAGSpecialistAgent extends BaseAgent {
   }
 
   private async retrieveSemanticClusters(embedding: number[], projectId: string): Promise<any[]> {
-    // Implement semantic clustering logic
-    // For now, return empty array as this would require advanced clustering algorithms
     return [];
   }
 
   private assessContentQuality(sources: any[]): any[] {
     return sources
       .filter(source => {
-        // Quality criteria
         const hasContent = source.content && source.content.length > 50;
         const hasGoodQuality = (source.quality_score || 0) >= 0.5;
         const hasRelevance = (source.similarity || 0) >= 0.25;
@@ -147,13 +144,12 @@ export class RAGSpecialistAgent extends BaseAgent {
         return hasContent && hasGoodQuality && hasRelevance;
       })
       .sort((a, b) => (b.weighted_score || b.similarity || 0) - (a.weighted_score || a.similarity || 0))
-      .slice(0, 10); // Top 10 highest quality sources
+      .slice(0, 10);
   }
 
   private optimizeContext(sources: any[], query: string): string {
     if (!sources.length) return '';
 
-    // Group sources by relevance and create optimized context
     const highRelevance = sources.filter(s => (s.similarity || 0) > 0.6);
     const mediumRelevance = sources.filter(s => (s.similarity || 0) > 0.4 && (s.similarity || 0) <= 0.6);
     
@@ -178,7 +174,7 @@ export class RAGSpecialistAgent extends BaseAgent {
 
     const avgSimilarity = sources.reduce((sum, s) => sum + (s.similarity || 0), 0) / sources.length;
     const avgQuality = sources.reduce((sum, s) => sum + (s.quality_score || 0.5), 0) / sources.length;
-    const sourceCount = Math.min(sources.length / 10, 1); // Normalize to 0-1
+    const sourceCount = Math.min(sources.length / 10, 1);
 
     return (avgSimilarity * 0.4 + avgQuality * 0.4 + sourceCount * 0.2);
   }

@@ -165,8 +165,8 @@ export class ContentProcessor {
       let successful = 0;
       let failed = 0;
 
-      // Process content items
-      for (const [index, content] of contentData.entries()) {
+      for (let index = 0; index < contentData.length; index++) {
+        const content = contentData[index];
         try {
           const { count: existingCount } = await supabase
             .from('document_chunks')

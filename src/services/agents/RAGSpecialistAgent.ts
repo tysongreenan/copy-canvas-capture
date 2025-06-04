@@ -1,4 +1,3 @@
-
 import { BaseAgent, AgentContext, AgentResponse } from './BaseAgent';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,7 +11,6 @@ export class RAGSpecialistAgent extends BaseAgent {
     reasoning.push(`Analyzing query: "${context.query}"`);
 
     try {
-      // Generate embedding for the query
       const embeddingResponse = await this.generateEmbedding(context.query);
       if (!embeddingResponse) {
         return {
@@ -25,7 +23,6 @@ export class RAGSpecialistAgent extends BaseAgent {
 
       reasoning.push('Generated query embedding successfully');
 
-      // Multi-strategy retrieval
       const retrievalStrategies = await Promise.all([
         this.retrieveProjectContent(embeddingResponse, context.projectId),
         this.retrieveGlobalKnowledge(embeddingResponse, context.taskType),
@@ -38,7 +35,6 @@ export class RAGSpecialistAgent extends BaseAgent {
       reasoning.push(`Retrieved ${globalKnowledge.length} global knowledge items`);
       reasoning.push(`Found ${semanticClusters.length} semantic clusters`);
 
-      // Quality assessment and filtering
       const qualityFilteredContent = this.assessContentQuality([
         ...projectContent,
         ...globalKnowledge,
@@ -47,7 +43,6 @@ export class RAGSpecialistAgent extends BaseAgent {
 
       reasoning.push(`Quality filtering retained ${qualityFilteredContent.length} high-quality sources`);
 
-      // Context optimization
       const optimizedContext = this.optimizeContext(qualityFilteredContent, context.query);
       
       const confidence = this.calculateConfidence(qualityFilteredContent, context.query);

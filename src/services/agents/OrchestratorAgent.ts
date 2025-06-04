@@ -1,8 +1,8 @@
-
 import { BaseAgent, AgentContext, AgentResponse } from './BaseAgent';
 import { RAGSpecialistAgent } from './RAGSpecialistAgent';
 import { MarketingExpertAgent } from './MarketingExpertAgent';
 import { QualityControlAgent } from './QualityControlAgent';
+import { ThinkingAgent } from './ThinkingAgent';
 
 export interface OrchestratedResponse {
   finalAnswer: string;
@@ -15,40 +15,54 @@ export interface OrchestratedResponse {
     approved: boolean;
     improvements: string[];
   };
+  thinkingSteps?: any[];
 }
 
 export class OrchestratorAgent extends BaseAgent {
   private ragAgent: RAGSpecialistAgent;
   private marketingAgent: MarketingExpertAgent;
   private qualityAgent: QualityControlAgent;
+  private thinkingAgent: ThinkingAgent;
 
   constructor() {
     super('Orchestrator', 'Coordinates multi-agent collaboration and response synthesis');
     this.ragAgent = new RAGSpecialistAgent();
     this.marketingAgent = new MarketingExpertAgent();
     this.qualityAgent = new QualityControlAgent();
+    this.thinkingAgent = new ThinkingAgent();
   }
 
   async process(context: AgentContext): Promise<AgentResponse> {
     const reasoning: string[] = [];
-    reasoning.push('Initiating multi-agent collaboration workflow');
+    reasoning.push('Initiating enhanced multi-agent workflow with deep thinking');
 
     try {
       const agentResults: Record<string, AgentResponse> = {};
 
-      // Phase 1: RAG Specialist retrieves and optimizes knowledge
-      reasoning.push('Phase 1: Knowledge retrieval and context optimization');
+      // Phase 1: Deep thinking analysis with RAG integration
+      reasoning.push('Phase 1: Deep thinking analysis with knowledge integration');
+      const thinkingResult = await this.thinkingAgent.process(context);
+      agentResults.thinkingAgent = thinkingResult;
+      
+      if (!thinkingResult.success) {
+        reasoning.push('Deep thinking analysis failed, proceeding with standard workflow');
+      } else {
+        reasoning.push(`Deep thinking completed with confidence: ${Math.round(thinkingResult.confidence * 100)}%`);
+      }
+
+      // Phase 2: RAG Specialist for additional context (if thinking didn't provide enough)
+      reasoning.push('Phase 2: Additional knowledge retrieval and context optimization');
       const ragResult = await this.ragAgent.process(context);
       agentResults.ragSpecialist = ragResult;
       
       if (!ragResult.success) {
-        reasoning.push('RAG retrieval failed, proceeding with limited context');
+        reasoning.push('RAG retrieval failed, proceeding with available context');
       } else {
         reasoning.push(`RAG retrieval successful with confidence: ${Math.round(ragResult.confidence * 100)}%`);
       }
 
-      // Phase 2: Marketing Expert generates insights
-      reasoning.push('Phase 2: Marketing expertise and strategy analysis');
+      // Phase 3: Marketing Expert generates insights based on thinking and RAG
+      reasoning.push('Phase 3: Marketing expertise and strategy analysis');
       const marketingContext = {
         ...context,
         previousAgentResults: agentResults
@@ -63,8 +77,8 @@ export class OrchestratorAgent extends BaseAgent {
         reasoning.push(`Marketing analysis completed with confidence: ${Math.round(marketingResult.confidence * 100)}%`);
       }
 
-      // Phase 3: Quality Control validates recommendations
-      reasoning.push('Phase 3: Quality control and ethics validation');
+      // Phase 4: Quality Control validates recommendations
+      reasoning.push('Phase 4: Quality control and ethics validation');
       const qualityContext = {
         ...context,
         previousAgentResults: agentResults
@@ -79,11 +93,10 @@ export class OrchestratorAgent extends BaseAgent {
         reasoning.push(`Quality validation completed with score: ${Math.round(qualityResult.confidence * 100)}%`);
       }
 
-      // Phase 4: Synthesize final response
-      reasoning.push('Phase 4: Response synthesis and final optimization');
-      const synthesizedResponse = await this.synthesizeResponse(agentResults, context);
+      // Phase 5: Synthesize final response with thinking integration
+      reasoning.push('Phase 5: Response synthesis with deep thinking integration');
+      const synthesizedResponse = await this.synthesizeEnhancedResponse(agentResults, context);
       
-      // Calculate overall confidence
       const overallConfidence = this.calculateOverallConfidence(agentResults);
       reasoning.push(`Overall system confidence: ${Math.round(overallConfidence * 100)}%`);
 
@@ -95,11 +108,12 @@ export class OrchestratorAgent extends BaseAgent {
         metadata: {
           agentCount: Object.keys(agentResults).length,
           qualityApproved: qualityResult.data?.approved || false,
-          hasKnowledgeContext: ragResult.success && ragResult.data?.sources?.length > 0
+          hasKnowledgeContext: ragResult.success && ragResult.data?.sources?.length > 0,
+          hasThinkingSteps: thinkingResult.success && thinkingResult.data?.thinkingSession?.steps?.length > 0
         }
       };
     } catch (error) {
-      reasoning.push(`Error in orchestration: ${error.message}`);
+      reasoning.push(`Error in enhanced orchestration: ${error.message}`);
       return {
         success: false,
         confidence: 0,
@@ -109,24 +123,43 @@ export class OrchestratorAgent extends BaseAgent {
     }
   }
 
-  private async synthesizeResponse(agentResults: Record<string, AgentResponse>, context: AgentContext): Promise<OrchestratedResponse> {
+  private async synthesizeEnhancedResponse(agentResults: Record<string, AgentResponse>, context: AgentContext): Promise<OrchestratedResponse> {
+    const thinkingData = agentResults.thinkingAgent?.data;
     const ragData = agentResults.ragSpecialist?.data;
     const marketingData = agentResults.marketingExpert?.data;
     const qualityData = agentResults.qualityControl?.data;
 
-    // Start with marketing insights as the base
-    let finalAnswer = marketingData?.insights?.analysis || 'I apologize, but I encountered issues generating marketing insights for your query.';
+    // Start with thinking agent's final answer if available, otherwise use marketing insights
+    let finalAnswer = thinkingData?.finalAnswer || 
+                     marketingData?.insights?.analysis || 
+                     'I apologize, but I encountered issues generating insights for your query.';
 
-    // Enhance with RAG sources if available
-    const sources = ragData?.sources || [];
-    if (sources.length > 0) {
-      finalAnswer += '\n\n**Sources and Context:**\n';
-      finalAnswer += `This analysis is based on ${sources.length} relevant sources from your knowledge base and marketing expertise.`;
+    // If we have thinking steps, enhance the answer with the reasoning process
+    if (thinkingData?.thinkingSession?.steps?.length > 0) {
+      finalAnswer += '\n\n**My Reasoning Process:**\n';
+      thinkingData.thinkingSession.steps.forEach((step: any, index: number) => {
+        finalAnswer += `${index + 1}. ${step.question}\n`;
+        finalAnswer += `   ${step.conclusion} (Confidence: ${Math.round(step.confidence * 100)}%)\n\n`;
+      });
     }
 
-    // Add recommendations if available
+    // Combine sources from thinking and RAG
+    const allSources = [
+      ...(thinkingData?.sources || []),
+      ...(ragData?.sources || [])
+    ];
+
+    // Remove duplicates based on content similarity
+    const uniqueSources = this.deduplicateSources(allSources);
+
+    if (uniqueSources.length > 0) {
+      finalAnswer += '\n\n**Knowledge Sources:**\n';
+      finalAnswer += `This analysis is based on ${uniqueSources.length} relevant sources from your knowledge base and expert reasoning.`;
+    }
+
+    // Add marketing recommendations if available
     if (marketingData?.recommendations?.length > 0) {
-      finalAnswer += '\n\n**Key Recommendations:**\n';
+      finalAnswer += '\n\n**Strategic Recommendations:**\n';
       marketingData.recommendations.forEach((rec: string, index: number) => {
         finalAnswer += `${index + 1}. ${rec}\n`;
       });
@@ -134,31 +167,35 @@ export class OrchestratorAgent extends BaseAgent {
 
     // Add quality improvements if needed
     if (qualityData?.improvements?.length > 0 && !qualityData.approved) {
-      finalAnswer += '\n\n**Quality Improvements:**\n';
-      finalAnswer += 'To enhance this marketing strategy, consider:\n';
-      qualityData.improvements.forEach((improvement: string, index: number) => {
+      finalAnswer += '\n\n**Quality Enhancement Suggestions:**\n';
+      qualityData.improvements.forEach((improvement: string) => {
         finalAnswer += `• ${improvement}\n`;
       });
-    }
-
-    // Add brand voice considerations if available
-    if (marketingData?.brandVoice) {
-      finalAnswer += '\n\n**Brand Voice Alignment:**\n';
-      finalAnswer += `This recommendation has been tailored to your brand's ${marketingData.brandVoice.tone} tone and ${marketingData.brandVoice.style} style.`;
     }
 
     return {
       finalAnswer,
       confidence: this.calculateOverallConfidence(agentResults),
-      sources,
+      sources: uniqueSources,
       agentResults,
       reasoning: this.combineReasoning(agentResults),
       quality: {
         score: qualityData?.qualityScore || 0.5,
         approved: qualityData?.approved || false,
         improvements: qualityData?.improvements || []
-      }
+      },
+      thinkingSteps: thinkingData?.thinkingSession?.steps || []
     };
+  }
+
+  private deduplicateSources(sources: any[]): any[] {
+    const seen = new Set();
+    return sources.filter(source => {
+      const key = source.content?.substring(0, 100) || source.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   private calculateOverallConfidence(agentResults: Record<string, AgentResponse>): number {
@@ -168,9 +205,10 @@ export class OrchestratorAgent extends BaseAgent {
 
     // Weighted average of agent confidences
     const weights = {
-      ragSpecialist: 0.3,
-      marketingExpert: 0.4,
-      qualityControl: 0.3
+      thinkingAgent: 0.3,
+      ragSpecialist: 0.2,
+      marketingExpert: 0.3,
+      qualityControl: 0.2
     };
 
     let weightedSum = 0;

@@ -11,9 +11,6 @@ export interface ProcessingResult {
 }
 
 export class ContentProcessor {
-  /**
-   * Check if content already exists to avoid reprocessing
-   */
   public static async checkExistingContent(
     url: string, 
     projectId: string
@@ -29,7 +26,6 @@ export class ContentProcessor {
         .single();
 
       if (existingContent) {
-        // Use document_chunks instead of content_embeddings
         const { count: embeddingCount } = await supabase
           .from('document_chunks')
           .select('*', { count: 'exact', head: true })
@@ -50,9 +46,6 @@ export class ContentProcessor {
     }
   }
 
-  /**
-   * Store content in database
-   */
   public static async storeContent(
     projectId: string,
     url: string,
@@ -84,14 +77,10 @@ export class ContentProcessor {
     }
   }
 
-  /**
-   * Enhanced error handling with user-friendly messages
-   */
   public static formatError(error: any): string {
     if (typeof error === 'string') return error;
     
     if (error?.message) {
-      // Convert technical errors to user-friendly messages
       if (error.message.includes('Invalid YouTube URL')) {
         return 'Please provide a valid YouTube video URL';
       }
@@ -107,9 +96,6 @@ export class ContentProcessor {
     return 'An unexpected error occurred. Please try again.';
   }
 
-  /**
-   * Check embedding health for projects
-   */
   public static async checkEmbeddingHealth(
     projectId: string
   ): Promise<{ 
@@ -122,13 +108,11 @@ export class ContentProcessor {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Check scraped content count
       const { count: contentCount } = await supabase
         .from('scraped_content')
         .select('*', { count: 'exact', head: true })
         .eq('project_id', projectId);
 
-      // Check document chunks count
       const { count: embeddingCount } = await supabase
         .from('document_chunks')
         .select('*', { count: 'exact', head: true })
@@ -137,7 +121,6 @@ export class ContentProcessor {
       const hasContent = (contentCount || 0) > 0;
       const hasEmbeddings = (embeddingCount || 0) > 0;
       
-      // Calculate health score (0-100)
       let healthScore = 0;
       if (hasContent && hasEmbeddings) {
         const ratio = (embeddingCount || 0) / Math.max(contentCount || 1, 1);
@@ -163,9 +146,6 @@ export class ContentProcessor {
     }
   }
 
-  /**
-   * Process missing embeddings for a project
-   */
   public static async processMissingEmbeddings(
     projectId: string,
     onProgress?: (processed: number, total: number) => void
@@ -173,7 +153,6 @@ export class ContentProcessor {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // Get all content without embeddings
       const { data: contentData } = await supabase
         .from('scraped_content')
         .select('id, url, title, content')
@@ -186,12 +165,9 @@ export class ContentProcessor {
       let successful = 0;
       let failed = 0;
 
-      // Process each content item
-      for (let i = 0; i < contentData.length; i++) {
-        const content = contentData[i];
-        
+      // Process content items
+      for (const [index, content] of contentData.entries()) {
         try {
-          // Check if embeddings already exist for this content
           const { count: existingCount } = await supabase
             .from('document_chunks')
             .select('*', { count: 'exact', head: true })
@@ -200,10 +176,9 @@ export class ContentProcessor {
 
           if ((existingCount || 0) > 0) {
             successful++;
-            continue; // Skip if already processed
+            continue;
           }
 
-          // Process content into chunks and create embeddings
           const contentText = this.extractTextFromContent(content.content);
           const chunks = this.splitTextIntoChunks(contentText);
 
@@ -229,10 +204,7 @@ export class ContentProcessor {
             }
           }
 
-          if (onProgress) {
-            onProgress(i + 1, contentData.length);
-          }
-
+          onProgress?.(index + 1, contentData.length);
         } catch (error) {
           console.error(`Error processing content ${content.id}:`, error);
           failed++;
@@ -250,9 +222,6 @@ export class ContentProcessor {
     }
   }
 
-  /**
-   * Extract text from content object
-   */
   private static extractTextFromContent(content: any): string {
     if (typeof content === 'string') return content;
     
@@ -270,9 +239,6 @@ export class ContentProcessor {
     return text.trim();
   }
 
-  /**
-   * Split text into optimized chunks
-   */
   private static splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
     if (!text || text.length <= maxChunkSize) {
       return text ? [text] : [];

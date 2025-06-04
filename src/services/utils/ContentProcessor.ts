@@ -174,22 +174,21 @@ export class ContentProcessor {
       const { supabase } = await import('@/integrations/supabase/client');
       
       // Get all content without embeddings
-      const { data: contentWithoutEmbeddings } = await supabase
+      const { data: contentData } = await supabase
         .from('scraped_content')
         .select('id, url, title, content')
         .eq('project_id', projectId);
 
-      if (!contentWithoutEmbeddings || contentWithoutEmbeddings.length === 0) {
+      if (!contentData || contentData.length === 0) {
         return { successful: 0, failed: 0, message: 'No content found to process' };
       }
 
       let successful = 0;
       let failed = 0;
 
-      // Fix: Use simpler iteration to avoid deep type issues
-      const contentArray = contentWithoutEmbeddings;
-      for (let i = 0; i < contentArray.length; i++) {
-        const content = contentArray[i];
+      // Process each content item
+      for (let i = 0; i < contentData.length; i++) {
+        const content = contentData[i];
         
         try {
           // Check if embeddings already exist for this content
@@ -231,7 +230,7 @@ export class ContentProcessor {
           }
 
           if (onProgress) {
-            onProgress(i + 1, contentArray.length);
+            onProgress(i + 1, contentData.length);
           }
 
         } catch (error) {

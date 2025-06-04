@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +86,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         return;
       }
       
-      // Fix: Create embedding info string properly
+      // Create embedding info string properly
       const embeddingInfoText = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
       setEmbeddingInfo(embeddingInfoText);
 

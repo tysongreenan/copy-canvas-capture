@@ -53,6 +53,8 @@ export function ChatInterface({
     setQualityThreshold,
     maxIterations,
     setMaxIterations,
+    forceMultiAgent,
+    setForceMultiAgent,
     useMultiAgent,
     setUseMultiAgent,
     thinkActive,
@@ -200,11 +202,25 @@ export function ChatInterface({
                       checked={useMultiAgent} 
                       onCheckedChange={setUseMultiAgent} 
                     />
-                  </div>
-                  <p className="text-xs text-white/60">
-                    {useMultiAgent ? "Using specialized agents for better marketing advice (RAG + Marketing Expert + Quality Control)" : "Using single AI agent system"}
-                  </p>
                 </div>
+                <p className="text-xs text-white/60">
+                  {useMultiAgent ? "Using specialized agents for better marketing advice (RAG + Marketing Expert + Quality Control)" : "Using single AI agent system"}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="force-multi-agent" className="text-sm">Force Multi-Agent</Label>
+                  <Switch
+                    id="force-multi-agent"
+                    checked={forceMultiAgent}
+                    onCheckedChange={setForceMultiAgent}
+                  />
+                </div>
+                <p className="text-xs text-white/60">
+                  When enabled, the multi-agent system will handle all tasks regardless of type
+                </p>
+              </div>
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

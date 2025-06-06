@@ -5,6 +5,10 @@ export interface AgentContext {
   taskType: string;
   userContext?: any;
   previousAgentResults?: Record<string, any>;
+  ragParams?: {
+    matchThreshold?: number;
+    minQualityScore?: number;
+  };
 }
 
 export interface AgentResponse {

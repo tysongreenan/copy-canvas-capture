@@ -59,12 +59,20 @@ export function UserMenu() {
           <span>Get User ID (Temp)</span>
         </DropdownMenuItem>
         {isMasterAdmin && (
-          <DropdownMenuItem asChild>
-            <Link to="/admin/knowledge" className="flex items-center cursor-pointer">
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Admin Panel</span>
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/knowledge" className="flex items-center cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Admin Panel</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/rag" className="flex items-center cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>RAG Stats</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()} className="flex items-center cursor-pointer text-red-500">

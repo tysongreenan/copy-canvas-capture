@@ -21,8 +21,16 @@ export class RAGSpecialistAgent extends BaseAgent {
       reasoning.push('Generated query embedding successfully');
 
       const retrievalStrategies = await Promise.allSettled([
-        this.retrieveProjectContent(embeddingResponse, context.projectId),
-        this.retrieveGlobalKnowledge(embeddingResponse, context.taskType),
+        this.retrieveProjectContent(
+          embeddingResponse,
+          context.projectId,
+          context.ragParams?.matchThreshold
+        ),
+        this.retrieveGlobalKnowledge(
+          embeddingResponse,
+          context.taskType,
+          context.ragParams?.matchThreshold
+        ),
         this.retrieveSemanticClusters(embeddingResponse, context.projectId)
       ]);
 
@@ -162,11 +170,15 @@ export class RAGSpecialistAgent extends BaseAgent {
     }
   }
 
-  private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
+  private async retrieveProjectContent(
+    embedding: number[],
+    projectId: string,
+    threshold = 0.25
+  ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
-        match_threshold: 0.25,
+        match_threshold: threshold,
         match_count: 8,
         p_project_id: projectId,
         p_min_quality_score: 50
@@ -179,11 +191,15 @@ export class RAGSpecialistAgent extends BaseAgent {
     }
   }
 
-  private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
+  private async retrieveGlobalKnowledge(
+    embedding: number[],
+    taskType: string,
+    threshold = 0.3
+  ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
-        match_threshold: 0.3,
+        match_threshold: threshold,
         match_count: 5,
         include_global: true,
         p_marketing_domain: taskType === 'marketing' ? 'marketing' : null,

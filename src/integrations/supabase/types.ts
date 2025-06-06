@@ -452,6 +452,41 @@ export type Database = {
         }
         Relationships: []
       }
+      rag_queries: {
+        Row: {
+          id: string
+          project_id: string | null
+          query_text: string
+          source_ids: string[]
+          confidence: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id?: string | null
+          query_text: string
+          source_ids: string[]
+          confidence: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string | null
+          query_text?: string
+          source_ids?: string[]
+          confidence?: number
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rag_queries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -544,6 +579,13 @@ export type Database = {
           source_info: string
           quality_score: number
           weighted_score: number
+        }[]
+      }
+      get_rag_query_stats: {
+        Args: { p_project_id: string }
+        Returns: {
+          avg_confidence: number | null
+          frequent_queries: Json | null
         }[]
       }
       search_agent_memories: {

@@ -2,6 +2,7 @@
 import { OrchestratorAgent, OrchestratedResponse } from './agents/OrchestratorAgent';
 import { AgentContext } from './agents/BaseAgent';
 import { MemoryService } from './MemoryService';
+import { RAGQueryService } from './RAGQueryService';
 
 export class MultiAgentService {
   private static orchestrator = new OrchestratorAgent();
@@ -51,6 +52,13 @@ export class MultiAgentService {
         }
       }
 
+      const avgConfidence = await RAGQueryService.getAverageConfidence(projectId);
+      let matchThreshold = 0.25;
+      if (avgConfidence !== null) {
+        if (avgConfidence > 0.8) matchThreshold = 0.3;
+        else if (avgConfidence < 0.4) matchThreshold = 0.2;
+      }
+
       const context: AgentContext = {
         query: message,
         projectId,
@@ -58,7 +66,8 @@ export class MultiAgentService {
         userContext: {
           ...userContext,
           memoryContext
-        }
+        },
+        ragParams: { matchThreshold }
       };
 
       const result = await this.orchestrator.process(context);
@@ -105,6 +114,20 @@ export class MultiAgentService {
       // Add memory context information if used
       if (memoryContext && !enhancedResponse.includes('previous conversation history')) {
         enhancedResponse += '\n💭 *This response incorporates your previous conversation history and preferences.*';
+      }
+
+      try {
+        await RAGQueryService.logQuery(
+          projectId,
+          message,
+          orchestratedData.sources.map(s => s.id),
+          result.confidence
+        );
+        console.log(
+          `Logged RAG query with ${orchestratedData.sources.map(s => s.id).length} sources`
+        );
+      } catch (logError) {
+        console.error('Failed to log RAG query:', logError);
       }
 
       return {

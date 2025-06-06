@@ -29,7 +29,11 @@ export class ThinkingAgent extends BaseAgent {
 
     try {
       // First, get knowledge context from RAG
-      const ragContext = await this.getRAGContext(context.query, context.projectId);
+      const ragContext = await this.getRAGContext(
+        context.query,
+        context.projectId,
+        context.ragParams?.matchThreshold
+      );
       reasoning.push(`Retrieved ${ragContext.sources.length} relevant knowledge sources`);
 
       // Start thinking session
@@ -67,7 +71,11 @@ export class ThinkingAgent extends BaseAgent {
     }
   }
 
-  private async getRAGContext(query: string, projectId: string): Promise<{
+  private async getRAGContext(
+    query: string,
+    projectId: string,
+    threshold = 0.25
+  ): Promise<{
     sources: any[];
     optimizedContext: string;
   }> {
@@ -84,7 +92,7 @@ export class ThinkingAgent extends BaseAgent {
       // Retrieve relevant documents
       const { data: sources, error: searchError } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embeddingData.embedding,
-        match_threshold: 0.25,
+        match_threshold: threshold,
         match_count: 10,
         p_project_id: projectId,
         include_global: true,

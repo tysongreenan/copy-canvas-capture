@@ -13,6 +13,7 @@ import Sitemap from "./pages/Sitemap";
 import ScrapCopy from "./pages/ScrapCopy";
 import BrandingDetails from "./pages/BrandingDetails";
 import AdminKnowledge from "./pages/AdminKnowledge";
+import AdminRAGStats from "./pages/AdminRAGStats";
 import { ChatDemo } from "./components/chat/ChatDemo";
 import ProjectWizard from "./pages/ProjectWizard";
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/chat" element={<ChatDemo />} />
               <Route path="/chat/:id" element={<ChatDemo />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
+              <Route path="/admin/rag" element={<AdminRAGStats />} />
               {/* Redirect /dashboard to /chat */}
               <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
               <Route path="*" element={<NotFound />} />

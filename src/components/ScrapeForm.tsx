@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ProjectService } from "@/services/ProjectService";
 import { ContentService } from "@/services/ContentService";
+import { useAuth } from "@/context/AuthContext";
 
 interface ScrapeFormProps {
   onResult: (data: ScrapedContent) => void;
@@ -25,6 +26,7 @@ export function ScrapeForm({ onResult, onCrawlComplete, projectId, inProjectView
   const [maxPages, setMaxPages] = useState(10);
   const [projectName, setProjectName] = useState("");
   const [generateEmbeddings, setGenerateEmbeddings] = useState(true);
+  const { currentTeamId } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,9 +74,10 @@ export function ScrapeForm({ onResult, onCrawlComplete, projectId, inProjectView
               if (projectDetails) {
                 // Save all the crawled content to the database
                 await ContentService.saveProject(
-                  projectDetails.title, 
-                  processedUrl, 
-                  allResults
+                  projectDetails.title,
+                  processedUrl,
+                  allResults,
+                  currentTeamId || null
                 );
                 
                 toast({

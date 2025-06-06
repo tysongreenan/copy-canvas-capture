@@ -110,7 +110,7 @@ export class RescanService {
         
         if (contentToUpdate.length > 0) {
           // Save to database
-          await ContentService.saveProject(project.title, project.url, contentToUpdate);
+          await ContentService.saveProject(project.title, project.url, contentToUpdate, project.team_id || null);
         }
       }
       

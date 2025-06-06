@@ -11,15 +11,15 @@ import { useEffect } from "react";
 
 const ChatDemo = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { 
-    projects, 
-    selectedProject, 
+  const { user, currentTeamId } = useAuth();
+  const {
+    projects,
+    selectedProject,
     selectedConversationId,
     handleProjectSelect,
     handleConversationSelect,
     handleConversationCreated
-  } = useProjectSelection(id);
+  } = useProjectSelection(id, currentTeamId);
   
   // Move the authentication check after all hooks are initialized
   if (!user) {

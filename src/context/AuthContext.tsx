@@ -3,12 +3,17 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { AuthService } from "@/services/AuthService";
 import { supabase } from "@/integrations/supabase/client";
+import { TeamService, Team } from "@/services/TeamService";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  teams: Team[];
+  currentTeamId: string | null;
+  joinTeam: (teamId: string) => Promise<void>;
+  switchTeam: (teamId: string) => void;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -20,6 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener first
@@ -28,6 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
+        if (currentSession?.user) {
+          TeamService.getUserTeams().then((t) => {
+            setTeams(t);
+            setCurrentTeamId(t[0]?.id || null);
+          });
+        } else {
+          setTeams([]);
+          setCurrentTeamId(null);
+        }
       }
     );
 
@@ -36,6 +52,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setLoading(false);
+      if (currentSession?.user) {
+        TeamService.getUserTeams().then((t) => {
+          setTeams(t);
+          setCurrentTeamId(t[0]?.id || null);
+        });
+      }
     });
 
     return () => {
@@ -47,6 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { user: authUser } = await AuthService.signIn({ email, password });
       setUser(authUser);
+      const userTeams = await TeamService.getUserTeams();
+      setTeams(userTeams);
+      setCurrentTeamId(userTeams[0]?.id || null);
       toast({
         title: "Signed in successfully",
         description: `Welcome back${authUser?.email ? ', ' + authUser.email : ''}!`,
@@ -78,11 +103,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const joinTeam = async (teamId: string) => {
+    const success = await TeamService.joinTeam(teamId);
+    if (success) {
+      const userTeams = await TeamService.getUserTeams();
+      setTeams(userTeams);
+      setCurrentTeamId(teamId);
+    }
+  };
+
+  const switchTeam = (teamId: string) => {
+    setCurrentTeamId(teamId);
+  };
+
   const signOut = async () => {
     try {
       await AuthService.signOut();
       setUser(null);
       setSession(null);
+      setTeams([]);
+      setCurrentTeamId(null);
       toast({
         title: "Signed out",
         description: "You've been signed out successfully",
@@ -98,7 +138,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        teams,
+        currentTeamId,
+        joinTeam,
+        switchTeam,
+        signIn,
+        signUp,
+        signOut
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -4,7 +4,7 @@ import { SavedProject, ContentService } from "@/services/ContentService";
 import { ChatConversation, ChatService } from "@/services/ChatService";
 import { useNavigate } from "react-router-dom";
 
-export function useProjectSelection(projectId?: string) {
+export function useProjectSelection(projectId?: string, teamId?: string | null) {
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<SavedProject | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>(undefined);
@@ -15,7 +15,7 @@ export function useProjectSelection(projectId?: string) {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const userProjects = await ContentService.getUserProjects();
+        const userProjects = await ContentService.getUserProjects(teamId || null);
         setProjects(userProjects);
         
         // If we have a project ID in the URL, select that project
@@ -34,7 +34,7 @@ export function useProjectSelection(projectId?: string) {
     };
     
     fetchProjects();
-  }, [projectId]);
+  }, [projectId, teamId]);
   
   // Fetch conversations when project changes
   useEffect(() => {

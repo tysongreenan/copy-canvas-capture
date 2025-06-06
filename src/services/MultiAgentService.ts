@@ -27,12 +27,12 @@ export class MultiAgentService {
     };
     metadata: any;
   }> {
+    let memoryContext = '';
     try {
       console.log(`Processing query with enhanced multi-agent system: "${message}"`);
       console.log(`Project ID: ${projectId}, Task Type: ${taskType}`);
 
       // Get memory context for authenticated users with fallback
-      let memoryContext = '';
       if (userContext?.isAuthenticated) {
         try {
           const { data: { user } } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
@@ -124,7 +124,7 @@ export class MultiAgentService {
       console.error('Error in multi-agent service:', error);
       
       // Create a helpful error response instead of generic error
-      const fallbackResponse = this.createFallbackResponse(message, error.message);
+      const fallbackResponse = this.createFallbackResponse(message, error.message, memoryContext);
       
       return {
         success: true, // Mark as success to provide helpful response
@@ -163,7 +163,7 @@ ${reasoning.slice(0, 3).map((r, i) => `${i + 1}. ${r}`).join('\n')}
 Please try rephrasing your question or ask again in a few moments. I'm working to improve my responses for you.`;
   }
 
-  private static createFallbackResponse(query: string, errorMessage: string): string {
+  private static createFallbackResponse(query: string, errorMessage: string, context?: string): string {
     const lowerQuery = query.toLowerCase();
     
     let specificGuidance = '';
@@ -193,9 +193,13 @@ Please try rephrasing your question or ask again in a few moments. I'm working t
 - Always be testing and improving`;
     }
 
+    const contextSection = context
+      ? `\n🔎 **Relevant Project Snippets:**\n${context}\n`
+      : '';
+
     return `I'm currently experiencing technical difficulties, but I want to help with your question: "${query}"
 
-${specificGuidance}
+${contextSection}${specificGuidance}
 
 💡 **Quick Action Steps:**
 1. Identify your most important marketing goal right now

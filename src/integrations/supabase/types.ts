@@ -13,7 +13,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
-          embedding: string | null
+          embedding: number[] | null
           id: string
           importance_score: number | null
           last_accessed_at: string | null
@@ -24,7 +24,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           importance_score?: number | null
           last_accessed_at?: string | null
@@ -35,7 +35,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           importance_score?: number | null
           last_accessed_at?: string | null
@@ -216,7 +216,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          embedding: string | null
+          embedding: number[] | null
           id: string
           metadata: Json
           project_id: string | null
@@ -225,7 +225,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           metadata?: Json
           project_id?: string | null
@@ -234,7 +234,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           metadata?: Json
           project_id?: string | null
@@ -280,7 +280,7 @@ export type Database = {
           content: string
           content_type: string
           created_at: string
-          embedding: string | null
+          embedding: number[] | null
           id: string
           marketing_domain: string
           metadata: Json | null
@@ -295,7 +295,7 @@ export type Database = {
           content: string
           content_type: string
           created_at?: string
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           marketing_domain: string
           metadata?: Json | null
@@ -310,7 +310,7 @@ export type Database = {
           content?: string
           content_type?: string
           created_at?: string
-          embedding?: string | null
+          embedding?: number[] | null
           id?: string
           marketing_domain?: string
           metadata?: Json | null
@@ -589,7 +589,7 @@ export type Database = {
       }
       match_documents: {
         Args: {
-          query_embedding: string
+          query_embedding: number[]
           match_threshold: number
           match_count: number
           p_project_id: string
@@ -603,7 +603,7 @@ export type Database = {
       }
       match_documents_multilevel: {
         Args: {
-          query_embedding: string
+          query_embedding: number[]
           match_threshold: number
           match_count: number
           p_project_id?: string
@@ -623,7 +623,7 @@ export type Database = {
       }
       match_documents_quality_weighted: {
         Args: {
-          query_embedding: string
+          query_embedding: number[]
           match_threshold?: number
           match_count?: number
           p_project_id?: string
@@ -646,7 +646,7 @@ export type Database = {
       }
       search_agent_memories: {
         Args: {
-          query_embedding: string
+          query_embedding: number[]
           similarity_threshold: number
           max_results: number
           p_user_id: string

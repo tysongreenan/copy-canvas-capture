@@ -513,6 +513,7 @@ export type Database = {
           include_global?: boolean
           marketing_domain?: string
           complexity_level?: string
+          p_categories?: string[]
         }
         Returns: {
           id: string
@@ -534,6 +535,7 @@ export type Database = {
           p_marketing_domain?: string
           p_complexity_level?: string
           p_min_quality_score?: number
+          p_categories?: string[]
         }
         Returns: {
           id: string

@@ -8,6 +8,7 @@ export interface SavedProjectSettings {
   scraping_config: any;
   seo_settings: any;
   integrations: any;
+  allowed_categories: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,7 +23,8 @@ export const ProjectSettingsService = {
           id: projectId,
           scraping_config: settings.scrapingConfig,
           seo_settings: settings.seoSettings,
-          integrations: settings.integrations
+          integrations: settings.integrations,
+          allowed_categories: settings.allowedCategories || []
         })
         .select()
         .single();
@@ -88,6 +90,10 @@ export const ProjectSettingsService = {
       
       if (settings.integrations) {
         updateData.integrations = settings.integrations;
+      }
+
+      if (settings.allowedCategories) {
+        updateData.allowed_categories = settings.allowedCategories;
       }
       
       if (Object.keys(updateData).length === 0) {

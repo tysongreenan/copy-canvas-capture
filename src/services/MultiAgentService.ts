@@ -2,6 +2,7 @@
 import { OrchestratorAgent, OrchestratedResponse } from './agents/OrchestratorAgent';
 import { AgentContext } from './agents/BaseAgent';
 import { MemoryService } from './MemoryService';
+import { ProjectSettingsService } from './ProjectSettingsService';
 
 export class MultiAgentService {
   private static orchestrator = new OrchestratorAgent();
@@ -31,6 +32,10 @@ export class MultiAgentService {
       console.log(`Processing query with enhanced multi-agent system: "${message}"`);
       console.log(`Project ID: ${projectId}, Task Type: ${taskType}`);
 
+      // Load project settings to determine allowed categories
+      const projectSettings = await ProjectSettingsService.getProjectSettings(projectId);
+      const allowedCategories = projectSettings?.allowed_categories || [];
+
       // Get memory context for authenticated users with fallback
       let memoryContext = '';
       if (userContext?.isAuthenticated) {
@@ -55,6 +60,7 @@ export class MultiAgentService {
         query: message,
         projectId,
         taskType,
+        allowedCategories,
         userContext: {
           ...userContext,
           memoryContext

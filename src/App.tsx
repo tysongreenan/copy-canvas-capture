@@ -15,6 +15,7 @@ import BrandingDetails from "./pages/BrandingDetails";
 import AdminKnowledge from "./pages/AdminKnowledge";
 import { ChatDemo } from "./components/chat/ChatDemo";
 import ProjectWizard from "./pages/ProjectWizard";
+import WorkspaceSettings from "./pages/WorkspaceSettings";
 
 // Update document title
 document.title = "Beggor - Extract Website Content Like a Pro";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/chat" element={<ChatDemo />} />
               <Route path="/chat/:id" element={<ChatDemo />} />
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
+              <Route path="/settings/:id" element={<WorkspaceSettings />} />
               {/* Redirect /dashboard to /chat */}
               <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
               <Route path="*" element={<NotFound />} />

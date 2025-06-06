@@ -58,6 +58,7 @@ export interface ProjectSettings {
       property: string;
     };
   };
+  allowedCategories: string[];
 }
 
 const ProjectWizard = () => {
@@ -106,6 +107,7 @@ const ProjectWizard = () => {
         property: "",
       },
     },
+    allowedCategories: [],
   });
   
   // Check if basic information is valid

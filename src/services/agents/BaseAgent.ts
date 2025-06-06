@@ -3,6 +3,7 @@ export interface AgentContext {
   query: string;
   projectId: string;
   taskType: string;
+  allowedCategories?: string[];
   userContext?: any;
   previousAgentResults?: Record<string, any>;
 }

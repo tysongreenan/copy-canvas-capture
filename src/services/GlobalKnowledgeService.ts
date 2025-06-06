@@ -223,6 +223,28 @@ export class GlobalKnowledgeService {
   }
 
   /**
+   * Get list of global knowledge categories
+   */
+  public static async getCategories(): Promise<{ id: string; name: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('global_categories')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Exception in getCategories:', error);
+      return [];
+    }
+  }
+
+  /**
    * Search global knowledge by content type and domain
    */
   public static async searchKnowledge(

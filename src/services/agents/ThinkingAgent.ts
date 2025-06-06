@@ -29,7 +29,11 @@ export class ThinkingAgent extends BaseAgent {
 
     try {
       // First, get knowledge context from RAG
-      const ragContext = await this.getRAGContext(context.query, context.projectId);
+      const ragContext = await this.getRAGContext(
+        context.query,
+        context.projectId,
+        context.allowedCategories
+      );
       reasoning.push(`Retrieved ${ragContext.sources.length} relevant knowledge sources`);
 
       // Start thinking session
@@ -67,7 +71,11 @@ export class ThinkingAgent extends BaseAgent {
     }
   }
 
-  private async getRAGContext(query: string, projectId: string): Promise<{
+  private async getRAGContext(
+    query: string,
+    projectId: string,
+    categories?: string[]
+  ): Promise<{
     sources: any[];
     optimizedContext: string;
   }> {
@@ -88,7 +96,8 @@ export class ThinkingAgent extends BaseAgent {
         match_count: 10,
         p_project_id: projectId,
         include_global: true,
-        p_min_quality_score: 60
+        p_min_quality_score: 60,
+        p_categories: categories && categories.length > 0 ? categories : null
       });
 
       if (searchError || !sources) {

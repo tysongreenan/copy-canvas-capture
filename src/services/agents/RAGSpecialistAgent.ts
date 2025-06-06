@@ -22,7 +22,7 @@ export class RAGSpecialistAgent extends BaseAgent {
 
       const retrievalStrategies = await Promise.allSettled([
         this.retrieveProjectContent(embeddingResponse, context.projectId),
-        this.retrieveGlobalKnowledge(embeddingResponse, context.taskType),
+        this.retrieveGlobalKnowledge(embeddingResponse, context.taskType, context.allowedCategories),
         this.retrieveSemanticClusters(embeddingResponse, context.projectId)
       ]);
 
@@ -179,7 +179,11 @@ export class RAGSpecialistAgent extends BaseAgent {
     }
   }
 
-  private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
+  private async retrieveGlobalKnowledge(
+    embedding: number[],
+    taskType: string,
+    categories?: string[]
+  ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
@@ -187,7 +191,8 @@ export class RAGSpecialistAgent extends BaseAgent {
         match_count: 5,
         include_global: true,
         p_marketing_domain: taskType === 'marketing' ? 'marketing' : null,
-        p_min_quality_score: 70
+        p_min_quality_score: 70,
+        p_categories: categories && categories.length > 0 ? categories : null
       });
 
       return error ? [] : (data || []).filter((item: any) => item.source_type === 'global');

@@ -43,7 +43,11 @@ export class ScraperService {
       
       // Only process embeddings if there was no error, embeddings are enabled, and we have a projectId
       if (this.generateEmbeddings && result.title !== 'Error') {
-        await EmbeddingService.processProject(projectId, [result]);
+        try {
+          await EmbeddingService.processProject(projectId, [result]);
+        } catch (error) {
+          console.error('Failed to process embeddings:', error);
+        }
       }
       
       return result;
@@ -165,7 +169,11 @@ export class ScraperService {
     
     // Process embeddings if enabled
     if (this.generateEmbeddings) {
-      await EmbeddingService.processProject(projectId, this.results);
+      try {
+        await EmbeddingService.processProject(projectId, this.results);
+      } catch (error) {
+        console.error('Failed to process embeddings:', error);
+      }
     }
     
     this.isCrawling = false;
@@ -210,6 +218,12 @@ export class ScraperService {
       return false;
     }
     
-    return EmbeddingService.processProject(projectId, [content]);
+    try {
+      await EmbeddingService.processProject(projectId, [content]);
+      return true;
+    } catch (error) {
+      console.error('Failed to generate embeddings:', error);
+      return false;
+    }
   }
 }

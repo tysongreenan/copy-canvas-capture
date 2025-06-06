@@ -141,12 +141,32 @@ export class RAGSpecialistAgent extends BaseAgent {
         ...item,
         similarity: 0.3, // Assign moderate similarity for keyword matches
         source_type: 'project',
-        source_info: item.metadata?.source || 'Project Content'
+        source_info: this.getMetadataSource(item.metadata) || 'Project Content'
       }));
     } catch (error) {
       console.error('Keyword-based retrieval failed:', error);
       return [];
     }
+  }
+
+  private getMetadataSource(metadata: any): string | null {
+    if (!metadata) return null;
+    
+    // Handle different metadata formats
+    if (typeof metadata === 'string') {
+      try {
+        const parsed = JSON.parse(metadata);
+        return parsed.source || null;
+      } catch {
+        return null;
+      }
+    }
+    
+    if (typeof metadata === 'object' && metadata.source) {
+      return metadata.source;
+    }
+    
+    return null;
   }
 
   private async generateEmbedding(text: string): Promise<number[] | null> {

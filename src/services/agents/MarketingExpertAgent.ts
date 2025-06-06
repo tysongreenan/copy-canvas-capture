@@ -23,19 +23,24 @@ export class MarketingExpertAgent extends BaseAgent {
       const marketingIntent = this.analyzeMarketingIntent(context.query);
       reasoning.push(`Detected marketing intent: ${marketingIntent.category}`);
 
-      // Generate marketing-specific prompts
-      const marketingPrompt = this.buildMarketingPrompt(context.query, optimizedContext, marketingIntent);
-      reasoning.push('Built specialized marketing analysis prompt');
-
-      // Get marketing insights using OpenAI
-      const marketingInsights = await this.generateMarketingInsights(marketingPrompt);
-      reasoning.push('Generated marketing insights and recommendations');
-
       // Brand voice analysis (if available)
       const brandVoice = await this.analyzeBrandVoice(context.projectId);
       if (brandVoice) {
         reasoning.push('Applied brand voice consistency analysis');
       }
+
+      // Generate marketing-specific prompts, injecting brand voice if present
+      const marketingPrompt = this.buildMarketingPrompt(
+        context.query,
+        optimizedContext,
+        marketingIntent,
+        brandVoice
+      );
+      reasoning.push('Built specialized marketing analysis prompt');
+
+      // Get marketing insights using OpenAI
+      const marketingInsights = await this.generateMarketingInsights(marketingPrompt);
+      reasoning.push('Generated marketing insights and recommendations');
 
       const confidence = this.calculateMarketingConfidence(marketingInsights, sources, marketingIntent);
       reasoning.push(`Marketing expertise confidence: ${Math.round(confidence * 100)}%`);
@@ -95,10 +100,26 @@ export class MarketingExpertAgent extends BaseAgent {
     return bestMatch;
   }
 
-  private buildMarketingPrompt(query: string, context: string, intent: any): string {
+  private buildMarketingPrompt(
+    query: string,
+    context: string,
+    intent: any,
+    brandVoice?: any
+  ): string {
     const basePrompt = `You are a senior marketing strategist with expertise in ${intent.category} marketing.`;
     
     const contextSection = context ? `\n\nRelevant Context:\n${context}` : '';
+
+    let brandVoiceSection = '';
+    if (brandVoice) {
+      const voiceParts = [] as string[];
+      if (brandVoice.tone) voiceParts.push(`Tone: ${brandVoice.tone}`);
+      if (brandVoice.style) voiceParts.push(`Style: ${brandVoice.style}`);
+      if (brandVoice.audience) voiceParts.push(`Primary Audience: ${brandVoice.audience}`);
+      if (voiceParts.length) {
+        brandVoiceSection = `\n\nBrand Voice Guidelines:\n${voiceParts.join('\n')}`;
+      }
+    }
     
     const expertisePrompt = {
       'strategy': 'Focus on strategic planning, market analysis, competitive positioning, and long-term growth.',
@@ -116,7 +137,7 @@ export class MarketingExpertAgent extends BaseAgent {
 ${expertisePrompt[intent.category] || expertisePrompt['strategy']}
 
 Please analyze the following marketing question and provide expert insights:
-${query}${contextSection}
+${query}${contextSection}${brandVoiceSection}
 
 Provide specific, actionable recommendations based on current marketing best practices.`;
   }

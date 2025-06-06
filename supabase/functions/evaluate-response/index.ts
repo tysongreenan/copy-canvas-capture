@@ -17,11 +17,12 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      response, 
-      originalQuery, 
+    const {
+      response,
+      originalQuery,
       taskType = 'general',
-      context = []
+      context = [],
+      qualityThreshold = 90
     } = await req.json();
 
     if (!response || !originalQuery) {
@@ -117,7 +118,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       score,
       feedback: evaluationFeedback,
-      passesThreshold: score >= 90 // 90% is our target threshold
+      passesThreshold: score >= qualityThreshold
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

@@ -374,7 +374,8 @@ Current expertise focus: ${taskType === 'research' ? 'Deep analysis and fact-fin
             query: message,
             response: currentResponse,
             context: context,
-            taskType: taskType
+            taskType: taskType,
+            qualityThreshold: qualityThreshold
           }
         });
 

@@ -4,13 +4,16 @@ import { EmbeddingService } from "@/services/EmbeddingService";
 import { ContentService } from "@/services/ContentService";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEmbeddingProgress } from "@/hooks/use-embedding-progress";
 
 export function useEmbeddings(projectId: string) {
   const [processingEmbeddings, setProcessingEmbeddings] = useState(false);
   const [hasEmbeddings, setHasEmbeddings] = useState(false);
   const [embeddingStatus, setEmbeddingStatus] = useState<'none' | 'processing' | 'success' | 'partial' | 'no-content'>('none');
+  const [progress, setProgress] = useState(0);
   const [projectPages, setProjectPages] = useState<any[]>([]);
   const { toast } = useToast();
+  const { data: progressData } = useEmbeddingProgress(projectId, processingEmbeddings);
 
   // Check if the project already has embeddings
   useEffect(() => {
@@ -41,6 +44,21 @@ export function useEmbeddings(projectId: string) {
     
     fetchPages();
   }, [projectId]);
+
+  useEffect(() => {
+    if (!progressData) return;
+
+    if (progressData.total > 0) {
+      const pct = Math.round((progressData.done / progressData.total) * 100);
+      setProgress(pct);
+    }
+
+    if (processingEmbeddings && progressData.total > 0 && progressData.done >= progressData.total) {
+      setProcessingEmbeddings(false);
+      setHasEmbeddings(true);
+      setEmbeddingStatus(progressData.failed > 0 ? 'partial' : 'success');
+    }
+  }, [progressData, processingEmbeddings]);
 
   const handleGenerateEmbeddings = async () => {
     setProcessingEmbeddings(true);
@@ -89,24 +107,12 @@ export function useEmbeddings(projectId: string) {
         description: `Processing ${scrapedPages.length} pages for AI chat...`
       });
       
-      // Process embeddings
-      const success = await EmbeddingService.processProject(projectId, scrapedPages);
-      
-      if (success) {
-        setHasEmbeddings(true);
-        setEmbeddingStatus('success');
-        toast({
-          title: "Success",
-          description: "Content processed successfully. You can now chat with your data."
-        });
-      } else {
-        setHasEmbeddings(true);
-        setEmbeddingStatus('partial');
-        toast({
-          title: "Partial success",
-          description: "Some content could not be processed. You can still chat with the processed data."
-        });
-      }
+      await EmbeddingService.processProject(projectId, scrapedPages);
+      setProgress(0);
+      toast({
+        title: "Jobs queued",
+        description: "Embedding jobs have been queued for processing"
+      });
     } catch (error) {
       console.error("Error generating embeddings:", error);
       toast({
@@ -116,7 +122,7 @@ export function useEmbeddings(projectId: string) {
       });
       setEmbeddingStatus('none');
     } finally {
-      setProcessingEmbeddings(false);
+      // keep processing state until jobs finish
     }
   };
 
@@ -124,6 +130,7 @@ export function useEmbeddings(projectId: string) {
     processingEmbeddings,
     hasEmbeddings,
     embeddingStatus,
+    progress,
     handleGenerateEmbeddings
   };
 }

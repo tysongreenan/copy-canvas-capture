@@ -250,6 +250,30 @@ export type Database = {
           },
         ]
       }
+      embedding_jobs: {
+        Row: {
+          id: string
+          status: string
+          payload: Json
+          attempts: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          status?: string
+          payload: Json
+          attempts?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          status?: string
+          payload?: Json
+          attempts?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       global_knowledge: {
         Row: {
           complexity_level: string | null

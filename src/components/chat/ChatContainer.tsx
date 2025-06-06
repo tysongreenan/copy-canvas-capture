@@ -19,6 +19,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
     processingEmbeddings,
     hasEmbeddings,
     embeddingStatus,
+    progress,
     handleGenerateEmbeddings
   } = useEmbeddings(project.id);
   
@@ -40,6 +41,7 @@ export function ChatContainer({ project }: ChatContainerProps) {
           hasEmbeddings={hasEmbeddings}
           embeddingStatus={embeddingStatus}
           processingEmbeddings={processingEmbeddings}
+          progress={progress}
           onGenerateEmbeddings={handleGenerateEmbeddings}
         />
       </div>

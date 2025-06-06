@@ -33,7 +33,8 @@ export function FileUpload({
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx', '.doc'],
       'text/plain': ['.txt']
     },
-    maxSize: 10000000, // 10MB
+    maxSize: 10000000,
+    // 10MB
     multiple: true
   });
   const handleRemoveFile = (fileToRemove: File) => {
@@ -138,21 +139,10 @@ export function FileUpload({
       setUploading(false);
     }
   };
-  return (
-    <div className="space-y-4">
-      <div
-        {...getRootProps({ className: 'flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-gray-50' })}
-      >
-        <input {...getInputProps()} />
-        {isDragActive ? (
-          <p>Drop the files here ...</p>
-        ) : (
-          <p>Drag & drop files here, or click to select</p>
-        )}
-      </div>
+  return <div className="space-y-4">
+      
 
-      {files.length > 0 && (
-        <div className="mt-4">
+      {files.length > 0 && <div className="mt-4">
           <ul>
             {files.map((file: File) => <li key={file.name} className="flex items-center justify-between p-2 rounded-md bg-gray-100 dark:bg-gray-800 mt-2">
                 <div className="flex items-center">
@@ -172,8 +162,6 @@ export function FileUpload({
               {uploading ? "Uploading..." : "Upload Files"}
             </Button>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }

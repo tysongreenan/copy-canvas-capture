@@ -452,6 +452,35 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_rag_settings: {
+        Row: {
+          workspace_id: string
+          similarity_threshold: number | null
+          min_quality_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          workspace_id: string
+          similarity_threshold?: number | null
+          min_quality_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          workspace_id?: string
+          similarity_threshold?: number | null
+          min_quality_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_rag_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "scraped_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

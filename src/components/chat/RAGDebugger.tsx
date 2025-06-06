@@ -17,6 +17,8 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [embeddingInfo, setEmbeddingInfo] = useState<string>('');
+  const [similarity, setSimilarity] = useState(0.25);
+  const [quality, setQuality] = useState(0.6);
   const { toast } = useToast();
 
   const generateEmbedding = async (text: string): Promise<number[] | null> => {
@@ -44,7 +46,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
     }
   };
 
-  const searchWithEmbedding = async (queryEmbedding: number[], threshold: number = 0.3) => {
+  const searchWithEmbedding = async (queryEmbedding: number[], threshold: number, minQuality: number) => {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: queryEmbedding as any,
@@ -55,7 +57,7 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
         include_global: false,
         p_marketing_domain: null,
         p_complexity_level: null,
-        p_min_quality_score: 0.0
+        p_min_quality_score: minQuality
       });
 
       if (error) {
@@ -88,23 +90,12 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
       const embeddingInfoText = `Dimensions: ${queryEmbedding.length} | First 5 values: [${queryEmbedding.slice(0, 5).map((v: number) => v.toFixed(4)).join(', ')}...]`;
       setEmbeddingInfo(embeddingInfoText);
 
-      const thresholds = [0.3, 0.2, 0.1, 0.05];
-      const allResults = [];
+      const searchResults = await searchWithEmbedding(queryEmbedding, similarity, quality);
+      setResults([{ threshold: similarity, count: searchResults.length, results: searchResults }]);
 
-      for (const threshold of thresholds) {
-        const searchResults = await searchWithEmbedding(queryEmbedding, threshold);
-        allResults.push({
-          threshold,
-          count: searchResults.length,
-          results: searchResults
-        });
-      }
-
-      setResults(allResults);
-      
       toast({
         title: "Search Complete",
-        description: `Tested ${thresholds.length} different similarity thresholds`,
+        description: `Similarity threshold ${similarity}, min quality ${quality}`,
       });
 
     } catch (error) {
@@ -139,6 +130,26 @@ export function RAGDebugger({ projectId }: RAGDebuggerProps) {
             <Search size={16} className="mr-2" />
             {isLoading ? 'Searching...' : 'Search'}
           </Button>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={similarity}
+            onChange={(e) => setSimilarity(parseFloat(e.target.value))}
+            placeholder="Similarity"
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={quality}
+            onChange={(e) => setQuality(parseFloat(e.target.value))}
+            placeholder="Min Quality"
+          />
         </div>
 
         {embeddingInfo && (

@@ -243,6 +243,11 @@ serve(async (req) => {
     }
 
     // Enhanced system prompt with project awareness
+    let marketingPrompt = '';
+    if (taskType === 'marketing' || taskType === 'content') {
+      marketingPrompt = `\n## Marketing Guidelines\n- Maintain consistent brand tone and style\n- Highlight the project's unique value proposition\n- Craft clear calls to action where appropriate\n- Keep messaging focused on the target audience`;
+    }
+
     const systemPrompt = `You are a helpful, knowledgeable, and conversational AI assistant. Your goal is to provide clear, accurate, and engaging responses that are easy to understand and actionable.
 
 ${context ? `## Available Context
@@ -255,6 +260,8 @@ ${context}
 - **Show your reasoning**: When making recommendations or drawing conclusions, briefly explain your thinking
 - **Use examples**: Include practical examples or use cases when helpful
 - **Ask clarifying questions**: If the request is ambiguous, ask specific questions to better help
+
+${marketingPrompt}
 
 ## Response Formatting
 - Use **bold text** for key concepts and important points

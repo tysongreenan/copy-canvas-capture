@@ -46,10 +46,17 @@ export function detectTaskType(message: string): AgentTaskType {
     lowerMessage.includes('marketing') ||
     lowerMessage.includes('campaign') ||
     lowerMessage.includes('advertisement') ||
+    lowerMessage.includes('advertising') ||
     lowerMessage.includes('promotion') ||
     lowerMessage.includes('brand') ||
     lowerMessage.includes('target audience') ||
-    lowerMessage.includes('social media post')
+    lowerMessage.includes('social media post') ||
+    lowerMessage.includes('lead generation') ||
+    lowerMessage.includes('sales funnel') ||
+    lowerMessage.includes('seo') ||
+    lowerMessage.includes('search engine optimization') ||
+    lowerMessage.includes('conversion') ||
+    lowerMessage.includes('growth')
   ) {
     return 'marketing';
   }

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { preprocessSearchText, createSearchQueries } from "./search-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,55 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// Enhanced text preprocessing for better matching
-function preprocessSearchText(text: string): string[] {
-  if (!text) return [];
-  
-  const variants = [];
-  const cleaned = text.toLowerCase().trim();
-  
-  // Add original
-  variants.push(cleaned);
-  
-  // Add without articles
-  variants.push(cleaned.replace(/^(the|a|an)\s+/i, ''));
-  
-  // Add individual words for partial matching
-  const words = cleaned.split(/\s+/).filter(word => word.length > 2);
-  variants.push(...words);
-  
-  // Add combinations for compound terms
-  if (words.length > 1) {
-    variants.push(words.join(' '));
-    variants.push(words.join(''));
-  }
-  
-  return [...new Set(variants)];
-}
-
-// Create context-aware search queries
-function createSearchQueries(originalQuery: string): string[] {
-  const queries = [originalQuery];
-  const lowerQuery = originalQuery.toLowerCase();
-  
-  // If asking about "the junction", add business context
-  if (lowerQuery.includes('junction')) {
-    queries.push('Junction Stouffville development project');
-    queries.push('Junction mixed-use development');
-    queries.push('Stouffville Junction real estate');
-    queries.push('Junction community project');
-  }
-  
-  // Add other common business query patterns
-  if (lowerQuery.match(/^(what is|tell me about|describe)\s+/)) {
-    const subject = lowerQuery.replace(/^(what is|tell me about|describe)\s+/, '');
-    queries.push(subject);
-    queries.push(`${subject} project`);
-    queries.push(`${subject} development`);
-  }
-  
-  return queries;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

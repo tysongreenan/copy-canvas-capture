@@ -13,7 +13,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
-          embedding: number[] | null
+          embedding: string | null
           id: string
           importance_score: number | null
           last_accessed_at: string | null
@@ -24,7 +24,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           importance_score?: number | null
           last_accessed_at?: string | null
@@ -35,7 +35,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           importance_score?: number | null
           last_accessed_at?: string | null
@@ -216,7 +216,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          embedding: number[] | null
+          embedding: string | null
           id: string
           metadata: Json
           project_id: string | null
@@ -225,7 +225,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           metadata?: Json
           project_id?: string | null
@@ -234,7 +234,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           metadata?: Json
           project_id?: string | null
@@ -250,37 +250,13 @@ export type Database = {
           },
         ]
       }
-      embedding_jobs: {
-        Row: {
-          id: string
-          status: string
-          payload: Json
-          attempts: number
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          status?: string
-          payload: Json
-          attempts?: number
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          status?: string
-          payload?: Json
-          attempts?: number
-          created_at?: string | null
-        }
-        Relationships: []
-      }
       global_knowledge: {
         Row: {
           complexity_level: string | null
           content: string
           content_type: string
           created_at: string
-          embedding: number[] | null
+          embedding: string | null
           id: string
           marketing_domain: string
           metadata: Json | null
@@ -295,7 +271,7 @@ export type Database = {
           content: string
           content_type: string
           created_at?: string
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           marketing_domain: string
           metadata?: Json | null
@@ -310,7 +286,7 @@ export type Database = {
           content?: string
           content_type?: string
           created_at?: string
-          embedding?: number[] | null
+          embedding?: string | null
           id?: string
           marketing_domain?: string
           metadata?: Json | null
@@ -457,7 +433,6 @@ export type Database = {
           title: string
           url: string
           user_id: string
-          team_id: string | null
         }
         Insert: {
           created_at?: string
@@ -466,7 +441,6 @@ export type Database = {
           title: string
           url: string
           user_id: string
-          team_id?: string | null
         }
         Update: {
           created_at?: string
@@ -475,80 +449,8 @@ export type Database = {
           title?: string
           url?: string
           user_id?: string
-          team_id?: string | null
         }
         Relationships: []
-      }
-      teams: {
-        Row: {
-          id: string
-          name: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      team_memberships: {
-        Row: {
-          id: string
-          team_id: string | null
-          user_id: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          team_id?: string | null
-          user_id?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          team_id?: string | null
-          user_id?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      workspace_rag_settings: {
-        Row: {
-          workspace_id: string
-          similarity_threshold: number | null
-          min_quality_score: number | null
-          updated_at: string
-        }
-        Insert: {
-          workspace_id: string
-          similarity_threshold?: number | null
-          min_quality_score?: number | null
-          updated_at?: string
-        }
-        Update: {
-          workspace_id?: string
-          similarity_threshold?: number | null
-          min_quality_score?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workspace_rag_settings_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: true
-            referencedRelation: "scraped_projects"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {
@@ -589,7 +491,7 @@ export type Database = {
       }
       match_documents: {
         Args: {
-          query_embedding: number[]
+          query_embedding: string
           match_threshold: number
           match_count: number
           p_project_id: string
@@ -603,7 +505,7 @@ export type Database = {
       }
       match_documents_multilevel: {
         Args: {
-          query_embedding: number[]
+          query_embedding: string
           match_threshold: number
           match_count: number
           p_project_id?: string
@@ -623,7 +525,7 @@ export type Database = {
       }
       match_documents_quality_weighted: {
         Args: {
-          query_embedding: number[]
+          query_embedding: string
           match_threshold?: number
           match_count?: number
           p_project_id?: string
@@ -646,7 +548,7 @@ export type Database = {
       }
       search_agent_memories: {
         Args: {
-          query_embedding: number[]
+          query_embedding: string
           similarity_threshold: number
           max_results: number
           p_user_id: string

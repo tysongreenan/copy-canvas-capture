@@ -99,6 +99,13 @@ export function ChatInterface({
       });
     }
   };
+
+  const handleFileUploadSuccess = () => {
+    toast({
+      title: "Files processed",
+      description: "Your files have been uploaded and processed successfully. You can now ask questions about them!"
+    });
+  };
   
   const handleSaveMemory = async () => {
     if (!conversationId || !messages.length || savingMemory) return;
@@ -326,7 +333,9 @@ export function ChatInterface({
                 isLoading={isLoading} 
                 placeholder={getPlaceholderText(taskType)} 
                 thinkActive={thinkActive} 
-                onThinkToggle={handleThinkToggle} 
+                onThinkToggle={handleThinkToggle}
+                projectId={projectId}
+                onFileUploadSuccess={handleFileUploadSuccess}
               />
             </div>
           </div>

@@ -3,11 +3,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, Info, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface ChatStatusAlertProps {
   hasEmbeddings: boolean;
   embeddingStatus: 'none' | 'processing' | 'success' | 'partial' | 'no-content';
   processingEmbeddings: boolean;
+  progress: number;
   onGenerateEmbeddings: () => void;
 }
 
@@ -15,6 +17,7 @@ export function ChatStatusAlert({
   hasEmbeddings,
   embeddingStatus,
   processingEmbeddings,
+  progress,
   onGenerateEmbeddings
 }: ChatStatusAlertProps) {
   if (hasEmbeddings) return null;
@@ -23,9 +26,10 @@ export function ChatStatusAlert({
     return (
       <Alert className="mb-4">
         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-        <AlertTitle>Processing content</AlertTitle>
-        <AlertDescription>
-          We're processing your content to make it available for AI chat. This may take a few moments.
+        <AlertTitle>Processing content ({progress}%)</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p>We're processing your content to make it available for AI chat.</p>
+          <Progress value={progress} />
         </AlertDescription>
       </Alert>
     );

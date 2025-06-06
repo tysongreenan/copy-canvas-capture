@@ -14,11 +14,18 @@ import { User, LogOut, Settings, Shield, Info } from "lucide-react";
 import { RoleService } from "@/services/RoleService";
 
 export function UserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, teams, currentTeamId, joinTeam, switchTeam } = useAuth();
   const { isMasterAdmin } = useRole();
 
   const handleGetUserId = async () => {
     await RoleService.printCurrentUserId();
+  };
+
+  const handleJoinTeam = async () => {
+    const teamId = window.prompt('Enter Team ID');
+    if (teamId) {
+      await joinTeam(teamId);
+    }
   };
 
   if (!user) {
@@ -52,6 +59,24 @@ export function UserMenu() {
             <Settings className="mr-2 h-4 w-4" />
             <span>Dashboard</span>
           </Link>
+        </DropdownMenuItem>
+        {teams.length > 0 && (
+          <div className="px-2 py-1">
+            <p className="text-xs mb-1">Teams</p>
+            {teams.map((team) => (
+              <DropdownMenuItem
+                key={team.id}
+                onClick={() => switchTeam(team.id)}
+                className="cursor-pointer"
+              >
+                {team.name}
+                {team.id === currentTeamId && ' ✓'}
+              </DropdownMenuItem>
+            ))}
+          </div>
+        )}
+        <DropdownMenuItem onClick={handleJoinTeam} className="cursor-pointer">
+          Join Team
         </DropdownMenuItem>
         {/* TEMPORARY: Remove after setup */}
         <DropdownMenuItem onClick={handleGetUserId} className="flex items-center cursor-pointer text-blue-600">

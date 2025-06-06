@@ -11,10 +11,16 @@ export interface SavedProject {
   created_at: string;
   page_count: number;
   user_id: string;
+  team_id: string | null;
 }
 
 export const ContentService = {
-  saveProject: async (title: string, startUrl: string, contents: ScrapedContent[]) => {
+  saveProject: async (
+    title: string,
+    startUrl: string,
+    contents: ScrapedContent[],
+    teamId: string | null
+  ) => {
     try {
       const { data: user } = await supabase.auth.getUser();
       
@@ -34,8 +40,9 @@ export const ContentService = {
           user_id: user.user.id,
           title: title,
           url: startUrl,
-          page_count: contents.length
-        } as Database['public']['Tables']['scraped_projects']['Insert']) // Properly type the insert
+          page_count: contents.length,
+          team_id: teamId || null
+        } as Database['public']['Tables']['scraped_projects']['Insert'])
         .select('*')
         .single();
       
@@ -154,13 +161,19 @@ export const ContentService = {
     }
   },
   
-  getUserProjects: async () => {
+  getUserProjects: async (teamId: string | null) => {
     try {
       // We cast the response type to match our SavedProject interface
-      const { data, error } = await supabase
+      let query = supabase
         .from('scraped_projects')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (teamId) {
+        query = query.eq('team_id', teamId);
+      }
+
+      const { data, error } = await query;
       
       if (error) {
         console.error("Error fetching projects:", error);

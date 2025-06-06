@@ -457,6 +457,7 @@ export type Database = {
           title: string
           url: string
           user_id: string
+          team_id: string | null
         }
         Insert: {
           created_at?: string
@@ -465,6 +466,7 @@ export type Database = {
           title: string
           url: string
           user_id: string
+          team_id?: string | null
         }
         Update: {
           created_at?: string
@@ -473,6 +475,49 @@ export type Database = {
           title?: string
           url?: string
           user_id?: string
+          team_id?: string | null
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          id: string
+          name: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      team_memberships: {
+        Row: {
+          id: string
+          team_id: string | null
+          user_id: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          team_id?: string | null
+          user_id?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          team_id?: string | null
+          user_id?: string | null
+          created_at?: string | null
         }
         Relationships: []
       }

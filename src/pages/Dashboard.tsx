@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("create");
-  const { user } = useAuth();
+  const { user, currentTeamId } = useAuth();
 
   // Redirect if not logged in
   if (!user) {
@@ -37,7 +37,7 @@ const Dashboard = () => {
     const fetchSavedProjects = async () => {
       setLoadingSaved(true);
       try {
-        const projects = await ContentService.getUserProjects();
+        const projects = await ContentService.getUserProjects(currentTeamId);
         setSavedProjects(projects);
       } catch (error) {
         console.error("Error fetching saved projects:", error);
@@ -47,7 +47,7 @@ const Dashboard = () => {
     };
     
     fetchSavedProjects();
-  }, [user]);
+  }, [user, currentTeamId]);
 
   const handleResult = (data: ScrapedContent) => {
     setScrapedData(data);

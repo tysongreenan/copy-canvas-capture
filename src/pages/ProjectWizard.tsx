@@ -61,7 +61,7 @@ export interface ProjectSettings {
 }
 
 const ProjectWizard = () => {
-  const { user } = useAuth();
+  const { user, currentTeamId } = useAuth();
   const navigate = useNavigate();
   
   // State for the active wizard step
@@ -194,7 +194,8 @@ const ProjectWizard = () => {
       const savedProject = await ContentService.saveProject(
         projectSettings.basicInfo.name,
         projectSettings.basicInfo.url,
-        emptyContent
+        emptyContent,
+        currentTeamId || null
       );
       
       if (!savedProject) {

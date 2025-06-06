@@ -33,7 +33,7 @@ export function SaveProjectButton({
   const [processingEmbeddings, setProcessingEmbeddings] = useState(false);
   const [withEmbeddings, setWithEmbeddings] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, currentTeamId } = useAuth();
 
   const handleSave = async () => {
     if (!user) {
@@ -48,7 +48,7 @@ export function SaveProjectButton({
     setSaving(true);
     try {
       // Save the project first
-      const savedProject = await ContentService.saveProject(title, startUrl, contents);
+      const savedProject = await ContentService.saveProject(title, startUrl, contents, currentTeamId || null);
       
       if (!savedProject) {
         throw new Error("Failed to save project");

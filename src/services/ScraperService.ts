@@ -108,7 +108,11 @@ export class ScraperService {
     let queue: string[] = [startUrl];
     let pageCount = 0;
     
-    while (queue.length > 0 && this.isCrawling && (options.maxPages && pageCount < options.maxPages)) {
+    while (
+      queue.length > 0 &&
+      this.isCrawling &&
+      (options.maxPages === undefined || pageCount < options.maxPages)
+    ) {
       const url = queue.shift()!;
       
       if (visited.has(url)) continue;

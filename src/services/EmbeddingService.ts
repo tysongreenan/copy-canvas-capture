@@ -104,7 +104,7 @@ export const EmbeddingService = {
     }
   },
 
-  private async fileToBase64(file: File): Promise<string> {
+  async fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -116,7 +116,7 @@ export const EmbeddingService = {
     });
   },
 
-  private splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
+  splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
     if (!text || text.length <= maxChunkSize) {
       return text ? [text] : [];
     }

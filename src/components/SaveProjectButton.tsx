@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Dialog,
@@ -68,18 +69,19 @@ export function SaveProjectButton({
           description: "Preparing content for AI chat..."
         });
         
-        // Import dynamically to avoid circular dependencies
-        const { EmbeddingService } = await import("@/services/EmbeddingService");
-        
-        // Process all pages
-        const success = await EmbeddingService.processProject(savedProject.id, contents);
-        
-        if (success) {
+        try {
+          // Import dynamically to avoid circular dependencies
+          const { EmbeddingService } = await import("@/services/EmbeddingService");
+          
+          // Process all pages
+          await EmbeddingService.processProject(savedProject.id, contents);
+          
           toast({
             title: "Processing complete",
             description: "Content is ready for AI chat"
           });
-        } else {
+        } catch (embeddingError) {
+          console.error("Error processing embeddings:", embeddingError);
           toast({
             title: "Processing incomplete",
             description: "Some content could not be processed for AI chat",

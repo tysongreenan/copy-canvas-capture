@@ -175,7 +175,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: JSON.stringify(embedding),
         match_threshold: threshold,
         match_count: 8,
         p_project_id: projectId,
@@ -197,7 +197,7 @@ export class RAGSpecialistAgent extends BaseAgent {
   ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
-        query_embedding: embedding,
+        query_embedding: JSON.stringify(embedding),
         match_threshold: threshold,
         match_count: 5,
         include_global: true,

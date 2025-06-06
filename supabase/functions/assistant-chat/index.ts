@@ -129,14 +129,17 @@ serve(async (req) => {
       }
     }
 
-    // Create a system message with instructions for handling no-context situations
-    let systemPrompt = "";
-    
-    if (projectId && !hasRAGResults) {
-      systemPrompt = contentTypeFilter 
-        ? `
-You are an AI assistant specializing in marketing research and strategy. 
+    // Compose a system message to keep the marketing tone consistent
+    let systemPrompt = `
+You are an AI assistant specializing in marketing research and strategy.
+Always keep a friendly marketing tone in your replies.
+Use any retrieved context from the knowledge base when available to tailor your answer.
+`;
 
+    // Add extra instructions when no relevant context was found
+    if (projectId && !hasRAGResults) {
+      systemPrompt += contentTypeFilter
+        ? `
 IMPORTANT INSTRUCTIONS:
 1. I couldn't find any relevant information in the '${contentTypeFilter}' content type for your query.
 2. If you'd like, I can search across all content types instead, or you can try a different question.
@@ -144,11 +147,8 @@ IMPORTANT INSTRUCTIONS:
 4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
 `
         : `
-You are an AI assistant specializing in marketing research and strategy. 
-When answering, consider both general marketing knowledge and any specific context provided.
-
 IMPORTANT INSTRUCTIONS:
-1. If no context is provided from the knowledge base, use your general knowledge to give a helpful response.
+1. No relevant context was found for your query, so use your general marketing knowledge to give a helpful response.
 2. When using general knowledge, make it clear to the user that you're not drawing from their specific documents.
 3. Never say that you couldn't find information or refuse to answer. Instead, provide general marketing insights that might be helpful.
 4. Suggest to the user what kind of information they might want to add to their knowledge base if they're looking for more specific answers.
@@ -165,27 +165,24 @@ IMPORTANT INSTRUCTIONS:
       content: userMessageContent
     };
     
-    // Add system message if needed (no RAG results found)
-    if (systemPrompt) {
-      // First add system message to guide the assistant
-      const systemMessageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2' // Updated to use v2
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: `[System Note: ${systemPrompt}]`
-        })
-      });
-      
-      if (!systemMessageResponse.ok) {
-        const error = await systemMessageResponse.json();
-        console.error("Failed to add system message:", error);
-        // Continue with the user message even if system message fails
-      }
+    // Always add a system message before the user message
+    const systemMessageResponse = await fetch(`https://api.openai.com/v1/threads/${activeThreadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2' // Updated to use v2
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: `[System Note: ${systemPrompt}]`
+      })
+    });
+
+    if (!systemMessageResponse.ok) {
+      const error = await systemMessageResponse.json();
+      console.error("Failed to add system message:", error);
+      // Continue with the user message even if system message fails
     }
     
     // Now add the user message

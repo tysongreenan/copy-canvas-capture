@@ -97,6 +97,16 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl!, supabaseKey!);
 
+    let settings = null;
+    if (projectId) {
+      const { data: s } = await supabase
+        .from('workspace_rag_settings')
+        .select('similarity_threshold, min_quality_score')
+        .eq('workspace_id', projectId)
+        .single();
+      settings = s;
+    }
+
     let ragResults = [];
     let hasRAGResults = false;
 
@@ -108,9 +118,10 @@ serve(async (req) => {
       const searchQueries = createSearchQueries(message);
       console.log(`Generated search queries: ${JSON.stringify(searchQueries)}`);
       
-      // Try different similarity thresholds
-      const thresholds = [0.3, 0.2, 0.1];
-      const minQualityNormalized = minQualityScore / 100.0;
+      // Try different similarity thresholds based on workspace settings
+      const baseThreshold = settings?.similarity_threshold ?? 0.3;
+      const thresholds = [baseThreshold, baseThreshold - 0.1, baseThreshold - 0.2].filter(t => t > 0);
+      const minQualityNormalized = settings?.min_quality_score ?? minQualityScore / 100.0;
       
       for (const query of searchQueries) {
         if (hasRAGResults) break;

@@ -1,6 +1,7 @@
 
 import { BaseAgent, AgentContext, AgentResponse } from './BaseAgent';
 import { supabase } from '@/integrations/supabase/client';
+import { RAGSettingsService } from '@/services/RAGSettingsService';
 
 export class RAGSpecialistAgent extends BaseAgent {
   constructor() {
@@ -20,9 +21,13 @@ export class RAGSpecialistAgent extends BaseAgent {
 
       reasoning.push('Generated query embedding successfully');
 
+      const settings = await RAGSettingsService.getSettings(context.projectId);
+      const sim = settings?.similarity_threshold ?? 0.25;
+      const minQ = settings?.min_quality_score ?? 0.5;
+
       const retrievalStrategies = await Promise.allSettled([
-        this.retrieveProjectContent(embeddingResponse, context.projectId),
-        this.retrieveGlobalKnowledge(embeddingResponse, context.taskType),
+        this.retrieveProjectContent(embeddingResponse, context.projectId, sim, minQ),
+        this.retrieveGlobalKnowledge(embeddingResponse, context.taskType, sim, minQ),
         this.retrieveSemanticClusters(embeddingResponse, context.projectId)
       ]);
 
@@ -162,14 +167,19 @@ export class RAGSpecialistAgent extends BaseAgent {
     }
   }
 
-  private async retrieveProjectContent(embedding: number[], projectId: string): Promise<any[]> {
+  private async retrieveProjectContent(
+    embedding: number[],
+    projectId: string,
+    threshold: number,
+    minQuality: number
+  ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
-        match_threshold: 0.25,
+        match_threshold: threshold,
         match_count: 8,
         p_project_id: projectId,
-        p_min_quality_score: 50
+        p_min_quality_score: minQuality
       });
 
       return error ? [] : (data || []);
@@ -179,15 +189,20 @@ export class RAGSpecialistAgent extends BaseAgent {
     }
   }
 
-  private async retrieveGlobalKnowledge(embedding: number[], taskType: string): Promise<any[]> {
+  private async retrieveGlobalKnowledge(
+    embedding: number[],
+    taskType: string,
+    threshold: number,
+    minQuality: number
+  ): Promise<any[]> {
     try {
       const { data, error } = await supabase.rpc('match_documents_quality_weighted', {
         query_embedding: embedding,
-        match_threshold: 0.3,
+        match_threshold: threshold,
         match_count: 5,
         include_global: true,
         p_marketing_domain: taskType === 'marketing' ? 'marketing' : null,
-        p_min_quality_score: 70
+        p_min_quality_score: minQuality
       });
 
       return error ? [] : (data || []).filter((item: any) => item.source_type === 'global');

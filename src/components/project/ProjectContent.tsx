@@ -5,6 +5,7 @@ import { ErrorState } from "@/components/project/ErrorState";
 import { ProjectHeader } from "@/components/project/ProjectHeader";
 import { ProjectTabs } from "@/components/project/ProjectTabs";
 import { getDomainFromUrl } from "@/components/project/urlUtils";
+import { WorkspaceRAGSettings } from "@/components/workspace/WorkspaceRAGSettings";
 
 export function ProjectContent() {
   const { project, loading, error } = useProject();
@@ -22,7 +23,10 @@ export function ProjectContent() {
       ) : error ? (
         <ErrorState error={error} />
       ) : (
-        <ProjectTabs />
+        <>
+          {project && <WorkspaceRAGSettings projectId={project.id} />}
+          <ProjectTabs />
+        </>
       )}
     </>
   );

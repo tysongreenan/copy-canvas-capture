@@ -43,7 +43,8 @@ export function useChatMessaging({
   const [minQualityScore, setMinQualityScore] = useState(60);
   const [evaluation, setEvaluation] = useState<ChatEvaluation | undefined>(undefined);
   const [thinkActive, setThinkActive] = useState(false);
-  const [useMultiAgent, setUseMultiAgent] = useState(true); // New state for multi-agent toggle
+  const [useMultiAgent, setUseMultiAgent] = useState(true); // Toggle multi-agent usage for marketing tasks
+  const [forceMultiAgent, setForceMultiAgent] = useState(false); // Force multi-agent mode for all tasks
   const { toast } = useToast();
   
   // Send message function with multi-agent integration
@@ -85,8 +86,11 @@ export function useChatMessaging({
         
         let response;
         
-        // Use multi-agent system for marketing-related queries
-        if (useMultiAgent && (detectedTaskType === 'marketing' || detectedTaskType === 'email' || detectedTaskType === 'content')) {
+        // Use multi-agent system for supported task types or when forced
+        if (
+          useMultiAgent &&
+          (forceMultiAgent || ['marketing', 'email', 'content', 'summary', 'research'].includes(detectedTaskType))
+        ) {
           console.log('Using multi-agent system for enhanced marketing response');
           
           // Import and use multi-agent service
@@ -230,7 +234,7 @@ export function useChatMessaging({
         setIsLoading(false);
       }
     },
-    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, minQualityScore, thinkActive, useMultiAgent]
+    [projectId, threadId, conversationId, addMessage, onConversationCreated, toast, setLastSources, saveMessageToDatabase, useMemory, usePromptChain, qualityThreshold, maxIterations, minQualityScore, thinkActive, useMultiAgent, forceMultiAgent]
   );
 
   return {
@@ -251,6 +255,8 @@ export function useChatMessaging({
     evaluation,
     thinkActive,
     setThinkActive,
+    forceMultiAgent,
+    setForceMultiAgent,
     useMultiAgent, // Export the new state
     setUseMultiAgent, // Export the setter
     handleSendMessage

@@ -1,132 +1,150 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ScrapedContent } from "./ScraperTypes";
-import { TextChunk, TextChunkGenerator } from "./TextChunkGenerator";
-import { EmbeddingProcessor } from "./EmbeddingProcessor";
+import { supabase } from '@/integrations/supabase/client';
 
-export class EmbeddingService {
-  /**
-   * Process a file by uploading it to the Supabase edge function for processing
-   */
-  public static async processFile(file: File, projectId: string): Promise<boolean> {
+export interface ScrapedContent {
+  url: string;
+  title: string;
+  headings: Array<{tag: string; text: string}>;
+  paragraphs: string[];
+  links: Array<{url: string; text: string}>;
+  listItems: string[];
+  metaDescription: string;
+  metaKeywords: string;
+}
+
+export const EmbeddingService = {
+  async processFile(file: File, projectId: string): Promise<boolean> {
     try {
-      console.log(`Processing file: ${file.name} (${file.type}) for project: ${projectId}`);
+      console.log(`Processing file: ${file.name} for project ${projectId}`);
       
-      // Create a FormData object to send the file
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("projectId", projectId);
-      
-      // Call the process-file edge function
-      const { data, error } = await supabase.functions.invoke("process-file", {
-        body: formData
+      // Use the existing process-file edge function
+      const { data, error } = await supabase.functions.invoke('process-file', {
+        body: { 
+          file: await this.fileToBase64(file),
+          fileName: file.name,
+          projectId: projectId
+        }
       });
-      
+
       if (error) {
-        console.error("Error processing file:", error);
+        console.error('Error processing file:', error);
         return false;
       }
-      
-      console.log("File processing result:", data);
-      return data.success === true;
+
+      return data?.success || false;
     } catch (error) {
-      console.error("Exception in processFile:", error);
+      console.error('Error in processFile:', error);
       return false;
     }
-  }
-  
-  /**
-   * Generate embeddings for a piece of text
-   */
-  public static async generateEmbedding(text: string): Promise<any> {
+  },
+
+  async processContent(content: ScrapedContent, projectId: string): Promise<void> {
     try {
-      const { data, error } = await supabase.functions.invoke("generate-embedding", {
-        body: { text }
+      // Extract text content from the scraped content
+      let textContent = '';
+      
+      // Add title
+      if (content.title) {
+        textContent += content.title + '\n\n';
+      }
+      
+      // Add headings
+      content.headings.forEach(heading => {
+        textContent += heading.text + '\n';
       });
       
-      if (error) throw error;
+      // Add paragraphs
+      content.paragraphs.forEach(paragraph => {
+        textContent += paragraph + '\n';
+      });
       
-      return data.embedding;
+      // Add list items
+      content.listItems.forEach(item => {
+        textContent += '- ' + item + '\n';
+      });
+      
+      // Add meta description
+      if (content.metaDescription) {
+        textContent += content.metaDescription + '\n';
+      }
+
+      // Split into chunks and process each one
+      const chunks = this.splitTextIntoChunks(textContent);
+      
+      for (const chunk of chunks) {
+        await supabase.functions.invoke('process-embeddings', {
+          body: {
+            text: chunk,
+            projectId: projectId,
+            metadata: {
+              source: content.url,
+              title: content.title,
+              type: 'scraped_content'
+            }
+          }
+        });
+      }
     } catch (error) {
-      console.error("Error generating embedding:", error);
+      console.error('Error processing content:', error);
       throw error;
     }
-  }
+  },
 
-  /**
-   * Process an entire project's content for embeddings
-   */
-  public static async processProject(projectId: string, contents: ScrapedContent[]): Promise<boolean> {
+  async processProject(projectId: string, scrapedPages: ScrapedContent[]): Promise<void> {
     try {
-      console.log(`Queueing ${contents.length} pages for project: ${projectId}`);
-      let allSuccess = true;
-
-      for (const content of contents) {
-        if (content.title === 'Error') {
-          console.log(`Skipping page with error: ${content.url}`);
-          continue;
-        }
-
-        const chunks = TextChunkGenerator.generateChunks(content);
-        console.log(`Generated ${chunks.length} chunks from ${content.url}`);
-
-        const jobs = chunks.map(chunk => ({
-          status: 'pending',
-          payload: { text: chunk.text, projectId, metadata: chunk.metadata },
-          attempts: 0
-        }));
-
-        const { error } = await supabase.from('embedding_jobs').insert(jobs);
-        if (error) {
-          console.error('Error enqueuing embedding jobs:', error);
-          allSuccess = false;
-        }
-      }
-
-      return allSuccess;
-    } catch (error) {
-      console.error("Error processing project for embeddings:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Process a document for embedding - compatibility method for the FileUpload component
-   */
-  public static async processDocument(projectId: string, documents: any[]): Promise<boolean> {
-    try {
-      let allSuccess = true;
+      console.log(`Processing ${scrapedPages.length} pages for project ${projectId}`);
       
-      // For each document, extract text and create embeddings
-      for (const document of documents) {
-        // Extract text from the document
-        const text = document?.pageContent || '';
-        if (!text) {
-          console.error("Empty document content");
-          allSuccess = false;
-          continue;
-        }
-        
-        // Create a simple text chunk for processing
-        const chunks = [{
-          text: text,
-          metadata: {
-            source: document?.metadata?.source || 'unknown',
-            type: 'uploaded_document'
-          }
-        }];
-        
-        // Process the chunks
-        const success = await EmbeddingProcessor.processChunks(chunks as TextChunk[], projectId);
-        if (!success) {
-          allSuccess = false;
-        }
+      // Process each page directly instead of using job queue
+      for (const page of scrapedPages) {
+        await this.processContent(page, projectId);
       }
-      
-      return allSuccess;
     } catch (error) {
-      console.error("Error processing document for embeddings:", error);
-      return false;
+      console.error('Error processing project:', error);
+      throw error;
     }
+  },
+
+  private async fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]); // Remove the data:type;base64, prefix
+      };
+      reader.onerror = error => reject(error);
+    });
+  },
+
+  private splitTextIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
+    if (!text || text.length <= maxChunkSize) {
+      return text ? [text] : [];
+    }
+
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const chunks: string[] = [];
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim();
+      if (!trimmedSentence) continue;
+
+      const potentialChunk = currentChunk + (currentChunk ? '. ' : '') + trimmedSentence;
+      
+      if (potentialChunk.length <= maxChunkSize) {
+        currentChunk = potentialChunk;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk + '.');
+        }
+        currentChunk = trimmedSentence;
+      }
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk + '.');
+    }
+
+    return chunks.filter(chunk => chunk.length > 20);
   }
-}
+};

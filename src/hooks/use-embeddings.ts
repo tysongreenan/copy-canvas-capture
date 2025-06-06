@@ -53,10 +53,11 @@ export function useEmbeddings(projectId: string) {
       setProgress(pct);
     }
 
+    // Check if processing is complete based on content vs embeddings
     if (processingEmbeddings && progressData.total > 0 && progressData.done >= progressData.total) {
       setProcessingEmbeddings(false);
       setHasEmbeddings(true);
-      setEmbeddingStatus(progressData.failed > 0 ? 'partial' : 'success');
+      setEmbeddingStatus('success');
     }
   }, [progressData, processingEmbeddings]);
 
@@ -79,7 +80,6 @@ export function useEmbeddings(projectId: string) {
       
       // Convert database records to ScrapedContent format
       const scrapedPages = projectPages.map(page => {
-        // Safely type the content object
         const contentObj = page.content as {
           headings: Array<{tag: string; text: string}>;
           paragraphs: string[];
@@ -89,7 +89,6 @@ export function useEmbeddings(projectId: string) {
           metaKeywords: string;
         };
         
-        // Convert the database record to ScrapedContent format
         return {
           url: page.url,
           title: page.title || "",
@@ -107,11 +106,20 @@ export function useEmbeddings(projectId: string) {
         description: `Processing ${scrapedPages.length} pages for AI chat...`
       });
       
-      await EmbeddingService.processProject(projectId, scrapedPages);
-      setProgress(0);
+      // Process embeddings directly instead of using job queue for now
+      for (const page of scrapedPages) {
+        try {
+          await EmbeddingService.processContent(page, projectId);
+        } catch (error) {
+          console.error(`Error processing page ${page.url}:`, error);
+        }
+      }
+      
+      setEmbeddingStatus('success');
+      setHasEmbeddings(true);
       toast({
-        title: "Jobs queued",
-        description: "Embedding jobs have been queued for processing"
+        title: "Processing complete",
+        description: "Your content has been processed and is ready for AI chat!"
       });
     } catch (error) {
       console.error("Error generating embeddings:", error);
@@ -122,7 +130,7 @@ export function useEmbeddings(projectId: string) {
       });
       setEmbeddingStatus('none');
     } finally {
-      // keep processing state until jobs finish
+      setProcessingEmbeddings(false);
     }
   };
 

@@ -250,6 +250,30 @@ export type Database = {
           },
         ]
       }
+      embedding_jobs: {
+        Row: {
+          attempts: number
+          created_at: string | null
+          id: string
+          payload: Json
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string | null
+          id?: string
+          payload: Json
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string | null
+          id?: string
+          payload?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       global_knowledge: {
         Row: {
           complexity_level: string | null
@@ -430,6 +454,7 @@ export type Database = {
           created_at: string
           id: string
           page_count: number | null
+          team_id: string | null
           title: string
           url: string
           user_id: string
@@ -438,6 +463,7 @@ export type Database = {
           created_at?: string
           id?: string
           page_count?: number | null
+          team_id?: string | null
           title: string
           url: string
           user_id: string
@@ -446,6 +472,7 @@ export type Database = {
           created_at?: string
           id?: string
           page_count?: number | null
+          team_id?: string | null
           title?: string
           url?: string
           user_id?: string
@@ -470,6 +497,33 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_rag_settings: {
+        Row: {
+          created_at: string
+          id: string
+          min_quality_score: number
+          similarity_threshold: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          min_quality_score?: number
+          similarity_threshold?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          min_quality_score?: number
+          similarity_threshold?: number
+          updated_at?: string
+          workspace_id?: string
         }
         Relationships: []
       }

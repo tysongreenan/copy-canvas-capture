@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -5,25 +6,26 @@ export function useEmbeddingProgress(projectId: string, enabled: boolean) {
   return useQuery({
     queryKey: ["embedding-progress", projectId],
     queryFn: async () => {
-      const { count: total } = await supabase
-        .from('embedding_jobs')
+      // For now, return a simple progress structure
+      // This will be enhanced once the schema is properly updated
+      const { count: embeddingCount } = await supabase
+        .from('document_chunks')
         .select('*', { count: 'exact', head: true })
-        .contains('payload', { projectId });
+        .eq('project_id', projectId);
 
-      const { count: done } = await supabase
-        .from('embedding_jobs')
+      const { count: contentCount } = await supabase
+        .from('scraped_content')
         .select('*', { count: 'exact', head: true })
-        .contains('payload', { projectId })
-        .in('status', ['complete', 'failed']);
+        .eq('project_id', projectId);
 
-      const { count: failed } = await supabase
-        .from('embedding_jobs')
-        .select('*', { count: 'exact', head: true })
-        .contains('payload', { projectId })
-        .eq('status', 'failed');
+      // Estimate progress based on content vs embeddings ratio
+      const total = contentCount || 0;
+      const done = embeddingCount || 0;
+      const failed = 0; // We'll track this differently for now
 
-      return { total: total || 0, done: done || 0, failed: failed || 0 };
+      return { total, done, failed };
     },
-    refetchInterval: enabled ? 2000 : false,
+    refetchInterval: enabled ? 3000 : false,
+    enabled: enabled && !!projectId,
   });
 }

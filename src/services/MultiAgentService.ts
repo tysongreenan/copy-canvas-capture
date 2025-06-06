@@ -27,6 +27,7 @@ export class MultiAgentService {
     };
     metadata: any;
   }> {
+    let orchestratedData: OrchestratedResponse | null = null;
     try {
       console.log(`Processing query with enhanced multi-agent system: "${message}"`);
       console.log(`Project ID: ${projectId}, Task Type: ${taskType}`);
@@ -80,7 +81,7 @@ export class MultiAgentService {
         };
       }
 
-      const orchestratedData = result.data as OrchestratedResponse;
+      orchestratedData = result.data as OrchestratedResponse;
 
       console.log(`Multi-agent processing completed with confidence: ${Math.round(result.confidence * 100)}%`);
       console.log(`Quality approved: ${orchestratedData.quality.approved}`);
@@ -122,9 +123,20 @@ export class MultiAgentService {
       };
     } catch (error) {
       console.error('Error in multi-agent service:', error);
-      
+
+      // Build contextual snippet from sources or memory if available
+      let contextSnippet = '';
+      if (orchestratedData?.sources?.length) {
+        contextSnippet = orchestratedData.sources
+          .slice(0, 2)
+          .map((s: any, i: number) => `${i + 1}. "${s.content.substring(0, 160)}"`)
+          .join('\n');
+      } else if (memoryContext) {
+        contextSnippet = memoryContext.split('\n').slice(0, 2).join('\n');
+      }
+
       // Create a helpful error response instead of generic error
-      const fallbackResponse = this.createFallbackResponse(message, error.message);
+      const fallbackResponse = this.createFallbackResponse(message, error.message, contextSnippet);
       
       return {
         success: true, // Mark as success to provide helpful response
@@ -163,9 +175,13 @@ ${reasoning.slice(0, 3).map((r, i) => `${i + 1}. ${r}`).join('\n')}
 Please try rephrasing your question or ask again in a few moments. I'm working to improve my responses for you.`;
   }
 
-  private static createFallbackResponse(query: string, errorMessage: string): string {
+  private static createFallbackResponse(
+    query: string,
+    errorMessage: string,
+    contextText?: string
+  ): string {
     const lowerQuery = query.toLowerCase();
-    
+
     let specificGuidance = '';
     if (lowerQuery.includes('campaign') || lowerQuery.includes('advertising')) {
       specificGuidance = `
@@ -193,9 +209,11 @@ Please try rephrasing your question or ask again in a few moments. I'm working t
 - Always be testing and improving`;
     }
 
+    const contextSection = contextText ? `**Context that may help:**\n${contextText}\n\n` : '';
+
     return `I'm currently experiencing technical difficulties, but I want to help with your question: "${query}"
 
-${specificGuidance}
+${contextSection}${specificGuidance}
 
 💡 **Quick Action Steps:**
 1. Identify your most important marketing goal right now
